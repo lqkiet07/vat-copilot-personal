@@ -7,6 +7,7 @@ import { useChatSessions } from './ChatSessionsContext'
 import ChatMessage from './ChatMessage'
 import ChatComposer from './ChatComposer'
 import ChatEmptyState from './ChatEmptyState'
+import ChatEvidenceDrawer from './ChatEvidenceDrawer'
 
 const CHAT_MODEL = 'qwen2.5:7b'
 
@@ -24,11 +25,20 @@ export function ChatView() {
   const [activeSources, setActiveSources] = useState([])
   const [sampleQuestions, setSampleQuestions] = useState([])
   const [pending, setPending] = useState(null)
+  const [openSource, setOpenSource] = useState(null)
 
   const abortRef = useRef(null)
   const scrollRef = useRef(null)
   const sourcesRef = useRef([])
   const resolvedDateRef = useRef(null)
+  const sourceIndexRef = useRef(new Map())
+
+  const messages = activeSession?.messages || []
+  const visibleMessages =
+    pending && pending.sessionId === activeId ? [...messages, pending.message] : messages
+  const lastAssistantId = [...visibleMessages]
+    .reverse()
+    .find((message) => message.role === 'assistant')?.id
 
   useEffect(() => {
     let cancelled = false
@@ -54,6 +64,15 @@ export function ChatView() {
     if (!node) return
     node.scrollTop = node.scrollHeight
   }, [pending?.message?.content, activeSession?.messages?.length])
+
+  useEffect(() => {
+    const index = sourceIndexRef.current
+    for (const message of visibleMessages) {
+      for (const source of message.sources || []) {
+        if (source?.id) index.set(source.id, source)
+      }
+    }
+  }, [visibleMessages])
 
   const handleAsOfDateChange = useCallback(
     (value) => {
@@ -180,12 +199,28 @@ export function ChatView() {
     }
   }, [])
 
-  const messages = activeSession?.messages || []
-  const visibleMessages =
-    pending && pending.sessionId === activeId ? [...messages, pending.message] : messages
-  const lastAssistantId = [...visibleMessages]
-    .reverse()
-    .find((message) => message.role === 'assistant')?.id
+  const handleCitationClick = useCallback((citationId) => {
+    const known = sourceIndexRef.current.get(citationId)
+    if (known) {
+      setOpenSource(known)
+      return
+    }
+
+    const cut = citationId.lastIndexOf('_D')
+    const docId = cut > 0 ? citationId.slice(0, cut) : citationId
+    setOpenSource({
+      id: citationId,
+      doc_id: docId,
+      code: '',
+      title: `Điều khoản ${citationId}`,
+      valid_from: '',
+      valid_to: '',
+    })
+  }, [])
+
+  const handleSourceClick = useCallback((source) => {
+    setOpenSource(source)
+  }, [])
 
   return (
     <main className="flex-1 flex flex-col min-w-0 overflow-hidden bg-paper">
@@ -201,6 +236,8 @@ export function ChatView() {
                   isLastAssistant={message.id === lastAssistantId}
                   onCopy={copyMessage}
                   onRegenerate={regenerate}
+                  onCitationClick={handleCitationClick}
+                  onSourceClick={handleSourceClick}
                 />
                 {message.streaming && activeSources.length > 0 && (
                   <p className="text-[11px] text-muted">
@@ -222,6 +259,8 @@ export function ChatView() {
         onStop={() => abortRef.current?.abort()}
         streaming={streaming}
       />
+
+      <ChatEvidenceDrawer source={openSource} onClose={() => setOpenSource(null)} />
     </main>
   )
 }

@@ -1,9 +1,11 @@
-import React, { useEffect, useRef } from 'react'
+import React, { useMemo } from 'react'
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
 import { Copy, RefreshCw } from 'lucide-react'
 
-import { MARKDOWN_COMPONENTS } from './markdownComponents'
+import { createMarkdownComponents } from './markdownComponents'
+import ChatRiskBanner from './ChatRiskBanner'
+import ChatSourceList from './ChatSourceList'
 
 function Caret() {
   return (
@@ -11,7 +13,18 @@ function Caret() {
   )
 }
 
-export function ChatMessage({ message, isLastAssistant, onCopy, onRegenerate }) {
+export function ChatMessage({
+  message,
+  isLastAssistant,
+  onCopy,
+  onRegenerate,
+  onCitationClick,
+  onSourceClick,
+}) {
+  const markdownComponents = useMemo(
+    () => createMarkdownComponents(onCitationClick),
+    [onCitationClick],
+  )
   const isUser = message.role === 'user'
 
   if (isUser) {
@@ -24,8 +37,16 @@ export function ChatMessage({ message, isLastAssistant, onCopy, onRegenerate }) 
     )
   }
 
+  const hasRisk = message.risk_score !== undefined && message.risk_score !== null
+
   return (
     <div className="space-y-2">
+      {message.in_scope === false && (
+        <span className="inline-flex items-center w-fit bg-[#F4F2ED] text-body border border-hairline rounded-full px-2 py-0.5 text-[11px]">
+          Ngoài phạm vi thuế GTGT
+        </span>
+      )}
+
       <div className="max-w-[78ch]">
         {message.streaming ? (
           <div className="text-[13.5px] leading-relaxed text-ink">
@@ -33,7 +54,7 @@ export function ChatMessage({ message, isLastAssistant, onCopy, onRegenerate }) 
             <Caret />
           </div>
         ) : (
-          <ReactMarkdown remarkPlugins={[remarkGfm]} components={MARKDOWN_COMPONENTS}>
+          <ReactMarkdown remarkPlugins={[remarkGfm]} components={markdownComponents}>
             {message.content}
           </ReactMarkdown>
         )}
@@ -44,6 +65,18 @@ export function ChatMessage({ message, isLastAssistant, onCopy, onRegenerate }) 
           <p className="mt-2 text-[11px] text-rose-600">Không thể hoàn tất câu trả lời.</p>
         )}
       </div>
+
+      {hasRisk && (
+        <ChatRiskBanner
+          score={message.risk_score}
+          level={message.risk_level}
+          warnings={message.warnings}
+        />
+      )}
+
+      {message.sources?.length > 0 && (
+        <ChatSourceList sources={message.sources} onSourceClick={onSourceClick} />
+      )}
 
       {isLastAssistant && !message.streaming && (
         <div className="flex items-center gap-3 pt-0.5">
