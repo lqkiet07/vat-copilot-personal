@@ -1,9 +1,9 @@
 # Temporal KG-RAG for Verifiable Legal Reasoning over Vietnamese VAT Regulations
 
-Hệ thống hỏi đáp pháp luật VAT có thể kiểm chứng: knowledge graph Neo4j 2 tầng
-(Văn bản → Điều → Khoản → Điểm), hybrid retrieval (Lucene full-text + vector 1024
-chiều, RRF k=60) có lọc hiệu lực theo thời gian, Citation Verifier tất định 5 trạng
-thái và Risk Score 0–100.
+A verifiable Vietnamese VAT legal QA system: a two-level Neo4j knowledge graph
+(Document → Article → Clause → Point), hybrid retrieval (Lucene full-text + 1024-dim
+vectors, RRF k=60) with temporal validity filtering, a deterministic 5-state
+Citation Verifier, and a 0–100 Risk Score.
 
 ## Tech stack
 - Backend: Python 3.11+, FastAPI, Neo4j 5.26 (Docker), Streamlit
@@ -25,11 +25,11 @@ python -m venv .venv
 pip install -r requirements.txt
 ```
 
-### 3. Seed knowledge graph
+### 3. Seed the knowledge graph
 ```bash
 python scripts/seed_neo4j.py
 ```
-Idempotent (`MERGE`); chạy lại nhiều lần không sinh dữ liệu trùng.
+Idempotent (`MERGE`); re-running does not duplicate data.
 
 ### 4. Backend (port 8000)
 ```bash
@@ -53,16 +53,16 @@ streamlit run app_demo.py
 ```bash
 pytest tests/ -q
 ```
-Cần Neo4j đang chạy. Kỳ vọng: `117 passed`.
+Requires Neo4j to be running. Expected: `117 passed`.
 
 ## Environment variables
-| Biến | Mặc định | Ý nghĩa |
+| Variable | Default | Description |
 |---|---|---|
 | `NEO4J_URI` | `bolt://localhost:7687` | Neo4j Bolt endpoint |
-| `NEO4J_USER` | `neo4j` | Tài khoản Neo4j |
-| `NEO4J_PASSWORD` | `vat-temporal-2026` | Mật khẩu demo local, đổi khi deploy |
+| `NEO4J_USER` | `neo4j` | Neo4j username |
+| `NEO4J_PASSWORD` | `vat-temporal-2026` | Local demo password; change before deployment |
 
-## Cấu trúc
+## Project structure
 ```
 src/api/        FastAPI routes, Pydantic models
 src/engine/     hybrid/temporal retrieval, LLM client
@@ -76,6 +76,6 @@ scripts/        scrape, build corpus, embeddings, seed, benchmark
 tests/          pytest suite
 ```
 
-## Dữ liệu
-Corpus pháp lý thuần sạch từ [vbpl.vn](https://vbpl.vn): Luật 48/2024/QH15,
-NĐ 181/2025, TT 69/2025, NĐ 359/2025, NĐ 144/2026.
+## Data
+Legal corpus sourced from [vbpl.vn](https://vbpl.vn): Law 48/2024/QH15,
+Decree 181/2025, Circular 69/2025, Decree 359/2025, Decree 144/2026.
