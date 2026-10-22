@@ -188,6 +188,97 @@ def test_prompt_falls_back_to_article_content_without_corpus_clause(
     assert "Thuế suất 0%." in captured["prompt"]
 
 
+def test_explicit_article_reference_enters_the_legal_basis(monkeypatch: pytest.MonkeyPatch, stub_retrieval, stub_verification):
+    corpus = [
+        {
+            "id": "ND_181_2025",
+            "code": "181/2025/ND-CP",
+            "title": "Nghi dinh 181/2025",
+            "valid_from": "2025-07-01",
+            "valid_to": "9999-12-31",
+            "articles": [
+                {
+                    "id": "ND_181_2025_D9",
+                    "code": "Dieu 9",
+                    "title": "Hoa don, chung tu",
+                    "clauses": [{"code": "Khoan 1", "content": "Ho don duoc lap khi ban hang."}],
+                }
+            ],
+        },
+        {
+            "id": "LUAT_48_2024",
+            "code": "48/2024/QH15",
+            "title": "Luat Thuê GTGT",
+            "valid_from": "2025-07-01",
+            "valid_to": "9999-12-31",
+            "articles": [
+                {
+                    "id": "LUAT_48_2024_D9",
+                    "code": "Dieu 9",
+                    "title": "Thue suat",
+                    "clauses": [{"code": "Khoan 1", "content": "Thuê suât 0%."}],
+                }
+            ],
+        },
+    ]
+    monkeypatch.setattr(chat_service, "load_corpus_tree", lambda *a, **k: corpus)
+    captured: dict[str, str] = {}
+
+    def _capture(prompt: str, model: str = "qwen2.5:7b"):
+        captured["prompt"] = prompt
+        return iter(["Cau tra loi [ND_181_2025_D9]."])
+
+    monkeypatch.setattr(chat_service, "generate_llm_response_stream", _capture)
+
+    response = chat_service.build_response(
+        [{"role": "user", "content": "Hoa don chung tu theo Dieu 9 Nghi dinh 181/2025?"}]
+    )
+
+    assert "ND_181_2025_D9" in captured["prompt"]
+    assert "Ho don duoc lap khi ban hang." in captured["prompt"]
+    assert "LUAT_48_2024_D9" not in captured["prompt"]
+    assert response.sources[0].id == "ND_181_2025_D9"
+
+
+def test_article_reference_without_document_hint_keeps_every_match(
+    monkeypatch: pytest.MonkeyPatch, stub_retrieval, stub_verification
+):
+    corpus = [
+        {
+            "id": "ND_181_2025",
+            "code": "181/2025/ND-CP",
+            "title": "Nghi dinh 181/2025",
+            "valid_from": "2025-07-01",
+            "valid_to": "9999-12-31",
+            "articles": [
+                {"id": "ND_181_2025_D9", "code": "Dieu 9", "title": "A", "clauses": []},
+            ],
+        },
+        {
+            "id": "LUAT_48_2024",
+            "code": "48/2024/QH15",
+            "title": "Luat 48/2024",
+            "valid_from": "2025-07-01",
+            "valid_to": "9999-12-31",
+            "articles": [
+                {"id": "LUAT_48_2024_D9", "code": "Dieu 9", "title": "B", "clauses": []},
+            ],
+        },
+    ]
+    monkeypatch.setattr(chat_service, "load_corpus_tree", lambda *a, **k: corpus)
+
+    matched = chat_service._explicit_article_ids("Theo Dieu 9 thi ap dung the nao?")
+
+    assert set(matched) == {"ND_181_2025_D9", "LUAT_48_2024_D9"}
+
+
+def test_question_without_article_reference_has_no_explicit_articles(
+    monkeypatch: pytest.MonkeyPatch,
+):
+    monkeypatch.setattr(chat_service, "load_corpus_tree", lambda *a, **k: [])
+    assert chat_service._explicit_article_ids("Thuê suât xuât khau la bao nhieu?") == []
+
+
 def test_no_evidence_reply_explains_the_temporal_gap(monkeypatch: pytest.MonkeyPatch):
     corpus = [
         {

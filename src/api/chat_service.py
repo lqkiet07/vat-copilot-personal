@@ -3,6 +3,8 @@
 The service is the single source of truth for the conversational flow: scope routing,
 temporal retrieval, prompt construction, streamed generation and citation scoring.
 """
+import re
+import unicodedata
 from collections.abc import Iterator
 
 from src.api.chat_domain import classify, resolve_date, rewrite_query
@@ -21,7 +23,11 @@ DEFAULT_AS_OF_DATE = "2026-09-30"
 MAX_SOURCES = 15
 MAX_FALLBACK_CITATIONS = 5
 MAX_CLAUSE_CHARS = 1500
+MAX_EXPLICIT_ARTICLES = 3
 QUERY_JOINER = " ; "
+
+_ARTICLE_REF = re.compile(r"dieu\s+(\d{1,3})\b")
+_DOCUMENT_REF = re.compile(r"(?:luat|nghi dinh|thong tu)\s*(\d{1,3}(?:[/-]\d{4})?)\b")
 
 SAMPLE_QUESTIONS: list[str] = [scenario["query"] for scenario in DEMO_SCENARIOS]
 
@@ -106,14 +112,25 @@ def _format_clause(clause: dict) -> str:
     return "\n".join(lines)
 
 
-def _load_clause_index() -> dict[str, str]:
-    """Map every article id to its clause text.
+def _fold(text: str) -> str:
+    """Lowercase and drop Vietnamese diacritics so codes can be compared."""
+    decomposed = unicodedata.normalize("NFD", text.lower())
+    stripped = "".join(char for char in decomposed if not unicodedata.combining(char))
+    return " ".join(stripped.replace("đ", "d").split())
+
+
+def _load_corpus_index() -> dict[str, dict]:
+    """Map every article id to its metadata and full clause text.
 
     The graph node only stores the article heading, so without this index the model
     receives titles instead of the legal wording it has to reason about.
     """
-    index: dict[str, str] = {}
+    index: dict[str, dict] = {}
     for document in load_corpus_tree():
+        doc_code = document.get("code", "")
+        doc_id = document.get("id", "")
+        doc_valid_from = document.get("valid_from", "")
+        doc_valid_to = document.get("valid_to", "")
         for article in document.get("articles", []):
             article_id = article.get("id")
             if not article_id:
@@ -123,17 +140,71 @@ def _load_clause_index() -> dict[str, str]:
                 for block in (_format_clause(clause) for clause in article.get("clauses", []))
                 if block
             ]
-            index[article_id] = "\n".join(blocks)[:MAX_CLAUSE_CHARS]
+            index[article_id] = {
+                "code": article.get("code", ""),
+                "title": article.get("title", ""),
+                "doc_id": doc_id,
+                "doc_code": doc_code,
+                "doc_title": document.get("title", ""),
+                "valid_from": article.get("valid_from") or doc_valid_from,
+                "valid_to": article.get("valid_to") or doc_valid_to,
+                "text": "\n".join(blocks)[:MAX_CLAUSE_CHARS],
+            }
     return index
 
 
-def _build_prompt(question: str, effective_date: str, articles: list[ArticleNode]) -> str:
+def _explicit_article_ids(question: str) -> list[str]:
+    """Resolve article numbers written in the question, e.g. 'Điều 9 Nghị định 181/2025'.
+
+    A lawyer cites article numbers, so the article they name must be part of the legal
+    basis even when the hybrid retriever does not rank it high.
+    """
+    folded = _fold(question)
+    numbers = {int(value) for value in _ARTICLE_REF.findall(folded)}
+    if not numbers:
+        return []
+    doc_hints = _DOCUMENT_REF.findall(folded)
+    matched: list[str] = []
+    for article_id, meta in _load_corpus_index().items():
+        article_match = re.fullmatch(r"dieu\s+(\d{1,3})", _fold(meta["code"]))
+        if article_match is None or int(article_match.group(1)) not in numbers:
+            continue
+        if doc_hints:
+            doc_code = _fold(meta["doc_code"]).replace("-", "/")
+            if not any(hint.replace("-", "/") in doc_code for hint in doc_hints):
+                continue
+        matched.append(article_id)
+    return matched[:MAX_EXPLICIT_ARTICLES]
+
+
+def _build_prompt(
+    question: str,
+    effective_date: str,
+    articles: list[ArticleNode],
+    explicit_ids: tuple[str, ...] = (),
+) -> str:
     """Build the VAT Copilot system prompt with the legal basis to rely on."""
-    clause_index = _load_clause_index()
+    corpus_index = _load_corpus_index()
+    clause_index = {article_id: meta["text"] for article_id, meta in corpus_index.items()}
+
+    direct_basis = []
+    for article_id in explicit_ids:
+        meta = corpus_index.get(article_id)
+        if meta is None:
+            continue
+        direct_basis.append(
+            f"- [{article_id}] {meta['code']} - {meta['title']}\n  {meta['text'] or meta['title']}"
+        )
+
     basis = "\n".join(
         f"- [{article.id}] {article.code} - {article.title}\n"
         f"  {clause_index.get(article.id) or article.content}"
         for article in articles
+    )
+    direct_section = (
+        "=== CĂN CỨ ĐƯỢC VIỆN DẪN TRỰC TIẾP TRONG CÂU HỎI ===\n" + "\n".join(direct_basis) + "\n\n"
+        if direct_basis
+        else ""
     )
     return (
         "Bạn là VAT Copilot, trợ lý tư vấn pháp luật chuyên về thuế GTGT tại Việt Nam.\n"
@@ -147,6 +218,7 @@ def _build_prompt(question: str, effective_date: str, articles: list[ArticleNode
         "6. Nếu căn cứ không đủ để kết luận thì nói rõ là chưa đủ căn cứ.\n\n"
         f"=== CÂU HỎI ===\n{question}\n\n"
         f"=== THỜI ĐIỂM TRA CỨU (as_of_date) ===\n{effective_date}\n\n"
+        f"{direct_section}"
         f"=== CĂN CỨ PHÁP LÝ ===\n{basis}\n\n"
         "=== CÂU TRẢ LỜI ===\n"
     )
@@ -244,18 +316,48 @@ def _no_evidence_events(effective_date: str) -> Iterator[tuple[str, dict]]:
     yield ("done", response.model_dump())
 
 
+def _explicit_sources(explicit_ids: tuple[str, ...]) -> list[ChatSource]:
+    """Build source entries for the articles the question cites directly."""
+    corpus_index = _load_corpus_index()
+    sources: list[ChatSource] = []
+    for article_id in explicit_ids:
+        meta = corpus_index.get(article_id)
+        if meta is None:
+            continue
+        sources.append(
+            ChatSource(
+                id=article_id,
+                code=meta["code"],
+                title=meta["title"],
+                doc_id=meta["doc_id"],
+                valid_from=str(meta["valid_from"]),
+                valid_to=str(meta["valid_to"]),
+            )
+        )
+    return sources
+
+
 def _answer_events(
     question: str,
     effective_date: str,
     articles: list[ArticleNode],
     model: str,
+    explicit_ids: tuple[str, ...] = (),
 ) -> Iterator[tuple[str, dict]]:
     """Emit the event sequence for an answer backed by retrieved legal articles."""
     selected = articles[:MAX_SOURCES]
-    sources = [_to_source(article) for article in selected]
+    sources = _explicit_sources(explicit_ids) + [_to_source(article) for article in selected]
+    unique_sources: list[ChatSource] = []
+    seen_ids: set[str] = set()
+    for source in sources:
+        if source.id in seen_ids:
+            continue
+        seen_ids.add(source.id)
+        unique_sources.append(source)
+    sources = unique_sources
     yield ("meta", {"as_of_date": effective_date, "sources": [s.model_dump() for s in sources]})
 
-    prompt = _build_prompt(question, effective_date, selected)
+    prompt = _build_prompt(question, effective_date, selected, explicit_ids)
     answer_parts: list[str] = []
     for delta in generate_llm_response_stream(prompt, model=model):
         answer_parts.append(delta)
@@ -305,7 +407,8 @@ def stream_chat(
     if not articles:
         yield from _no_evidence_events(effective_date)
         return
-    yield from _answer_events(last_user_text, effective_date, articles, model)
+    explicit_ids = tuple(_explicit_article_ids(last_user_text))
+    yield from _answer_events(last_user_text, effective_date, articles, model, explicit_ids)
 
 
 def build_response(
