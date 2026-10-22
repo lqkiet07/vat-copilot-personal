@@ -18,7 +18,7 @@ from src.verifier.risk_score import verify_and_score
 ChatTurn = ChatMessage | dict
 
 DEFAULT_AS_OF_DATE = "2026-09-30"
-MAX_SOURCES = 8
+MAX_SOURCES = 15
 MAX_FALLBACK_CITATIONS = 5
 MAX_CLAUSE_CHARS = 1500
 QUERY_JOINER = " ; "
@@ -36,12 +36,6 @@ GREETING_REPLY = (
 OUT_OF_SCOPE_REPLY = (
     "Câu hỏi của bạn nằm ngoài phạm vi của VAT Copilot. "
     "Tôi chỉ tư vấn về thuế GTGT và các quy định pháp luật liên quan đến thuế GTGT. "
-    "Bạn có thể thử các câu hỏi mẫu:\n" + _SAMPLE_LIST
-)
-
-NO_EVIDENCE_REPLY = (
-    "Tôi không tìm thấy điều khoản thuế GTGT còn hiệu lực phù hợp với câu hỏi này "
-    "tại thời điểm tra cứu, nên chưa đủ căn cứ để trả lời. "
     "Bạn có thể thử các câu hỏi mẫu:\n" + _SAMPLE_LIST
 )
 
@@ -186,12 +180,58 @@ def _direct_reply_events(reply: str, effective_date: str) -> Iterator[tuple[str,
     yield ("done", response.model_dump())
 
 
+def _load_documents() -> list[dict]:
+    """Return the corpus document metadata used to explain temporal gaps."""
+    documents = []
+    for document in load_corpus_tree():
+        documents.append(
+            {
+                "title": document.get("title", ""),
+                "code": document.get("code", ""),
+                "valid_from": document.get("valid_from", ""),
+            }
+        )
+    return documents
+
+
+def _next_effective_document(as_of_date: str) -> dict | None:
+    """Find the earliest document that becomes effective after the reference date."""
+    candidates = [
+        document
+        for document in _load_documents()
+        if document["valid_from"] and document["valid_from"] > as_of_date
+    ]
+    if not candidates:
+        return None
+    return min(candidates, key=lambda document: document["valid_from"])
+
+
+def _no_evidence_message(as_of_date: str) -> str:
+    """Explain why no legal basis applies, naming the next document in force."""
+    upcoming = _next_effective_document(as_of_date)
+    if upcoming is None:
+        return (
+            f"Tại thời điểm {as_of_date}, kho dữ liệu pháp luật đóng băng ngày 30/09/2026 "
+            "không có điều khoản nào còn hiệu lực để áp dụng cho tình huống này.\n"
+            "Bạn có thể thử các câu hỏi mẫu:\n" + _SAMPLE_LIST
+        )
+    label = upcoming["code"] or upcoming["title"]
+    return (
+        f"Tại thời điểm {as_of_date}, chưa có văn bản nào trong kho dữ liệu (đóng băng ngày "
+        f"30/09/2026) có hiệu lực để áp dụng cho tình huống này. Văn bản sớm nhất có hiệu lực "
+        f"sau thời điểm tra cứu là {label} (hiệu lực từ {upcoming['valid_from']}), nên sự việc "
+        "xảy ra trước mốc đó sẽ phải áp dụng quy định trước đây — vốn không nằm trong kho "
+        "dữ liệu của hệ thống.\nBạn có thể thử các câu hỏi mẫu:\n" + _SAMPLE_LIST
+    )
+
+
 def _no_evidence_events(effective_date: str) -> Iterator[tuple[str, dict]]:
     """Emit the event sequence for a question with no matching legal basis."""
+    message = _no_evidence_message(effective_date)
     yield ("meta", {"as_of_date": effective_date, "sources": []})
-    yield ("token", {"delta": NO_EVIDENCE_REPLY})
+    yield ("token", {"delta": message})
     response = ChatResponse(
-        message=NO_EVIDENCE_REPLY,
+        message=message,
         citations=[],
         sources=[],
         risk_score=50,
@@ -279,11 +319,12 @@ def build_response(
         if name == "done":
             final_payload = payload
     if final_payload is None:
+        fallback_date = as_of_date or DEFAULT_AS_OF_DATE
         return ChatResponse(
-            message=NO_EVIDENCE_REPLY,
+            message=_no_evidence_message(fallback_date),
             risk_score=50,
             risk_level="MEDIUM",
             in_scope=True,
-            as_of_date=as_of_date or DEFAULT_AS_OF_DATE,
+            as_of_date=fallback_date,
         )
     return ChatResponse(**final_payload)

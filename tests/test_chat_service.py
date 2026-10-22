@@ -188,6 +188,34 @@ def test_prompt_falls_back_to_article_content_without_corpus_clause(
     assert "Thuế suất 0%." in captured["prompt"]
 
 
+def test_no_evidence_reply_explains_the_temporal_gap(monkeypatch: pytest.MonkeyPatch):
+    corpus = [
+        {
+            "id": "LUAT_48_2024",
+            "code": "48/2024/QH15",
+            "title": "Luật Thuế giá trị gia tăng số 48/2024/QH15",
+            "valid_from": "2025-07-01",
+            "articles": [],
+        }
+    ]
+    monkeypatch.setattr(chat_service, "load_corpus_tree", lambda *a, **k: corpus)
+    monkeypatch.setattr(
+        chat_service,
+        "query_temporal_rag",
+        lambda query, as_of_date: SimpleNamespace(articles=[]),
+    )
+
+    response = chat_service.build_response(
+        [{"role": "user", "content": "thuế suất xuất khẩu dịch vụ tháng 5/2024?"}],
+        as_of_date="2024-05-15",
+    )
+
+    assert response.risk_score == 50
+    assert "2024-05-31" in response.message
+    assert "48/2024/QH15" in response.message
+    assert "2025-07-01" in response.message
+
+
 def test_stream_chat_emits_meta_first_and_done_last(stub_retrieval, stub_llm, stub_verification):
     events = list(chat_service.stream_chat([{"role": "user", "content": VAT_QUESTION}]))
 

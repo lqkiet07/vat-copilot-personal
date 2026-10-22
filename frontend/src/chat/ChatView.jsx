@@ -115,6 +115,7 @@ export function ChatView() {
               sourcesRef.current = Array.isArray(data.sources) ? data.sources : []
               resolvedDateRef.current = data.as_of_date || null
               setActiveSources(sourcesRef.current)
+              if (data.as_of_date) setAsOfDate(data.as_of_date)
             } else if (event === 'token') {
               partial += data.delta || ''
               setPending((current) =>
