@@ -139,6 +139,55 @@ def test_empty_retrieval_returns_no_evidence_reply(monkeypatch: pytest.MonkeyPat
         assert question in response.message
 
 
+def test_prompt_contains_clause_text_from_corpus(monkeypatch: pytest.MonkeyPatch, stub_retrieval, stub_verification):
+    corpus = [
+        {
+            "id": "LUAT_48_2024",
+            "articles": [
+                {
+                    "id": "LUAT_48_2024_D10",
+                    "code": "Dieu 10",
+                    "title": "Thuế suất 0%",
+                    "clauses": [
+                        {"code": "Khoan 1", "content": "Hàng hóa xuất khẩu không chịu thuế GTGT."},
+                        {"code": "Khoan 2", "content": "Dịch vụ xuất khẩu theo hợp đồng."},
+                    ],
+                }
+            ],
+        }
+    ]
+    monkeypatch.setattr(chat_service, "load_corpus_tree", lambda *a, **k: corpus)
+    captured: dict[str, str] = {}
+
+    def _capture(prompt: str, model: str = "qwen2.5:7b"):
+        captured["prompt"] = prompt
+        return iter(["Thuế suất 0% [LUAT_48_2024_D10]."])
+
+    monkeypatch.setattr(chat_service, "generate_llm_response_stream", _capture)
+
+    chat_service.build_response([{"role": "user", "content": VAT_QUESTION}])
+
+    assert "Hàng hóa xuất khẩu không chịu thuế GTGT." in captured["prompt"]
+    assert "Dịch vụ xuất khẩu theo hợp đồng." in captured["prompt"]
+
+
+def test_prompt_falls_back_to_article_content_without_corpus_clause(
+    monkeypatch: pytest.MonkeyPatch, stub_retrieval, stub_verification
+):
+    monkeypatch.setattr(chat_service, "load_corpus_tree", lambda *a, **k: [])
+    captured: dict[str, str] = {}
+
+    def _capture(prompt: str, model: str = "qwen2.5:7b"):
+        captured["prompt"] = prompt
+        return iter(["Thuế suất 0% [LUAT_48_2024_D10]."])
+
+    monkeypatch.setattr(chat_service, "generate_llm_response_stream", _capture)
+
+    chat_service.build_response([{"role": "user", "content": VAT_QUESTION}])
+
+    assert "Thuế suất 0%." in captured["prompt"]
+
+
 def test_stream_chat_emits_meta_first_and_done_last(stub_retrieval, stub_llm, stub_verification):
     events = list(chat_service.stream_chat([{"role": "user", "content": VAT_QUESTION}]))
 

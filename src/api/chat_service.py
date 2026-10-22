@@ -10,6 +10,7 @@ from src.api.chat_models import ChatMessage, ChatResponse, ChatSource
 from src.engine.llm_client import generate_llm_response_stream
 from src.engine.models import ArticleNode
 from src.engine.temporal_retriever import query_temporal_rag
+from src.ui.corpus_viewer import load_corpus_tree
 from src.ui.demo_service import DEMO_SCENARIOS
 from src.verifier.citation_verifier import extract_citations
 from src.verifier.risk_score import verify_and_score
@@ -19,6 +20,7 @@ ChatTurn = ChatMessage | dict
 DEFAULT_AS_OF_DATE = "2026-09-30"
 MAX_SOURCES = 8
 MAX_FALLBACK_CITATIONS = 5
+MAX_CLAUSE_CHARS = 1500
 QUERY_JOINER = " ; "
 
 SAMPLE_QUESTIONS: list[str] = [scenario["query"] for scenario in DEMO_SCENARIOS]
@@ -94,10 +96,49 @@ def _to_source(article: ArticleNode) -> ChatSource:
     )
 
 
+def _format_clause(clause: dict) -> str:
+    """Render one clause with its points into a single readable line block."""
+    content = clause.get("content") or ""
+    if not content:
+        return ""
+    code = clause.get("code") or ""
+    lines = [f"{code}: {content}".strip(": ").strip() if code else content]
+    for point in clause.get("points", []):
+        point_content = point.get("content") or ""
+        if not point_content:
+            continue
+        point_code = point.get("code") or ""
+        lines.append(f"  {point_code} {point_content}".strip())
+    return "\n".join(lines)
+
+
+def _load_clause_index() -> dict[str, str]:
+    """Map every article id to its clause text.
+
+    The graph node only stores the article heading, so without this index the model
+    receives titles instead of the legal wording it has to reason about.
+    """
+    index: dict[str, str] = {}
+    for document in load_corpus_tree():
+        for article in document.get("articles", []):
+            article_id = article.get("id")
+            if not article_id:
+                continue
+            blocks = [
+                block
+                for block in (_format_clause(clause) for clause in article.get("clauses", []))
+                if block
+            ]
+            index[article_id] = "\n".join(blocks)[:MAX_CLAUSE_CHARS]
+    return index
+
+
 def _build_prompt(question: str, effective_date: str, articles: list[ArticleNode]) -> str:
     """Build the VAT Copilot system prompt with the legal basis to rely on."""
+    clause_index = _load_clause_index()
     basis = "\n".join(
-        f"- [{article.id}] {article.code} - {article.title}\n  {article.content}"
+        f"- [{article.id}] {article.code} - {article.title}\n"
+        f"  {clause_index.get(article.id) or article.content}"
         for article in articles
     )
     return (
