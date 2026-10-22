@@ -1,0 +1,1202 @@
+[
+  {
+    "question_id": "VAT_001",
+    "question": "Doanh nghiệp tại Việt Nam xuất khẩu phần mềm cho đối tác nước ngoài vào tháng 08/2025 áp dụng mức thuế suất thuế GTGT là bao nhiêu?",
+    "as_of_date": "2025-08-15",
+    "category": "EXPORT_TAX_RATE",
+    "gold_citations": ["LUAT_48_2024_D9", "ND_181_2025_D17"],
+    "gold_atomic_facts": [
+      "Dịch vụ phần mềm xuất khẩu ra nước ngoài áp dụng mức thuế suất thuế GTGT 0%",
+      "Phải đáp ứng điều kiện về hợp đồng và thanh toán không dùng tiền mặt"
+    ],
+    "is_temporal_trap": false
+  },
+  {
+    "question_id": "VAT_002",
+    "question": "Điều kiện để hàng hóa xuất khẩu được áp dụng thuế suất thuế GTGT 0% theo quy định tại Nghị định 181/2025 là gì?",
+    "as_of_date": "2025-09-01",
+    "category": "EXPORT_TAX_RATE",
+    "gold_citations": ["ND_181_2025_D18", "TT_69_2025_D4"],
+    "gold_atomic_facts": [
+      "Phải có hợp đồng bán hàng hóa xuất khẩu hoặc hợp đồng gia công",
+      "Có chứng từ thanh toán qua ngân hàng và tờ khai hải quan đã thông quan"
+    ],
+    "is_temporal_trap": false
+  },
+  {
+    "question_id": "VAT_003",
+    "question": "Hàng hóa, dịch vụ cung cấp cho doanh nghiệp chế xuất nằm trong khu phi thuế quan áp dụng thuế suất thuế GTGT bao nhiêu từ tháng 07/2025?",
+    "as_of_date": "2025-07-20",
+    "category": "EXPORT_TAX_RATE",
+    "gold_citations": ["LUAT_48_2024_D9", "ND_181_2025_D17"],
+    "gold_atomic_facts": [
+      "Hàng hóa, dịch vụ cung cấp cho tổ chức trong khu phi thuế quan được áp dụng thuế suất 0%",
+      "Khu phi thuế quan được xác định theo quy định của pháp luật thương mại"
+    ],
+    "is_temporal_trap": false
+  },
+  {
+    "question_id": "VAT_004",
+    "question": "Dịch vụ vận tải quốc tế hành khách và hàng hóa từ Việt Nam ra nước ngoài áp dụng thuế suất GTGT nào theo Luật 48/2024?",
+    "as_of_date": "2025-10-10",
+    "category": "EXPORT_TAX_RATE",
+    "gold_citations": ["LUAT_48_2024_D9", "ND_181_2025_D17"],
+    "gold_atomic_facts": [
+      "Dịch vụ vận tải quốc tế thuộc đối tượng áp dụng mức thuế suất thuế GTGT 0%",
+      "Vận tải quốc tế bao gồm vận tải hành khách, hành lý, hàng hóa chặng quốc tế"
+    ],
+    "is_temporal_trap": false
+  },
+  {
+    "question_id": "VAT_005",
+    "question": "Doanh nghiệp gia công hàng may mặc xuất khẩu ra nước ngoài vào tháng 11/2025 có được áp dụng mức thuế suất thuế GTGT 0% không?",
+    "as_of_date": "2025-11-15",
+    "category": "EXPORT_TAX_RATE",
+    "gold_citations": ["LUAT_48_2024_D9", "ND_181_2025_D17", "ND_181_2025_D18"],
+    "gold_atomic_facts": [
+      "Gia công hàng hóa xuất khẩu thuộc đối tượng áp dụng thuế suất 0%",
+      "Cơ sở kinh doanh phải có hợp đồng gia công ký với tổ chức nước ngoài"
+    ],
+    "is_temporal_trap": false
+  },
+  {
+    "question_id": "VAT_006",
+    "question": "Ngưỡng giá trị thanh toán hóa đơn mua hàng hóa, dịch vụ bắt buộc phải có chứng từ thanh toán không dùng tiền mặt để được khấu trừ thuế GTGT theo Luật 48/2024 là bao nhiêu?",
+    "as_of_date": "2025-08-01",
+    "category": "NON_CASH_PAYMENT",
+    "gold_citations": ["LUAT_48_2024_D14", "ND_181_2025_D26"],
+    "gold_atomic_facts": [
+      "Hóa đơn mua hàng hóa, dịch vụ từng lần có giá trị từ 5 triệu đồng trở lên bắt buộc phải có chứng từ thanh toán không dùng tiền mặt",
+      "Quy định mới tại Luật 48/2024 hạ ngưỡng từ 20 triệu xuống 5 triệu đồng"
+    ],
+    "is_temporal_trap": false
+  },
+  {
+    "question_id": "VAT_007",
+    "question": "Doanh nghiệp mua hàng hóa vào tháng 09/2025 với hóa đơn 8 triệu đồng và trả bằng tiền mặt thì có được khấu trừ thuế GTGT đầu vào không?",
+    "as_of_date": "2025-09-15",
+    "category": "NON_CASH_PAYMENT",
+    "gold_citations": ["LUAT_48_2024_D14", "ND_181_2025_D26"],
+    "gold_atomic_facts": [
+      "Không được khấu trừ thuế GTGT đầu vào vì hóa đơn từ 5 triệu đồng trở lên phải thanh toán không dùng tiền mặt",
+      "Khoản thuế GTGT đầu vào không được khấu trừ này được tính vào chi phí được trừ khi xác định thuế TNDN theo quy định"
+    ],
+    "is_temporal_trap": false
+  },
+  {
+    "question_id": "VAT_008",
+    "question": "Trường hợp mua hàng nhiều lần trong cùng một ngày của một người bán có tổng giá trị trên 5 triệu đồng nhưng mỗi lần dưới 5 triệu đồng thanh toán tiền mặt thì xử lý khấu trừ thuế GTGT như thế nào?",
+    "as_of_date": "2025-10-05",
+    "category": "NON_CASH_PAYMENT",
+    "gold_citations": ["ND_181_2025_D26"],
+    "gold_atomic_facts": [
+      "Mua hàng nhiều lần trong cùng ngày của một người cung cấp có tổng thanh toán từ 5 triệu đồng trở lên chỉ được khấu trừ nếu có chứng từ thanh toán không dùng tiền mặt",
+      "Trường hợp thanh toán bằng tiền mặt thì cơ sở kinh doanh không được khấu trừ thuế GTGT"
+    ],
+    "is_temporal_trap": false
+  },
+  {
+    "question_id": "VAT_009",
+    "question": "Các phương thức thanh toán nào được coi là chứng từ thanh toán không dùng tiền mặt theo quy định tại Nghị định 181/2025?",
+    "as_of_date": "2025-08-20",
+    "category": "NON_CASH_PAYMENT",
+    "gold_citations": ["ND_181_2025_D26"],
+    "gold_atomic_facts": [
+      "Chứng từ thanh toán không dùng tiền mặt bao gồm chứng từ thanh toán qua ngân hàng",
+      "Các hình thức thanh toán không dùng tiền mặt khác phù hợp quy định của Ngân hàng Nhà nước"
+    ],
+    "is_temporal_trap": false
+  },
+  {
+    "question_id": "VAT_010",
+    "question": "Trường hợp thanh toán bù trừ công nợ giữa hai bên có được coi là thanh toán không dùng tiền mặt để khấu trừ thuế GTGT không?",
+    "as_of_date": "2025-11-01",
+    "category": "NON_CASH_PAYMENT",
+    "gold_citations": ["ND_181_2025_D26"],
+    "gold_atomic_facts": [
+      "Phương thức bù trừ công nợ giữa mua và bán hàng hóa, dịch vụ được chấp nhận là thanh toán không dùng tiền mặt",
+      "Phải có biên bản đối chiếu công nợ và điều khoản bù trừ quy định trong hợp đồng"
+    ],
+    "is_temporal_trap": false
+  },
+  {
+    "question_id": "VAT_011",
+    "question": "Sản phẩm trồng trọt, chăn nuôi, thủy sản nuôi trồng tự sản xuất chưa qua chế biến do tổ chức tự bán ra thuộc diện chịu thuế GTGT như thế nào theo Luật 48/2024?",
+    "as_of_date": "2025-07-15",
+    "category": "NON_TAXABLE_GOODS",
+    "gold_citations": ["LUAT_48_2024_D5", "ND_181_2025_D4"],
+    "gold_atomic_facts": [
+      "Sản phẩm trồng trọt, chăn nuôi, nuôi trồng thủy hải sản chưa chế biến do người sản xuất tự bán ra thuộc đối tượng không chịu thuế GTGT",
+      "Nếu chỉ sơ chế thông thường thì vẫn thuộc đối tượng không chịu thuế GTGT"
+    ],
+    "is_temporal_trap": false
+  },
+  {
+    "question_id": "VAT_012",
+    "question": "Chuyển nhượng quyền sử dụng đất có phải đối tượng chịu thuế giá trị gia tăng từ ngày 01/07/2025 hay không?",
+    "as_of_date": "2025-08-10",
+    "category": "NON_TAXABLE_GOODS",
+    "gold_citations": ["LUAT_48_2024_D5"],
+    "gold_atomic_facts": [
+      "Chuyển quyền sử dụng đất thuộc đối tượng không chịu thuế giá trị gia tăng",
+      "Khoản thu từ chuyển quyền sử dụng đất không phát sinh thuế GTGT đầu ra"
+    ],
+    "is_temporal_trap": false
+  },
+  {
+    "question_id": "VAT_013",
+    "question": "Dịch vụ y tế, khám chữa bệnh cho người theo quy định của pháp luật có chịu thuế giá trị gia tăng không theo Luật 48/2024?",
+    "as_of_date": "2025-09-05",
+    "category": "NON_TAXABLE_GOODS",
+    "gold_citations": ["LUAT_48_2024_D5", "ND_181_2025_D4"],
+    "gold_atomic_facts": [
+      "Dịch vụ y tế, khám bệnh, chữa bệnh cho người thuộc đối tượng không chịu thuế GTGT",
+      "Bao gồm cả dịch vụ vận chuyển bệnh nhân và dịch vụ thú y khám chữa bệnh cho động vật"
+    ],
+    "is_temporal_trap": false
+  },
+  {
+    "question_id": "VAT_014",
+    "question": "Mặt hàng phân bón nhập khẩu hoặc sản xuất trong nước theo quy định tại Luật 48/2024 được phân loại vào diện chịu thuế nào?",
+    "as_of_date": "2025-10-01",
+    "category": "TAX_RATE_FIVE_PERCENT",
+    "gold_citations": ["LUAT_48_2024_D9", "ND_181_2025_D19"],
+    "gold_atomic_facts": [
+      "Phân bón áp dụng mức thuế suất thuế GTGT là 5% theo Luật 48/2024",
+      "Luật 48/2024 đã chuyển phân bón từ đối tượng không chịu thuế sang áp dụng thuế suất 5%"
+    ],
+    "is_temporal_trap": false
+  },
+  {
+    "question_id": "VAT_015",
+    "question": "Dịch vụ dạy học, dạy nghề theo quy định của pháp luật giáo dục có thuộc diện chịu thuế GTGT từ tháng 07/2025 không?",
+    "as_of_date": "2025-07-25",
+    "category": "NON_TAXABLE_GOODS",
+    "gold_citations": ["LUAT_48_2024_D5"],
+    "gold_atomic_facts": [
+      "Dạy học, dạy nghề theo quy định của pháp luật thuộc đối tượng không chịu thuế giá trị gia tăng",
+      "Bao gồm cả dạy ngoại ngữ, tin học và đào tạo nghề ngắn hạn"
+    ],
+    "is_temporal_trap": false
+  },
+  {
+    "question_id": "VAT_016",
+    "question": "Thức ăn chăn nuôi gia súc, gia cầm, thủy sản theo quy định tại Điều 5 Luật 48/2024 có chịu thuế GTGT không?",
+    "as_of_date": "2025-09-20",
+    "category": "NON_TAXABLE_GOODS",
+    "gold_citations": ["LUAT_48_2024_D5", "ND_181_2025_D4"],
+    "gold_atomic_facts": [
+      "Thức ăn gia súc, gia cầm, thủy sản và thức ăn cho vật nuôi khác thuộc đối tượng không chịu thuế GTGT",
+      "Không phân biệt thức ăn tự chế biến hay nhập khẩu nếu đáp ứng tiêu chuẩn thức ăn chăn nuôi"
+    ],
+    "is_temporal_trap": false
+  },
+  {
+    "question_id": "VAT_017",
+    "question": "Hàng hóa tạm nhập tái xuất trong thời hạn quy định có phải nộp thuế giá trị gia tăng ở khâu nhập khẩu không?",
+    "as_of_date": "2025-11-20",
+    "category": "NON_TAXABLE_GOODS",
+    "gold_citations": ["LUAT_48_2024_D5", "ND_181_2025_D4"],
+    "gold_atomic_facts": [
+      "Hàng hóa tạm nhập, tái xuất trong thời hạn được cơ quan hải quan chấp thuận không thuộc đối tượng chịu thuế GTGT",
+      "Nếu quá thời hạn tạm nhập tái xuất thì phải nộp thuế theo quy định"
+    ],
+    "is_temporal_trap": false
+  },
+  {
+    "question_id": "VAT_018",
+    "question": "Hồ sơ, thủ tục để xác định đối tượng không chịu thuế GTGT theo Thông tư 69/2025 bao gồm những giấy tờ gì?",
+    "as_of_date": "2025-12-01",
+    "category": "NON_TAXABLE_GOODS",
+    "gold_citations": ["TT_69_2025_D3"],
+    "gold_atomic_facts": [
+      "Hồ sơ gồm giấy tờ chứng minh đối tượng không chịu thuế phù hợp với từng nhóm hàng hóa, dịch vụ",
+      "Cơ sở kinh doanh tự xác định và chịu trách nhiệm trước pháp luật về tính chính xác của hồ sơ"
+    ],
+    "is_temporal_trap": false
+  },
+  {
+    "question_id": "VAT_019",
+    "question": "Nước sạch phục vụ sản xuất và sinh hoạt được áp dụng mức thuế suất thuế GTGT bao nhiêu theo Luật 48/2024?",
+    "as_of_date": "2025-08-05",
+    "category": "TAX_RATE_FIVE_PERCENT",
+    "gold_citations": ["LUAT_48_2024_D9", "ND_181_2025_D19"],
+    "gold_atomic_facts": [
+      "Nước sạch phục vụ sinh hoạt và sản xuất áp dụng mức thuế suất thuế GTGT 5%",
+      "Không bao gồm nước uống đóng chai hoặc nước ngọt đóng lon"
+    ],
+    "is_temporal_trap": false
+  },
+  {
+    "question_id": "VAT_020",
+    "question": "Thiết bị, dụng cụ y tế chuyên dùng có áp dụng mức thuế suất thuế GTGT 5% từ ngày 01/07/2025 không?",
+    "as_of_date": "2025-08-25",
+    "category": "TAX_RATE_FIVE_PERCENT",
+    "gold_citations": ["LUAT_48_2024_D9", "ND_181_2025_D19"],
+    "gold_atomic_facts": [
+      "Thiết bị y tế, dụng cụ y tế chuyên dùng áp dụng mức thuế suất thuế GTGT 5%",
+      "Phải có giấy phép lưu hành hoặc giấy phép nhập khẩu của Bộ Y tế theo quy định"
+    ],
+    "is_temporal_trap": false
+  },
+  {
+    "question_id": "VAT_021",
+    "question": "Đồ dùng phục vụ giảng dạy và học tập như mô hình giải phẫu, tranh minh họa học tập áp dụng thuế suất thuế GTGT nào?",
+    "as_of_date": "2025-09-10",
+    "category": "TAX_RATE_FIVE_PERCENT",
+    "gold_citations": ["LUAT_48_2024_D9", "ND_181_2025_D19"],
+    "gold_atomic_facts": [
+      "Đồ dùng giảng dạy, học tập chuyên dùng áp dụng thuế suất thuế GTGT 5%",
+      "Bao gồm mô hình thí nghiệm, thiết bị nghe nhìn chuyên dùng cho giảng dạy"
+    ],
+    "is_temporal_trap": false
+  },
+  {
+    "question_id": "VAT_022",
+    "question": "Thuốc phòng trừ sâu bệnh và các loại thuốc thú y chuyên dùng áp dụng mức thuế suất GTGT nào từ tháng 07/2025?",
+    "as_of_date": "2025-10-15",
+    "category": "TAX_RATE_FIVE_PERCENT",
+    "gold_citations": ["LUAT_48_2024_D9", "ND_181_2025_D19"],
+    "gold_atomic_facts": [
+      "Thuốc bảo vệ thực vật, thuốc thú y và chất điều hòa sinh trưởng áp dụng thuế suất 5%",
+      "Phải nằm trong danh mục thuốc được phép lưu hành tại Việt Nam"
+    ],
+    "is_temporal_trap": false
+  },
+  {
+    "question_id": "VAT_023",
+    "question": "Nguyên tắc khấu trừ thuế GTGT đầu vào đối với hàng hóa, dịch vụ dùng cho sản xuất kinh doanh chịu thuế GTGT theo Luật 48/2024 như thế nào?",
+    "as_of_date": "2025-07-10",
+    "category": "INPUT_TAX_DEDUCTION",
+    "gold_citations": ["LUAT_48_2024_D14", "ND_181_2025_D23"],
+    "gold_atomic_facts": [
+      "Thuế GTGT đầu vào của hàng hóa, dịch vụ sử dụng cho SXKD chịu thuế GTGT được khấu trừ toàn bộ",
+      "Phải đáp ứng đủ điều kiện về hóa đơn hợp pháp và chứng từ thanh toán"
+    ],
+    "is_temporal_trap": false
+  },
+  {
+    "question_id": "VAT_024",
+    "question": "Cách phân bổ khấu trừ thuế GTGT đầu vào khi hàng hóa, dịch vụ dùng đồng thời cho sản xuất hàng chịu thuế và không chịu thuế GTGT?",
+    "as_of_date": "2025-08-30",
+    "category": "INPUT_TAX_DEDUCTION",
+    "gold_citations": ["LUAT_48_2024_D14", "ND_181_2025_D23"],
+    "gold_atomic_facts": [
+      "Doanh nghiệp phải hạch toán riêng thuế đầu vào cho hoạt động chịu thuế và không chịu thuế",
+      "Trường hợp không hạch toán riêng được thì thuế đầu vào được phân bổ theo tỷ lệ % doanh thu chịu thuế trên tổng doanh thu"
+    ],
+    "is_temporal_trap": false
+  },
+  {
+    "question_id": "VAT_025",
+    "question": "Xe ô tô chở người từ 9 chỗ ngồi trở xuống có giá trị trên 1,6 tỷ đồng phục vụ quản lý doanh nghiệp thì thuế GTGT đầu vào phần vượt 1,6 tỷ được khấu trừ không?",
+    "as_of_date": "2025-09-25",
+    "category": "INPUT_TAX_DEDUCTION",
+    "gold_citations": ["ND_181_2025_D24"],
+    "gold_atomic_facts": [
+      "Số thuế GTGT đầu vào tương ứng với phần giá trị vượt trên 1,6 tỷ đồng không được khấu trừ",
+      "Ngoại trừ ô tô dùng cho kinh doanh vận chuyển hành khách, du lịch, khách sạn"
+    ],
+    "is_temporal_trap": false
+  },
+  {
+    "question_id": "VAT_026",
+    "question": "Thuế GTGT đầu vào của tài sản cố định hình thành từ quỹ phúc lợi hoặc dùng trực tiếp cho người lao động tại trạm y tế, nhà ăn của doanh nghiệp có được khấu trừ không?",
+    "as_of_date": "2025-10-25",
+    "category": "INPUT_TAX_DEDUCTION",
+    "gold_citations": ["ND_181_2025_D23"],
+    "gold_atomic_facts": [
+      "Thuế GTGT đầu vào của công trình phúc lợi phục vụ người lao động trong khu vực sản xuất kinh doanh được khấu trừ toàn bộ",
+      "Bao gồm trạm y tế, nhà ăn, nhà vệ sinh, phòng thay đồ tại nơi làm việc"
+    ],
+    "is_temporal_trap": false
+  },
+  {
+    "question_id": "VAT_027",
+    "question": "Hàng hóa xuất khẩu không có xác nhận thực xuất của cơ quan hải quan trên tờ khai thì có được khấu trừ thuế GTGT đầu vào không?",
+    "as_of_date": "2025-11-10",
+    "category": "INPUT_TAX_DEDUCTION",
+    "gold_citations": ["ND_181_2025_D27"],
+    "gold_atomic_facts": [
+      "Hàng hóa xuất khẩu không có xác nhận thực xuất của cơ quan hải quan không được khấu trừ thuế GTGT đầu vào theo quy định xuất khẩu",
+      "Doanh nghiệp không được áp dụng mức thuế suất 0% và không được hoàn thuế đối với lô hàng này"
+    ],
+    "is_temporal_trap": false
+  },
+  {
+    "question_id": "VAT_028",
+    "question": "Doanh nghiệp phát hiện hóa đơn GTGT đầu vào bị bỏ sót chưa kê khai thì được kê khai bổ sung vào kỳ tính thuế nào theo Luật 48/2024?",
+    "as_of_date": "2025-12-15",
+    "category": "INPUT_TAX_DEDUCTION",
+    "gold_citations": ["LUAT_48_2024_D14", "ND_181_2025_D23"],
+    "gold_atomic_facts": [
+      "Doanh nghiệp được kê khai khấu trừ bổ sung vào kỳ tính thuế phát hiện sai sót trước khi cơ quan thuế công bố quyết định thanh tra, kiểm tra",
+      "Thời hạn kê khai bổ sung tuân thủ quy định của pháp luật về quản lý thuế"
+    ],
+    "is_temporal_trap": false
+  },
+  {
+    "question_id": "VAT_029",
+    "question": "Dự án đầu tư mới đang trong giai đoạn đầu tư chưa đi vào hoạt động có số thuế GTGT đầu vào lũy kế chưa khấu trừ hết bao nhiêu thì đủ điều kiện hoàn thuế?",
+    "as_of_date": "2025-08-18",
+    "category": "TAX_REFUND",
+    "gold_citations": ["LUAT_48_2024_D15", "ND_181_2025_D30"],
+    "gold_atomic_facts": [
+      "Dự án đầu tư có số thuế GTGT đầu vào chưa được khấu trừ từ 300 triệu đồng trở lên được xét hoàn thuế",
+      "Phải là dự án đầu tư mới theo quy định của pháp luật về đầu tư"
+    ],
+    "is_temporal_trap": false
+  },
+  {
+    "question_id": "VAT_030",
+    "question": "Doanh nghiệp trong tháng hoặc quý có hàng hóa, dịch vụ xuất khẩu có số thuế GTGT đầu vào chưa khấu trừ từ 300 triệu đồng trở lên có được hoàn thuế GTGT không?",
+    "as_of_date": "2025-09-18",
+    "category": "TAX_REFUND",
+    "gold_citations": ["LUAT_48_2024_D15", "ND_181_2025_D29"],
+    "gold_atomic_facts": [
+      "Cơ sở kinh doanh có hàng hóa, dịch vụ xuất khẩu có số thuế đầu vào chưa khấu trừ từ 300 triệu đồng trở lên được hoàn thuế GTGT theo tháng hoặc quý",
+      "Số thuế GTGT được hoàn không vượt quá tỷ lệ quy định trên doanh thu hàng hóa, dịch vụ xuất khẩu"
+    ],
+    "is_temporal_trap": false
+  },
+  {
+    "question_id": "VAT_031",
+    "question": "Doanh nghiệp giải thể hoặc phá sản có số thuế GTGT nộp thừa hoặc chưa được khấu trừ hết thì giải quyết hoàn thuế ra sao theo Luật 48/2024?",
+    "as_of_date": "2025-10-18",
+    "category": "TAX_REFUND",
+    "gold_citations": ["LUAT_48_2024_D15", "ND_181_2025_D32"],
+    "gold_atomic_facts": [
+      "Cơ sở kinh doanh khi giải thể, phá sản có số thuế GTGT nộp thừa hoặc chưa khấu trừ hết được hoàn thuế theo quy định",
+      "Cơ quan thuế thực hiện kiểm tra quyết toán thuế trước khi hoàn thuế"
+    ],
+    "is_temporal_trap": false
+  },
+  {
+    "question_id": "VAT_032",
+    "question": "Người nước ngoài mang hàng hóa mua tại Việt Nam khi xuất cảnh qua cửa khẩu quốc tế được hoàn thuế GTGT theo điều kiện nào?",
+    "as_of_date": "2025-11-18",
+    "category": "TAX_REFUND",
+    "gold_citations": ["LUAT_48_2024_D15", "ND_181_2025_D33"],
+    "gold_atomic_facts": [
+      "Hàng hóa phải được mua tại các cửa khẩu hoặc đại lý bán hàng hoàn thuế GTGT cho người nước ngoài",
+      "Hàng hóa phải chưa qua sử dụng và mang theo người khi xuất cảnh qua cửa khẩu quốc tế"
+    ],
+    "is_temporal_trap": false
+  },
+  {
+    "question_id": "VAT_033",
+    "question": "Công thức và phương pháp xác định số thuế GTGT được hoàn cho hàng hóa xuất khẩu theo hướng dẫn tại Thông tư 69/2025 như thế nào?",
+    "as_of_date": "2025-12-05",
+    "category": "TAX_REFUND",
+    "gold_citations": ["TT_69_2025_D7"],
+    "gold_atomic_facts": [
+      "Xác định số thuế đầu vào dùng riêng cho xuất khẩu và thuế đầu vào dùng chung được phân bổ",
+      "Số thuế GTGT hoàn không vượt quá mức khống chế tỷ lệ phần trăm trên doanh thu xuất khẩu theo quy định"
+    ],
+    "is_temporal_trap": false
+  },
+  {
+    "question_id": "VAT_034",
+    "question": "Chương trình, dự án sử dụng vốn hỗ trợ phát triển chính thức (ODA) không hoàn lại được hoàn thuế GTGT đầu vào theo điều kiện gì tại Nghị định 181/2025?",
+    "as_of_date": "2025-12-20",
+    "category": "TAX_REFUND",
+    "gold_citations": ["ND_181_2025_D34"],
+    "gold_atomic_facts": [
+      "Chủ dự án ODA không hoàn lại được hoàn số thuế GTGT đã trả khi mua hàng hóa, dịch vụ tại Việt Nam",
+      "Phải có quyết định phê duyệt dự án ODA không hoàn lại của cấp có thẩm quyền"
+    ],
+    "is_temporal_trap": false
+  },
+  {
+    "question_id": "VAT_035",
+    "question": "Hàng hóa, dịch vụ dùng để khuyến mại theo đúng quy định của pháp luật về thương mại thì giá tính thuế GTGT được xác định là bao nhiêu?",
+    "as_of_date": "2025-08-12",
+    "category": "TAXABLE_PRICE_AND_TIMING",
+    "gold_citations": ["ND_181_2025_D6"],
+    "gold_atomic_facts": [
+      "Hàng hóa, dịch vụ dùng để khuyến mại theo đúng pháp luật về thương mại thì giá tính thuế GTGT được xác định bằng không (0)",
+      "Doanh nghiệp vẫn phải lập hóa đơn theo quy định"
+    ],
+    "is_temporal_trap": false
+  },
+  {
+    "question_id": "VAT_036",
+    "question": "Thời điểm xác định thuế GTGT đối với hoạt động bán hàng hóa thông thường theo quy định tại Điều 8 Luật 48/2024 là thời điểm nào?",
+    "as_of_date": "2025-08-28",
+    "category": "TAXABLE_PRICE_AND_TIMING",
+    "gold_citations": ["LUAT_48_2024_D8"],
+    "gold_atomic_facts": [
+      "Thời điểm chuyển giao quyền sở hữu hoặc quyền sử dụng hàng hóa cho người mua",
+      "Không phân biệt đã thu được tiền hay chưa thu được tiền"
+    ],
+    "is_temporal_trap": false
+  },
+  {
+    "question_id": "VAT_037",
+    "question": "Thời điểm xác định thuế GTGT đối với dịch vụ viễn thông, truyền hình trả tiền thu cước định kỳ được quy định ra sao tại Nghị định 181/2025?",
+    "as_of_date": "2025-09-28",
+    "category": "TAXABLE_PRICE_AND_TIMING",
+    "gold_citations": ["ND_181_2025_D16"],
+    "gold_atomic_facts": [
+      "Thời điểm hoàn thành việc đối soát dữ liệu cước dịch vụ theo hợp đồng",
+      "Không chậm hơn ngày cuối cùng của tháng phát sinh việc đối soát cước"
+    ],
+    "is_temporal_trap": false
+  },
+  {
+    "question_id": "VAT_038",
+    "question": "Giá tính thuế GTGT đối với hoạt động chuyển nhượng bất động sản được trừ giá đất như thế nào theo Nghị định 181/2025?",
+    "as_of_date": "2025-10-28",
+    "category": "TAXABLE_PRICE_AND_TIMING",
+    "gold_citations": ["ND_181_2025_D8"],
+    "gold_atomic_facts": [
+      "Giá tính thuế GTGT là giá chuyển nhượng bất động sản trừ đi giá đất được trừ tại thời điểm chuyển nhượng",
+      "Giá đất được trừ thực hiện theo hướng dẫn chi tiết của Chính phủ"
+    ],
+    "is_temporal_trap": false
+  },
+  {
+    "question_id": "VAT_039",
+    "question": "Tỷ lệ % để tính thuế GTGT trên doanh thu đối với hoạt động phân phối, cung cấp hàng hóa áp dụng phương pháp trực tiếp là bao nhiêu?",
+    "as_of_date": "2025-11-28",
+    "category": "DIRECT_METHOD_AND_INVOICE",
+    "gold_citations": ["LUAT_48_2024_D12", "TT_69_2025_D5"],
+    "gold_atomic_facts": [
+      "Tỷ lệ tính thuế GTGT trên doanh thu đối với hoạt động phân phối, cung cấp hàng hóa là 1%",
+      "Áp dụng đối với cơ sở kinh doanh nộp thuế theo phương pháp trực tiếp trên doanh thu"
+    ],
+    "is_temporal_trap": false
+  },
+  {
+    "question_id": "VAT_040",
+    "question": "Các loại hóa đơn, chứng từ hợp pháp làm căn cứ khấu trừ thuế GTGT đầu vào bao gồm những loại nào theo Luật 48/2024?",
+    "as_of_date": "2025-12-28",
+    "category": "DIRECT_METHOD_AND_INVOICE",
+    "gold_citations": ["LUAT_48_2024_D16", "ND_181_2025_D25"],
+    "gold_atomic_facts": [
+      "Hóa đơn giá trị gia tăng mua hàng hóa, dịch vụ hợp pháp (hóa đơn điện tử)",
+      "Chứng từ nộp thuế GTGT ở khâu nhập khẩu hoặc chứng từ nộp thuế GTGT thay cho phía nước ngoài"
+    ],
+    "is_temporal_trap": false
+  },
+  {
+    "question_id": "VAT_041",
+    "question": "Vào ngày 15/03/2024, một doanh nghiệp mua hàng hóa trị giá 15 triệu đồng trả bằng tiền mặt. Hỏi có bị tước quyền khấu trừ theo ngưỡng 5 triệu đồng của Luật 48/2024 hay không?",
+    "as_of_date": "2024-03-15",
+    "category": "TEMPORAL_TRAP_PRE_EFFECTIVE",
+    "gold_citations": [],
+    "gold_atomic_facts": [
+      "Tại ngày 15/03/2024 Luật 48/2024/QH15 chưa có hiệu lực thi hành (hiệu lực từ 01/07/2025)",
+      "Không áp dụng ngưỡng khống chế 5 triệu đồng của Luật 48/2024 cho giao dịch phát sinh năm 2024"
+    ],
+    "is_temporal_trap": true
+  },
+  {
+    "question_id": "VAT_042",
+    "question": "Doanh nghiệp xuất khẩu phần mềm vào ngày 10/01/2025, có thể áp dụng Điều 9 Luật 48/2024 để kê khai thuế suất 0% hay không?",
+    "as_of_date": "2025-01-10",
+    "category": "TEMPORAL_TRAP_PRE_EFFECTIVE",
+    "gold_citations": [],
+    "gold_atomic_facts": [
+      "Vào ngày 10/01/2025 Luật số 48/2024/QH15 chưa có hiệu lực thi hành",
+      "Không thể áp dụng Điều 9 Luật 48/2024 cho giao dịch phát sinh tháng 01/2025"
+    ],
+    "is_temporal_trap": true
+  },
+  {
+    "question_id": "VAT_043",
+    "question": "Hóa đơn mua máy móc trị giá 12 triệu đồng thanh toán bằng tiền mặt vào ngày 20/05/2025 có bị từ chối khấu trừ theo Luật 48/2024 không?",
+    "as_of_date": "2025-05-20",
+    "category": "TEMPORAL_TRAP_PRE_EFFECTIVE",
+    "gold_citations": [],
+    "gold_atomic_facts": [
+      "Thời điểm ngày 20/05/2025 là trước ngày Luật 48/2024 có hiệu lực (01/07/2025)",
+      "Quy định khống chế hóa đơn từ 5 triệu đồng thanh toán không dùng tiền mặt chưa có hiệu lực tại ngày này"
+    ],
+    "is_temporal_trap": true
+  },
+  {
+    "question_id": "VAT_044",
+    "question": "Dự án đầu tư nộp hồ sơ xin hoàn thuế vào ngày 15/04/2025 có được áp dụng điều kiện hoàn thuế của Nghị định 181/2025/NĐ-CP không?",
+    "as_of_date": "2025-04-15",
+    "category": "TEMPORAL_TRAP_PRE_EFFECTIVE",
+    "gold_citations": [],
+    "gold_atomic_facts": [
+      "Nghị định 181/2025/NĐ-CP chưa có hiệu lực vào ngày 15/04/2025 (có hiệu lực từ 01/07/2025)",
+      "Hồ sơ hoàn thuế ngày 15/04/2025 không được áp dụng các điều khoản của Nghị định 181/2025"
+    ],
+    "is_temporal_trap": true
+  },
+  {
+    "question_id": "VAT_045",
+    "question": "Vào ngày 28/02/2025, thủ tục áp dụng thuế suất 0% đối với hàng hóa xuất khẩu có được thực hiện theo Điều 4 Thông tư 69/2025/TT-BTC không?",
+    "as_of_date": "2025-02-28",
+    "category": "TEMPORAL_TRAP_PRE_EFFECTIVE",
+    "gold_citations": [],
+    "gold_atomic_facts": [
+      "Thông tư 69/2025/TT-BTC có hiệu lực từ ngày 01/07/2025",
+      "Vào ngày 28/02/2025 Thông tư 69/2025/TT-BTC chưa có hiệu lực"
+    ],
+    "is_temporal_trap": true
+  },
+  {
+    "question_id": "VAT_046",
+    "question": "Tại thời điểm ngày 15/08/2025, doanh nghiệp có phải áp dụng quy định sửa đổi bổ sung của Nghị định 359/2025/NĐ-CP về đối tượng không chịu thuế hay không?",
+    "as_of_date": "2025-08-15",
+    "category": "TEMPORAL_TRAP_AMENDMENT_PRE_EFFECTIVE",
+    "gold_citations": ["ND_181_2025_D4"],
+    "gold_atomic_facts": [
+      "Tại ngày 15/08/2025, Nghị định 359/2025/NĐ-CP chưa có hiệu lực (chỉ có hiệu lực từ 01/01/2026)",
+      "Tại thời điểm này vẫn áp dụng nguyên văn quy định tại Điều 4 Nghị định 181/2025"
+    ],
+    "is_temporal_trap": true
+  },
+  {
+    "question_id": "VAT_047",
+    "question": "Vào ngày 15/07/2026, doanh nghiệp xác định giá tính thuế hoạt động đại lý hưởng hoa hồng theo Điều 9 Nghị định 181/2025 thì quy định này đã bị sửa đổi bởi văn bản nào?",
+    "as_of_date": "2026-07-15",
+    "category": "TEMPORAL_TRAP_AMENDED_PROVISION",
+    "gold_citations": ["ND_144_2026_D2", "ND_181_2025_D9"],
+    "gold_atomic_facts": [
+      "Điểm b khoản 1 Điều 9 Nghị định 181/2025 đã bị sửa đổi bổ sung bởi Điều 2 Nghị định 144/2026/NĐ-CP",
+      "Tại ngày 15/07/2026 phải áp dụng nội dung đã được sửa đổi tại Nghị định 144/2026"
+    ],
+    "is_temporal_trap": true
+  },
+  {
+    "question_id": "VAT_048",
+    "question": "Vào ngày 10/08/2026, quy định về chứng từ thanh toán không dùng tiền mặt tại điểm g khoản 2 Điều 26 Nghị định 181/2025 đã được sửa đổi theo điều khoản nào?",
+    "as_of_date": "2026-08-10",
+    "category": "TEMPORAL_TRAP_AMENDED_PROVISION",
+    "gold_citations": ["ND_144_2026_D4", "ND_181_2025_D26"],
+    "gold_atomic_facts": [
+      "Điểm g khoản 2 Điều 26 Nghị định 181/2025 đã được sửa đổi bởi Điều 4 Nghị định 144/2026/NĐ-CP",
+      "Tại ngày 10/08/2026 áp dụng theo quy định sửa đổi tại Điều 4 Nghị định 144/2026"
+    ],
+    "is_temporal_trap": true
+  },
+  {
+    "question_id": "VAT_049",
+    "question": "Vào ngày 15/02/2026, quy định tại khoản 3 Điều 37 Nghị định 181/2025 về điều kiện hoàn thuế có còn hiệu lực pháp lý để áp dụng hay không?",
+    "as_of_date": "2026-02-15",
+    "category": "TEMPORAL_TRAP_ANNULLED_PROVISION",
+    "gold_citations": ["ND_359_2025_D1"],
+    "gold_atomic_facts": [
+      "Khoản 3 Điều 37 Nghị định 181/2025 đã bị bãi bỏ bởi Điều 1 Nghị định 359/2025/NĐ-CP có hiệu lực từ ngày 01/01/2026",
+      "Tại ngày 15/02/2026 quy định tại khoản 3 Điều 37 không còn hiệu lực thi hành"
+    ],
+    "is_temporal_trap": true
+  },
+  {
+    "question_id": "VAT_050",
+    "question": "Vào ngày 20/07/2026, nguyên tắc khấu trừ thuế GTGT đầu vào tại khoản 2 Điều 23 Nghị định 181/2025 đã được sửa đổi bởi điều khoản nào của Nghị định 144/2026?",
+    "as_of_date": "2026-07-20",
+    "category": "TEMPORAL_TRAP_AMENDED_PROVISION",
+    "gold_citations": ["ND_144_2026_D3", "ND_181_2025_D23"],
+    "gold_atomic_facts": [
+      "Khoản 2 Điều 23 Nghị định 181/2025 đã được sửa đổi bởi Điều 3 Nghị định 144/2026/NĐ-CP",
+      "Tại ngày 20/07/2026 bắt buộc áp dụng nội dung sửa đổi theo Điều 3 Nghị định 144/2026"
+    ],
+    "is_temporal_trap": true
+  },
+  {
+    "question_id": "VAT_051",
+    "question": "Vào ngày 20/08/2024, một doanh nghiệp chế xuất bán thanh lý phế liệu vào thị trường nội địa. Doanh nghiệp nội địa mua hàng có phải kê khai nộp thuế GTGT khâu nhập khẩu theo quy định của Luật 48/2024 hay không?",
+    "as_of_date": "2024-08-20",
+    "category": "TEMPORAL_TRAP_PRE_EFFECTIVE",
+    "gold_citations": [],
+    "gold_atomic_facts": [
+      "Tại ngày 20/08/2024 Luật Thuế giá trị gia tăng số 48/2024/QH15 chưa có hiệu lực thi hành (có hiệu lực từ ngày 01/07/2025)",
+      "Không áp dụng các quy định của Luật 48/2024/QH15 cho giao dịch phát sinh trong năm 2024"
+    ],
+    "is_temporal_trap": true
+  },
+  {
+    "question_id": "VAT_052",
+    "question": "Ngày 15/11/2024, công ty thanh toán hóa đơn ăn uống tiếp khách trị giá 18 triệu đồng bằng tiền mặt. Khoản thuế GTGT đầu vào này có bị loại trừ khấu trừ theo quy định khống chế hóa đơn từ 5 triệu đồng của Luật 48/2024 không?",
+    "as_of_date": "2024-11-15",
+    "category": "TEMPORAL_TRAP_PRE_EFFECTIVE",
+    "gold_citations": [],
+    "gold_atomic_facts": [
+      "Tại ngày 15/11/2024 Luật 48/2024/QH15 chưa có hiệu lực thi hành",
+      "Quy định hạ ngưỡng bắt buộc thanh toán không dùng tiền mặt xuống 5 triệu đồng chưa có hiệu lực pháp luật tại thời điểm năm 2024"
+    ],
+    "is_temporal_trap": true
+  },
+  {
+    "question_id": "VAT_053",
+    "question": "Vào ngày 20/02/2025, công ty sản xuất phân bón bán sản phẩm phân bón NPK cho đại lý thì áp dụng mức thuế suất thuế GTGT 5% theo Điều 9 Luật 48/2024 có đúng quy định không?",
+    "as_of_date": "2025-02-20",
+    "category": "TEMPORAL_TRAP_PRE_EFFECTIVE",
+    "gold_citations": [],
+    "gold_atomic_facts": [
+      "Luật 48/2024/QH15 chỉ có hiệu lực thi hành kể từ ngày 01/07/2025",
+      "Tại thời điểm ngày 20/02/2025, quy định chuyển phân bón sang chịu thuế suất 5% theo Điều 9 Luật 48/2024 chưa có hiệu lực thi hành"
+    ],
+    "is_temporal_trap": true
+  },
+  {
+    "question_id": "VAT_054",
+    "question": "Ngày 10/04/2025, doanh nghiệp nộp hồ sơ xin hoàn thuế GTGT cho dự án đầu tư mở rộng theo quy định tại Điều 30 Nghị định 181/2025/NĐ-CP thì cơ quan thuế có chấp thuận giải quyết không?",
+    "as_of_date": "2025-04-10",
+    "category": "TEMPORAL_TRAP_PRE_EFFECTIVE",
+    "gold_citations": [],
+    "gold_atomic_facts": [
+      "Nghị định 181/2025/NĐ-CP chưa có hiệu lực pháp luật tại thời điểm ngày 10/04/2025 (hiệu lực từ ngày 01/07/2025)",
+      "Cơ quan thuế không căn cứ vào các điều khoản của Nghị định 181/2025 để xử lý hồ sơ hoàn thuế trước ngày 01/07/2025"
+    ],
+    "is_temporal_trap": true
+  },
+  {
+    "question_id": "VAT_055",
+    "question": "Ngày 12/06/2025, doanh nghiệp vận tải quốc tế hoàn thiện hồ sơ để áp dụng thuế suất thuế GTGT 0% theo hướng dẫn tại Điều 4 Thông tư 69/2025/TT-BTC có hợp lệ về mặt thời gian hiệu lực không?",
+    "as_of_date": "2025-06-12",
+    "category": "TEMPORAL_TRAP_PRE_EFFECTIVE",
+    "gold_citations": [],
+    "gold_atomic_facts": [
+      "Thông tư 69/2025/TT-BTC chỉ có hiệu lực thi hành từ ngày 01/07/2025",
+      "Vào ngày 12/06/2025 Thông tư 69/2025/TT-BTC chưa có hiệu lực thi hành nên không thể viện dẫn áp dụng"
+    ],
+    "is_temporal_trap": true
+  },
+  {
+    "question_id": "VAT_056",
+    "question": "Vào ngày 15/07/2026, doanh nghiệp xuất khẩu khoáng sản chế biến muốn xác định danh mục sản phẩm không chịu thuế GTGT thì áp dụng Danh mục Phụ lục ban hành kèm theo Nghị định 181/2025 hay văn bản nào?",
+    "as_of_date": "2026-07-15",
+    "category": "TEMPORAL_TRAP_AMENDED_PROVISION",
+    "gold_citations": ["ND_144_2026_D1", "ND_144_2026_D5", "ND_181_2025_D4"],
+    "gold_atomic_facts": [
+      "Khoản 14 Điều 4 và Danh mục Phụ lục ban hành kèm theo Nghị định 181/2025 đã bị sửa đổi, thay thế bởi Điều 1 và Điều 5 Nghị định 144/2026/NĐ-CP",
+      "Kể từ ngày 20/06/2026, doanh nghiệp bắt buộc áp dụng Danh mục Phụ lục mới ban hành kèm theo Nghị định 144/2026/NĐ-CP"
+    ],
+    "is_temporal_trap": true
+  },
+  {
+    "question_id": "VAT_057",
+    "question": "Ngày 20/08/2026, doanh nghiệp mua máy móc trả chậm trên 5 triệu đồng chưa đến hạn thanh toán, nghĩa vụ kê khai điều chỉnh giảm khi đến hạn mà chưa có chứng từ thanh toán không dùng tiền mặt thực hiện theo quy định nào?",
+    "as_of_date": "2026-08-20",
+    "category": "TEMPORAL_TRAP_AMENDED_PROVISION",
+    "gold_citations": ["ND_144_2026_D4", "ND_181_2025_D26"],
+    "gold_atomic_facts": [
+      "Điểm g khoản 2 Điều 26 Nghị định 181/2025 đã được sửa đổi bổ sung bởi Điều 4 Nghị định 144/2026/NĐ-CP có hiệu lực từ ngày 20/06/2026",
+      "Tại ngày 20/08/2026, cơ sở kinh doanh phải thực hiện kê khai điều chỉnh giảm thuế GTGT đầu vào theo quy định sửa đổi tại Điều 4 Nghị định 144/2026/NĐ-CP"
+    ],
+    "is_temporal_trap": true
+  },
+  {
+    "question_id": "VAT_058",
+    "question": "Vào ngày 05/09/2026, khi phân bổ thuế GTGT đầu vào dùng chung cho hoạt động chịu thuế và không chịu thuế, doanh nghiệp xác định tổng doanh thu hàng hóa bán ra theo điểm a khoản 2 Điều 23 Nghị định 181/2025 ban đầu hay theo văn bản sửa đổi?",
+    "as_of_date": "2026-09-05",
+    "category": "TEMPORAL_TRAP_AMENDED_PROVISION",
+    "gold_citations": ["ND_144_2026_D3", "ND_181_2025_D23"],
+    "gold_atomic_facts": [
+      "Khoản 2 Điều 23 Nghị định 181/2025 đã được sửa đổi, bổ sung bởi Điều 3 Nghị định 144/2026/NĐ-CP có hiệu lực từ ngày 20/06/2026",
+      "Tại thời điểm tháng 09/2026, việc xác định tổng doanh thu để phân bổ thuế GTGT đầu vào phải tuân theo quy định sửa đổi tại Điều 3 Nghị định 144/2026/NĐ-CP"
+    ],
+    "is_temporal_trap": true
+  },
+  {
+    "question_id": "VAT_059",
+    "question": "Vào ngày 25/09/2025, doanh nghiệp nộp hồ sơ xin hoàn thuế GTGT có được áp dụng việc bãi bỏ khoản 3 Điều 37 Nghị định 181/2025 theo Nghị định 359/2025/NĐ-CP hay không?",
+    "as_of_date": "2025-09-25",
+    "category": "TEMPORAL_TRAP_AMENDMENT_PRE_EFFECTIVE",
+    "gold_citations": ["ND_181_2025_D37"],
+    "gold_atomic_facts": [
+      "Nghị định 359/2025/NĐ-CP chỉ có hiệu lực thi hành kể từ ngày 01/01/2026",
+      "Tại ngày 25/09/2025, quy định tại khoản 3 Điều 37 Nghị định 181/2025 vẫn đang có hiệu lực và chưa bị bãi bỏ"
+    ],
+    "is_temporal_trap": true
+  },
+  {
+    "question_id": "VAT_060",
+    "question": "Vào ngày 10/11/2025, cơ sở kinh doanh có được căn cứ vào quy định bổ sung khoản 1b Điều 4 Nghị định 181/2025 tại Nghị định 359/2025/NĐ-CP để xác định đối tượng không chịu thuế GTGT hay không?",
+    "as_of_date": "2025-11-10",
+    "category": "TEMPORAL_TRAP_AMENDMENT_PRE_EFFECTIVE",
+    "gold_citations": ["ND_181_2025_D4"],
+    "gold_atomic_facts": [
+      "Tại thời điểm ngày 10/11/2025, Nghị định 359/2025/NĐ-CP chưa có hiệu lực thi hành (có hiệu lực từ ngày 01/01/2026)",
+      "Khoản 1b bổ sung vào Điều 4 Nghị định 181/2025 chưa có hiệu lực pháp luật trong tháng 11/2025"
+    ],
+    "is_temporal_trap": true
+  },
+  {
+    "question_id": "VAT_061",
+    "question": "Doanh nghiệp tại Hà Nội có dự án đầu tư mở rộng nhà máy sản xuất tại tỉnh Bắc Ninh (cùng pháp nhân, hạch toán phụ thuộc), số thuế GTGT đầu vào của dự án đầu tư chưa khấu trừ hết là 650 triệu đồng vào tháng 08/2025 thì có được hoàn thuế GTGT không?",
+    "as_of_date": "2025-08-25",
+    "category": "TAX_REFUND",
+    "gold_citations": ["LUAT_48_2024_D15", "ND_181_2025_D30"],
+    "gold_atomic_facts": [
+      "Cơ sở kinh doanh có dự án đầu tư mở rộng tại địa bàn tỉnh khác nơi đóng trụ sở chính có số thuế GTGT đầu vào chưa khấu trừ từ 300 triệu đồng trở lên được xét hoàn thuế GTGT",
+      "Phải lập hồ sơ khai thuế GTGT riêng cho dự án đầu tư và bù trừ với số thuế GTGT phải nộp của hoạt động sản xuất kinh doanh đang thực hiện (nếu có)"
+    ],
+    "is_temporal_trap": false
+  },
+  {
+    "question_id": "VAT_062",
+    "question": "Dự án đầu tư mở rộng nâng công suất dây chuyền sản xuất trên cùng địa bàn tỉnh của doanh nghiệp có số thuế GTGT đầu vào chưa khấu trừ hết lũy kế 400 triệu đồng vào tháng 10/2025 thì thủ tục kết chuyển và hoàn thuế GTGT xử lý như thế nào?",
+    "as_of_date": "2025-10-15",
+    "category": "TAX_REFUND",
+    "gold_citations": ["LUAT_48_2024_D15", "ND_181_2025_D30"],
+    "gold_atomic_facts": [
+      "Dự án đầu tư mở rộng cùng địa bàn phải bù trừ số thuế GTGT đầu vào của dự án với số thuế GTGT phải nộp của hoạt động sản xuất kinh doanh hiện tại",
+      "Sau khi bù trừ, nếu số thuế GTGT đầu vào của dự án đầu tư còn lại từ 300 triệu đồng trở lên thì được hoàn thuế GTGT cho dự án đầu tư"
+    ],
+    "is_temporal_trap": false
+  },
+  {
+    "question_id": "VAT_063",
+    "question": "Công ty sản xuất linh kiện điện tử mua 01 xe ô tô 5 chỗ ngồi nguyên giá 2,4 tỷ đồng (chưa thuế GTGT, thuế GTGT 10% là 240 triệu đồng) để phục vụ đưa đón Giám đốc vào tháng 09/2025. Số thuế GTGT đầu vào công ty được khấu trừ là bao nhiêu?",
+    "as_of_date": "2025-09-20",
+    "category": "INPUT_TAX_DEDUCTION",
+    "gold_citations": ["LUAT_48_2024_D14", "ND_181_2025_D24"],
+    "gold_atomic_facts": [
+      "Ô tô chở người từ 9 chỗ ngồi trở xuống có giá trị vượt trên 1,6 tỷ đồng phục vụ quản lý doanh nghiệp chỉ được khấu trừ thuế GTGT đầu vào tương ứng với phần trị giá 1,6 tỷ đồng (tối đa 160 triệu đồng)",
+      "Phần thuế GTGT đầu vào tương ứng phần giá trị vượt trên 1,6 tỷ đồng (80 triệu đồng) không được khấu trừ mà tính vào nguyên giá tài sản cố định"
+    ],
+    "is_temporal_trap": false
+  },
+  {
+    "question_id": "VAT_064",
+    "question": "Doanh nghiệp hoạt động trong lĩnh vực kinh doanh vận chuyển hành khách và du lịch lữ hành mua ô tô 7 chỗ ngồi trị giá 3 tỷ đồng (chưa thuế GTGT) vào tháng 11/2025 để phục vụ chở khách du lịch có bị giới hạn mức khấu trừ thuế GTGT theo trần 1,6 tỷ đồng không?",
+    "as_of_date": "2025-11-10",
+    "category": "INPUT_TAX_DEDUCTION",
+    "gold_citations": ["LUAT_48_2024_D14", "ND_181_2025_D24"],
+    "gold_atomic_facts": [
+      "Ô tô chở người từ 9 chỗ ngồi trở xuống sử dụng vào mục đích kinh doanh vận chuyển hàng hóa, hành khách, kinh doanh du lịch, khách sạn không bị khống chế mức khấu trừ 1,6 tỷ đồng",
+      "Doanh nghiệp được kê khai khấu trừ toàn bộ số thuế GTGT đầu vào thực tế ghi trên hóa đơn nếu đáp ứng đủ chứng từ thanh toán không dùng tiền mặt"
+    ],
+    "is_temporal_trap": false
+  },
+  {
+    "question_id": "VAT_065",
+    "question": "Công ty thanh toán tiền mua lô hàng nguyên vật liệu trị giá 35 triệu đồng qua thẻ tín dụng mang tên công ty (tài khoản thẻ mở tại ngân hàng thương mại đứng tên doanh nghiệp) vào tháng 08/2025 thì có được coi là chứng từ thanh toán không dùng tiền mặt hợp lệ để khấu trừ thuế GTGT không?",
+    "as_of_date": "2025-08-30",
+    "category": "NON_CASH_PAYMENT",
+    "gold_citations": ["LUAT_48_2024_D14", "ND_181_2025_D26"],
+    "gold_atomic_facts": [
+      "Chứng từ thanh toán bằng thẻ tín dụng mang tên doanh nghiệp mở tại ngân hàng được xác định là chứng từ thanh toán không dùng tiền mặt hợp lệ",
+      "Doanh nghiệp đủ điều kiện khấu trừ thuế GTGT đầu vào của lô hàng nếu có hóa đơn GTGT hợp pháp và hợp đồng mua bán"
+    ],
+    "is_temporal_trap": false
+  },
+  {
+    "question_id": "VAT_066",
+    "question": "Doanh nghiệp cử nhân viên đi công tác mua vé máy bay và lưu trú khách sạn tổng cộng 12 triệu đồng, thanh toán bằng thẻ tín dụng cá nhân của nhân viên sau đó công ty chuyển khoản thanh toán lại cho nhân viên theo quy chế tài chính vào tháng 10/2025 thì có được khấu trừ thuế GTGT đầu vào không?",
+    "as_of_date": "2025-10-22",
+    "category": "NON_CASH_PAYMENT",
+    "gold_citations": ["LUAT_48_2024_D14", "ND_181_2025_D26"],
+    "gold_atomic_facts": [
+      "Trường hợp ủy quyền cho cá nhân sử dụng thẻ cá nhân thanh toán sau đó doanh nghiệp thanh toán lại bằng chuyển khoản phù hợp với quy chế tài chính của doanh nghiệp được chấp nhận là thanh toán không dùng tiền mặt",
+      "Hóa đơn GTGT mang tên, mã số thuế của doanh nghiệp đủ điều kiện kê khai khấu trừ thuế GTGT đầu vào"
+    ],
+    "is_temporal_trap": false
+  },
+  {
+    "question_id": "VAT_067",
+    "question": "Hợp tác xã nông nghiệp bán sản phẩm thóc, lúa tươi thu hoạch chưa qua chế biến cho một công ty thương mại lương thực vào tháng 09/2025 thì hóa đơn GTGT lập theo mức thuế suất nào?",
+    "as_of_date": "2025-09-18",
+    "category": "NON_TAXABLE_GOODS",
+    "gold_citations": ["LUAT_48_2024_D5", "ND_181_2025_D4", "TT_69_2025_D3"],
+    "gold_atomic_facts": [
+      "Sản phẩm trồng trọt chưa chế biến do tổ chức, hợp tác xã bán cho doanh nghiệp, hợp tác xã ở khâu thương mại thuộc đối tượng không phải kê khai, tính nộp thuế GTGT",
+      "Trên hóa đơn GTGT, dòng thuế suất và tiền thuế GTGT không ghi và gạch chéo"
+    ],
+    "is_temporal_trap": false
+  },
+  {
+    "question_id": "VAT_068",
+    "question": "Công ty thương mại mua nông sản sơ chế (rau, củ, quả đóng gói) từ các nhà vườn rồi bán lại trực tiếp cho người tiêu dùng cá nhân và hộ kinh doanh cá thể vào tháng 11/2025 thì phải áp dụng thuế suất thuế GTGT là bao nhiêu?",
+    "as_of_date": "2025-11-12",
+    "category": "TAX_RATE_FIVE_PERCENT",
+    "gold_citations": ["LUAT_48_2024_D9", "ND_181_2025_D19"],
+    "gold_atomic_facts": [
+      "Sản phẩm nông sản chưa qua chế biến hoặc chỉ sơ chế thông thường bán cho hộ, cá nhân kinh doanh và người tiêu dùng khác phải tính thuế GTGT theo mức thuế suất 5%",
+      "Trường hợp bán cho cá nhân tiêu dùng không thuộc diện không phải kê khai tính nộp thuế GTGT"
+    ],
+    "is_temporal_trap": false
+  },
+  {
+    "question_id": "VAT_069",
+    "question": "Công ty logistics tại Việt Nam ký hợp đồng trực tiếp vận chuyển container đường biển từ cảng Đình Vũ (Hải Phòng) sang cảng Hamburg (Đức) vào tháng 08/2025 thì dịch vụ vận tải này áp dụng thuế suất GTGT bao nhiêu và cần điều kiện gì?",
+    "as_of_date": "2025-08-28",
+    "category": "EXPORT_TAX_RATE",
+    "gold_citations": ["LUAT_48_2024_D9", "ND_181_2025_D17", "ND_181_2025_D18", "TT_69_2025_D4"],
+    "gold_atomic_facts": [
+      "Dịch vụ vận tải quốc tế hàng hóa chặng từ Việt Nam ra nước ngoài áp dụng mức thuế suất thuế GTGT 0%",
+      "Phải có hợp đồng vận chuyển với người thuê, chứng từ thanh toán không dùng tiền mặt và chứng từ vận tải quốc tế (vận đơn)"
+    ],
+    "is_temporal_trap": false
+  },
+  {
+    "question_id": "VAT_070",
+    "question": "Doanh nghiệp cảng biển cung cấp dịch vụ bốc xếp, dỡ hàng hóa container cho các tàu biển quốc tế cập cảng tại Việt Nam vào tháng 12/2025 có được áp dụng mức thuế suất thuế GTGT 0% không?",
+    "as_of_date": "2025-12-10",
+    "category": "EXPORT_TAX_RATE",
+    "gold_citations": ["LUAT_48_2024_D9", "ND_181_2025_D17", "ND_181_2025_D18"],
+    "gold_atomic_facts": [
+      "Dịch vụ cung cấp trực tiếp cho phương tiện vận tải quốc tế tại cảng biển (như bốc xếp, neo đậu, hoa tiêu) được áp dụng thuế suất thuế GTGT 0%",
+      "Doanh nghiệp phải có hợp đồng ký với hãng tàu nước ngoài hoặc đại lý của hãng tàu và chứng từ thanh toán qua ngân hàng"
+    ],
+    "is_temporal_trap": false
+  },
+  {
+    "question_id": "VAT_071",
+    "question": "Vào tháng 09/2025, doanh nghiệp nhận hóa đơn điện tử khởi tạo từ máy tính tiền có mã của cơ quan thuế cho chi phí tiếp khách giá trị 15 triệu đồng và thanh toán qua ngân hàng thì hóa đơn này có đủ điều kiện khấu trừ thuế GTGT không?",
+    "as_of_date": "2025-09-15",
+    "category": "INPUT_TAX_DEDUCTION",
+    "gold_citations": ["LUAT_48_2024_D14", "LUAT_48_2024_D16", "ND_181_2025_D25", "ND_181_2025_D26"],
+    "gold_atomic_facts": [
+      "Hóa đơn điện tử khởi tạo từ máy tính tiền có kết nối chuyển dữ liệu điện tử với cơ quan thuế là chứng từ hợp pháp để kê khai khấu trừ thuế GTGT đầu vào",
+      "Hóa đơn có giá trị từ 5 triệu đồng trở lên đã có chứng từ thanh toán không dùng tiền mặt nên đủ điều kiện khấu trừ toàn bộ thuế GTGT đầu vào"
+    ],
+    "is_temporal_trap": false
+  },
+  {
+    "question_id": "VAT_072",
+    "question": "Doanh nghiệp mua văn phòng phẩm có hóa đơn điện tử từ máy tính tiền giá trị 3,5 triệu đồng thanh toán bằng tiền mặt vào tháng 10/2025 thì có được khấu trừ thuế GTGT đầu vào không?",
+    "as_of_date": "2025-10-08",
+    "category": "INPUT_TAX_DEDUCTION",
+    "gold_citations": ["LUAT_48_2024_D14", "ND_181_2025_D25", "ND_181_2025_D26"],
+    "gold_atomic_facts": [
+      "Hóa đơn mua hàng hóa có giá trị dưới 5 triệu đồng thanh toán bằng tiền mặt vẫn được khấu trừ thuế GTGT đầu vào theo quy định tại Luật 48/2024",
+      "Hóa đơn điện tử máy tính tiền hợp pháp là căn cứ hợp lệ để kê khai khấu trừ"
+    ],
+    "is_temporal_trap": false
+  },
+  {
+    "question_id": "VAT_073",
+    "question": "Doanh nghiệp trích quỹ phúc lợi mua bánh trung thu và quà tặng cho toàn bộ nhân viên vào dịp Tết Trung thu tháng 09/2025 thì có phải xuất hóa đơn GTGT không và xác định giá tính thuế như thế nào?",
+    "as_of_date": "2025-09-28",
+    "category": "TAXABLE_PRICE_AND_TIMING",
+    "gold_citations": ["LUAT_48_2024_D7", "ND_181_2025_D6"],
+    "gold_atomic_facts": [
+      "Hàng hóa dùng để biếu, tặng, cho người lao động bắt buộc phải lập hóa đơn GTGT",
+      "Giá tính thuế GTGT là giá tính thuế của hàng hóa, dịch vụ cùng loại hoặc tương đương tại thời điểm phát sinh việc biếu tặng"
+    ],
+    "is_temporal_trap": false
+  },
+  {
+    "question_id": "VAT_074",
+    "question": "Công ty thực hiện chương trình khuyến mại mua 2 tặng 1 đã đăng ký hợp pháp với Sở Công Thương theo Luật Thương mại vào tháng 11/2025 thì sản phẩm tặng kèm xuất hóa đơn và tính thuế GTGT đầu ra như thế nào?",
+    "as_of_date": "2025-11-20",
+    "category": "TAXABLE_PRICE_AND_TIMING",
+    "gold_citations": ["LUAT_48_2024_D7", "ND_181_2025_D6"],
+    "gold_atomic_facts": [
+      "Hàng hóa dùng để khuyến mại theo đúng quy định của pháp luật về thương mại có giá tính thuế GTGT được xác định bằng không (0)",
+      "Cơ sở kinh doanh phải lập hóa đơn GTGT, trên hóa đơn ghi rõ hàng khuyến mại không thu tiền và tiền thuế GTGT bằng 0"
+    ],
+    "is_temporal_trap": false
+  },
+  {
+    "question_id": "VAT_075",
+    "question": "Một công ty công nghệ tại Mỹ cung cấp dịch vụ phần mềm quản trị đám mây SaaS xuyên biên giới cho các doanh nghiệp tại Việt Nam vào tháng 10/2025 thì nghĩa vụ khai nộp thuế GTGT được thực hiện theo phương thức nào?",
+    "as_of_date": "2025-10-18",
+    "category": "NON_TAXABLE_GOODS",
+    "gold_citations": ["LUAT_48_2024_D4", "ND_181_2025_D3", "ND_181_2025_D13", "TT_69_2025_D9"],
+    "gold_atomic_facts": [
+      "Nhà cung cấp nước ngoài không có cơ sở thường trú tại Việt Nam trực tiếp đăng ký thuế, khai thuế và nộp thuế qua Cổng thông tin điện tử của Tổng cục Thuế",
+      "Trường hợp nhà cung cấp nước ngoài chưa đăng ký thuế thì bên mua tại Việt Nam có trách nhiệm khấu trừ, kê khai và nộp thay thuế GTGT nhà thầu theo quy định"
+    ],
+    "is_temporal_trap": false
+  },
+  {
+    "question_id": "VAT_076",
+    "question": "Doanh nghiệp phần mềm Việt Nam phát hành ứng dụng trò chơi trên nền tảng Apple Store và Google Play, người dùng tải và mua gói dịch vụ ở nước ngoài thanh toán vào tài khoản doanh nghiệp vào tháng 12/2025 thì áp dụng mức thuế suất thuế GTGT nào?",
+    "as_of_date": "2025-12-15",
+    "category": "EXPORT_TAX_RATE",
+    "gold_citations": ["LUAT_48_2024_D9", "ND_181_2025_D17", "ND_181_2025_D18"],
+    "gold_atomic_facts": [
+      "Dịch vụ phần mềm cung cấp cho tổ chức, cá nhân ở nước ngoài và được tiêu dùng ngoài Việt Nam thuộc diện áp dụng thuế suất thuế GTGT 0%",
+      "Phải đáp ứng điều kiện về hợp đồng phân phối hoặc điều khoản dịch vụ số với nền tảng và chứng từ nhận tiền thanh toán qua ngân hàng"
+    ],
+    "is_temporal_trap": false
+  },
+  {
+    "question_id": "VAT_077",
+    "question": "Doanh nghiệp sản xuất hàng may mặc xuất khẩu có số thuế GTGT đầu vào chưa khấu trừ của hàng xuất khẩu trong quý III/2025 là 480 triệu đồng thì điều kiện hoàn thuế GTGT và mức trần số thuế được hoàn xác định thế nào?",
+    "as_of_date": "2025-10-10",
+    "category": "TAX_REFUND",
+    "gold_citations": ["LUAT_48_2024_D15", "ND_181_2025_D29", "TT_69_2025_D7"],
+    "gold_atomic_facts": [
+      "Cơ sở kinh doanh có hàng hóa xuất khẩu có số thuế GTGT đầu vào chưa khấu trừ từ 300 triệu đồng trở lên được xét hoàn thuế GTGT theo quý",
+      "Số thuế GTGT được hoàn không vượt quá doanh thu hàng hóa, dịch vụ xuất khẩu nhân với tỷ lệ khống chế tối đa theo quy định pháp luật"
+    ],
+    "is_temporal_trap": false
+  },
+  {
+    "question_id": "VAT_078",
+    "question": "Doanh nghiệp xuất khẩu lô hàng gỗ nội thất sang Nhật Bản vào tháng 09/2025 có thỏa thuận thanh toán trả chậm 90 ngày kể từ ngày vận đơn thì tại kỳ kê khai thuế quý III/2025 chưa có chứng từ thanh toán ngân hàng có được kê khai thuế suất 0% và hoàn thuế không?",
+    "as_of_date": "2025-10-05",
+    "category": "EXPORT_TAX_RATE",
+    "gold_citations": ["ND_181_2025_D18", "ND_181_2025_D27", "ND_181_2025_D29"],
+    "gold_atomic_facts": [
+      "Trường hợp xuất khẩu có thỏa thuận thanh toán trả chậm trong hợp đồng thì cơ sở kinh doanh vẫn được kê khai thuế suất 0% tại kỳ xuất khẩu",
+      "Hồ sơ đề nghị hoàn thuế GTGT chỉ được giải quyết sau khi đã có chứng từ thanh toán qua ngân hàng theo thời hạn thỏa thuận"
+    ],
+    "is_temporal_trap": false
+  },
+  {
+    "question_id": "VAT_079",
+    "question": "Kể từ ngày 01/07/2025 theo Luật 48/2024, mặt hàng phân bón hóa học (đạm urê, lân, kali, NPK) sản xuất trong nước hoặc nhập khẩu áp dụng mức thuế suất thuế GTGT là bao nhiêu?",
+    "as_of_date": "2025-08-05",
+    "category": "TAX_RATE_FIVE_PERCENT",
+    "gold_citations": ["LUAT_48_2024_D9", "ND_181_2025_D19"],
+    "gold_atomic_facts": [
+      "Mặt hàng phân bón thuộc đối tượng áp dụng mức thuế suất thuế GTGT 5% kể từ ngày Luật 48/2024 có hiệu lực (01/07/2025)",
+      "Cơ sở sản xuất, kinh doanh phân bón được khấu trừ thuế GTGT đầu vào phục vụ cho hoạt động sản xuất kinh doanh mặt hàng này"
+    ],
+    "is_temporal_trap": false
+  },
+  {
+    "question_id": "VAT_080",
+    "question": "Doanh nghiệp nhập khẩu máy gặt đập liên hợp và máy cày chuyên dùng phục vụ canh tác nông nghiệp vào tháng 09/2025 thì thuế suất thuế GTGT ở khâu nhập khẩu và bán ra trong nước là bao nhiêu?",
+    "as_of_date": "2025-09-12",
+    "category": "TAX_RATE_FIVE_PERCENT",
+    "gold_citations": ["LUAT_48_2024_D9", "ND_181_2025_D19"],
+    "gold_atomic_facts": [
+      "Máy móc, thiết bị chuyên dùng phục vụ cho sản xuất nông nghiệp áp dụng mức thuế suất thuế GTGT 5%",
+      "Áp dụng thống nhất mức thuế suất 5% ở cả khâu nhập khẩu và khâu bán thương mại trong nước"
+    ],
+    "is_temporal_trap": false
+  },
+  {
+    "question_id": "VAT_081",
+    "question": "Công ty thiết bị y tế nhập khẩu máy chụp cộng hưởng từ (MRI) và máy siêu âm có giấy phép lưu hành của Bộ Y tế vào tháng 11/2025 thì áp dụng mức thuế suất thuế GTGT nào?",
+    "as_of_date": "2025-11-25",
+    "category": "TAX_RATE_FIVE_PERCENT",
+    "gold_citations": ["LUAT_48_2024_D9", "ND_181_2025_D19"],
+    "gold_atomic_facts": [
+      "Thiết bị y tế có giấy phép lưu hành hoặc giấy chứng nhận đăng ký lưu hành theo quy định của pháp luật về quản lý thiết bị y tế áp dụng thuế suất thuế GTGT 5%",
+      "Hồ sơ nhập khẩu và bán ra phải xuất trình giấy phép lưu hành do cơ quan y tế có thẩm quyền cấp"
+    ],
+    "is_temporal_trap": false
+  },
+  {
+    "question_id": "VAT_082",
+    "question": "Doanh nghiệp áp dụng chiết khấu thương mại giảm giá 5% cho khách hàng mua đạt sản lượng tích lũy cuối quý IV/2025. Khoản chiết khấu này ghi trên hóa đơn GTGT của lần mua cuối cùng thì xác định giá tính thuế GTGT như thế nào?",
+    "as_of_date": "2025-12-30",
+    "category": "TAXABLE_PRICE_AND_TIMING",
+    "gold_citations": ["LUAT_48_2024_D7", "ND_181_2025_D5"],
+    "gold_atomic_facts": [
+      "Trường hợp cơ sở kinh doanh áp dụng chiết khấu thương mại căn cứ vào số lượng, doanh số thì số tiền chiết khấu được giảm trừ trên hóa đơn bán hàng của lần mua cuối cùng hoặc lập hóa đơn điều chỉnh",
+      "Giá tính thuế GTGT là giá bán đã trừ khoản chiết khấu thương mại ghi trên hóa đơn"
+    ],
+    "is_temporal_trap": false
+  },
+  {
+    "question_id": "VAT_083",
+    "question": "Nhà thầu xây dựng ký hợp đồng thi công công trình nhà xưởng công nghiệp, trong tháng 10/2025 hai bên tiến hành nghiệm thu bàn giao giai đoạn 1 khối lượng xây lắp hoàn thành nhưng chủ đầu tư chưa thanh toán tiền thì thời điểm xác định thuế GTGT là khi nào?",
+    "as_of_date": "2025-10-31",
+    "category": "TAXABLE_PRICE_AND_TIMING",
+    "gold_citations": ["LUAT_48_2024_D8", "ND_181_2025_D16"],
+    "gold_atomic_facts": [
+      "Thời điểm xác định thuế GTGT đối với hoạt động xây dựng, lắp đặt là thời điểm nghiệm thu, bàn giao công trình, hạng mục công trình, khối lượng xây dựng hoàn thành",
+      "Thời điểm xác định nghĩa vụ thuế tính theo ngày nghiệm thu, không phân biệt đã thu được tiền hay chưa thu được tiền"
+    ],
+    "is_temporal_trap": false
+  },
+  {
+    "question_id": "VAT_084",
+    "question": "Công ty cho thuê tòa nhà văn phòng ký hợp đồng cho thuê thời hạn 3 năm vào tháng 08/2025 và thu trước toàn bộ tiền thuê cho 3 năm là 3,6 tỷ đồng thì giá tính thuế GTGT và việc lập hóa đơn thực hiện theo nguyên tắc nào?",
+    "as_of_date": "2025-08-18",
+    "category": "TAXABLE_PRICE_AND_TIMING",
+    "gold_citations": ["LUAT_48_2024_D7", "ND_181_2025_D7"],
+    "gold_atomic_facts": [
+      "Đối với hoạt động cho thuê tài sản thu tiền trước cho nhiều kỳ thì giá tính thuế GTGT là số tiền thuê thu từng kỳ hoặc thu trước cho cả thời hạn thuê",
+      "Cơ sở kinh doanh thu tiền trước toàn bộ có thể lựa chọn kê khai nộp thuế GTGT cho toàn bộ số tiền thu trước hoặc phân bổ theo từng kỳ nếu thỏa mãn hướng dẫn quản lý thuế"
+    ],
+    "is_temporal_trap": false
+  },
+  {
+    "question_id": "VAT_085",
+    "question": "Công ty bán thanh lý một xe ô tô tải cũ đã trích hết khấu hao tài sản cố định cho một cá nhân với giá 150 triệu đồng vào tháng 11/2025 thì có phải xuất hóa đơn GTGT và chịu thuế GTGT đầu ra không?",
+    "as_of_date": "2025-11-22",
+    "category": "TAXABLE_PRICE_AND_TIMING",
+    "gold_citations": ["LUAT_48_2024_D7", "ND_181_2025_D5"],
+    "gold_atomic_facts": [
+      "Hoạt động bán tài sản thanh lý của cơ sở kinh doanh nộp thuế theo phương pháp khấu trừ thuộc đối tượng chịu thuế GTGT",
+      "Doanh nghiệp phải lập hóa đơn GTGT và tính thuế GTGT đầu ra theo thuế suất 10% trên giá bán thanh lý chưa có thuế"
+    ],
+    "is_temporal_trap": false
+  },
+  {
+    "question_id": "VAT_086",
+    "question": "Kho hàng của công ty bị ngập lụt do ảnh hưởng của bão lũ vào tháng 10/2025 gây hư hỏng toàn bộ nguyên vật liệu trị giá 500 triệu đồng và không được công ty bảo hiểm bồi thường thì số thuế GTGT đầu vào của lô hàng này có bị loại trừ khấu trừ không?",
+    "as_of_date": "2025-10-25",
+    "category": "INPUT_TAX_DEDUCTION",
+    "gold_citations": ["LUAT_48_2024_D14", "ND_181_2025_D23"],
+    "gold_atomic_facts": [
+      "Hàng hóa bị tổn thất do thiên tai, hỏa hoạn, tai nạn bất khả kháng mà không được bồi thường được khấu trừ thuế GTGT đầu vào",
+      "Cơ sở kinh doanh phải lập đầy đủ hồ sơ chứng minh tổn thất bất khả kháng theo quy định của pháp luật"
+    ],
+    "is_temporal_trap": false
+  },
+  {
+    "question_id": "VAT_087",
+    "question": "Doanh nghiệp chi tiền mua thuốc y tế và thiết bị cứu trợ trị giá 200 triệu đồng để tài trợ cho đồng bào vùng bão lũ thông qua Ủy ban Mặt trận Tổ quốc vào tháng 11/2025 thì số thuế GTGT đầu vào trên hóa đơn mua hàng có được kê khai khấu trừ không?",
+    "as_of_date": "2025-11-30",
+    "category": "INPUT_TAX_DEDUCTION",
+    "gold_citations": ["LUAT_48_2024_D14", "ND_181_2025_D23"],
+    "gold_atomic_facts": [
+      "Thuế GTGT đầu vào của hàng hóa mua vào để tài trợ phòng chống thiên tai, dịch bệnh thông qua cơ quan, tổ chức có thẩm quyền được kê khai khấu trừ toàn bộ",
+      "Phải có hóa đơn GTGT hợp pháp, biên bản giao nhận tài trợ và chứng từ thanh toán không dùng tiền mặt"
+    ],
+    "is_temporal_trap": false
+  },
+  {
+    "question_id": "VAT_088",
+    "question": "Công ty trong tháng 08/2025 có phát sinh cả hoạt động chịu thuế GTGT (doanh thu 8 tỷ) và hoạt động không chịu thuế GTGT (doanh thu 2 tỷ). Thuế GTGT đầu vào dùng chung cho cả hai hoạt động là 100 triệu đồng thì số thuế GTGT đầu vào được khấu trừ xác định như thế nào?",
+    "as_of_date": "2025-08-31",
+    "category": "INPUT_TAX_DEDUCTION",
+    "gold_citations": ["LUAT_48_2024_D14", "ND_181_2025_D23"],
+    "gold_atomic_facts": [
+      "Thuế GTGT đầu vào của hàng hóa, dịch vụ sử dụng đồng thời cho hoạt động chịu thuế và không chịu thuế thì chỉ được khấu trừ số thuế GTGT đầu vào của hoạt động chịu thuế",
+      "Cơ sở kinh doanh phải hạch toán riêng, trường hợp không hạch toán riêng được thì phân bổ theo tỷ lệ phần trăm giữa doanh thu chịu thuế so với tổng doanh thu của hàng hóa, dịch vụ bán ra"
+    ],
+    "is_temporal_trap": false
+  },
+  {
+    "question_id": "VAT_089",
+    "question": "Doanh nghiệp thực hiện thủ tục giải thể chấm dứt hoạt động vào tháng 12/2025, trên tờ khai thuế GTGT kỳ cuối cùng còn số thuế GTGT đầu vào chưa khấu trừ hết là 250 triệu đồng thì có được hoàn lại tiền thuế từ ngân sách nhà nước không?",
+    "as_of_date": "2025-12-20",
+    "category": "TAX_REFUND",
+    "gold_citations": ["LUAT_48_2024_D15", "ND_181_2025_D32"],
+    "gold_atomic_facts": [
+      "Cơ sở kinh doanh nộp thuế theo phương pháp khấu trừ được hoàn thuế GTGT khi giải thể, phá sản, chấm dứt hoạt động nếu có số thuế GTGT nộp thừa hoặc số thuế GTGT đầu vào chưa được khấu trừ hết",
+      "Cơ quan thuế thực hiện kiểm tra quyết toán thuế trước khi ban hành quyết định hoàn thuế theo quy định"
+    ],
+    "is_temporal_trap": false
+  },
+  {
+    "question_id": "VAT_090",
+    "question": "Công ty cổ phần A thực hiện chuyển nhượng toàn bộ 40% phần vốn góp tại Công ty TNHH B cho đối tác với giá trị 50 tỷ đồng vào tháng 09/2025 thì khoản thu chuyển nhượng vốn này có phải chịu thuế GTGT không?",
+    "as_of_date": "2025-09-25",
+    "category": "NON_TAXABLE_GOODS",
+    "gold_citations": ["LUAT_48_2024_D5", "ND_181_2025_D4"],
+    "gold_atomic_facts": [
+      "Hoạt động chuyển nhượng vốn bao gồm chuyển nhượng một phần hoặc toàn bộ số vốn đã đầu tư vào tổ chức kinh tế khác thuộc đối tượng không chịu thuế GTGT",
+      "Doanh nghiệp không phải tính và nộp thuế GTGT đối với doanh thu từ hoạt động chuyển nhượng vốn này"
+    ],
+    "is_temporal_trap": false
+  },
+  {
+    "question_id": "VAT_091",
+    "question": "Khách du lịch quốc tế mang hộ chiếu nước ngoài mua hàng hóa tại cửa hàng được phép bán hàng hoàn thuế GTGT và xuất cảnh qua Cửa khẩu sân bay Tân Sơn Nhất vào tháng 11/2025 thì điều kiện và thủ tục hoàn thuế GTGT thực hiện ra sao?",
+    "as_of_date": "2025-11-18",
+    "category": "TAX_REFUND",
+    "gold_citations": ["LUAT_48_2024_D15", "ND_181_2025_D33"],
+    "gold_atomic_facts": [
+      "Người nước ngoài, người Việt Nam định cư ở nước ngoài mang hộ chiếu xuất cảnh được hoàn thuế GTGT đối với hàng hóa mua tại Việt Nam mang theo người khi xuất cảnh",
+      "Hàng hóa phải có hóa đơn kiêm tờ khai hoàn thuế xuất trong thời hạn quy định và xuất trình tại quầy hải quan kiểm tra tại cửa khẩu sân bay quốc tế"
+    ],
+    "is_temporal_trap": false
+  },
+  {
+    "question_id": "VAT_092",
+    "question": "Doanh nghiệp viễn thông cung ứng dịch vụ viễn thông công ích và bưu chính công ích theo chương trình đặt hàng của Chính phủ vào tháng 08/2025 có thuộc diện chịu thuế GTGT không?",
+    "as_of_date": "2025-08-12",
+    "category": "NON_TAXABLE_GOODS",
+    "gold_citations": ["LUAT_48_2024_D5", "ND_181_2025_D4"],
+    "gold_atomic_facts": [
+      "Dịch vụ bưu chính, viễn thông công ích và Internet phổ cập theo chương trình của Chính phủ thuộc đối tượng không chịu thuế GTGT",
+      "Doanh nghiệp cung ứng không tính thuế GTGT đầu ra đối với các dịch vụ công ích thuộc danh mục quy định"
+    ],
+    "is_temporal_trap": false
+  },
+  {
+    "question_id": "VAT_093",
+    "question": "Đại lý bán vé máy bay cấp 1 bán vé đúng giá quy định của hãng hàng không và nhận khoản thù lao hoa hồng đại lý vào tháng 10/2025 thì việc xác định giá tính thuế GTGT và nghĩa vụ kê khai thuế đối với khoản hoa hồng này như thế nào?",
+    "as_of_date": "2025-10-14",
+    "category": "TAXABLE_PRICE_AND_TIMING",
+    "gold_citations": ["LUAT_48_2024_D7", "ND_181_2025_D9"],
+    "gold_atomic_facts": [
+      "Hoạt động đại lý bán vé đúng giá hưởng hoa hồng thì giá tính thuế GTGT là khoản tiền hoa hồng được hưởng chưa có thuế GTGT",
+      "Đại lý phải xuất hóa đơn GTGT cho hãng hàng không đối với tiền hoa hồng được hưởng và nộp thuế GTGT theo thuế suất quy định"
+    ],
+    "is_temporal_trap": false
+  },
+  {
+    "question_id": "VAT_094",
+    "question": "Doanh nghiệp có trụ sở chính tại TP. Hồ Chí Minh thực hiện công trình xây dựng, lắp đặt tại tỉnh Bình Dương có giá trị hợp đồng bao gồm thuế GTGT là 11 tỷ đồng vào tháng 09/2025 thì nghĩa vụ nộp thuế GTGT vãng lai tại tỉnh Bình Dương xử lý thế nào?",
+    "as_of_date": "2025-09-30",
+    "category": "DIRECT_METHOD_AND_INVOICE",
+    "gold_citations": ["LUAT_48_2024_D11", "ND_181_2025_D20"],
+    "gold_atomic_facts": [
+      "Người nộp thuế thực hiện công trình xây dựng khác tỉnh với nơi đóng trụ sở chính phải kê khai, nộp thuế GTGT vãng lai tại cơ quan thuế nơi có công trình",
+      "Số thuế GTGT đã nộp vãng lai tại địa phương nơi thi công được trừ vào số thuế GTGT phải nộp trên tờ khai tại trụ sở chính"
+    ],
+    "is_temporal_trap": false
+  },
+  {
+    "question_id": "VAT_095",
+    "question": "Lô hàng linh kiện điện tử đã xuất khẩu sang Hàn Quốc vào tháng 08/2025 bị khách hàng trả lại toàn bộ do không đạt tiêu chuẩn kỹ thuật và doanh nghiệp làm thủ tục tái nhập khẩu vào tháng 10/2025 thì xử lý kê khai điều chỉnh thuế GTGT như thế nào?",
+    "as_of_date": "2025-10-28",
+    "category": "EXPORT_TAX_RATE",
+    "gold_citations": ["LUAT_48_2024_D7", "ND_181_2025_D5", "ND_181_2025_D27"],
+    "gold_atomic_facts": [
+      "Hàng xuất khẩu bị trả lại tái nhập khẩu vào nội địa phải thực hiện điều chỉnh giảm doanh thu xuất khẩu và giảm số thuế GTGT đầu vào tương ứng tại kỳ tái nhập khẩu",
+      "Trường hợp đã hoàn thuế GTGT cho lô hàng thì cơ sở kinh doanh phải kê khai hoàn trả lại tiền thuế GTGT đã được hoàn tương ứng"
+    ],
+    "is_temporal_trap": false
+  },
+  {
+    "question_id": "VAT_096",
+    "question": "Trường phổ thông liên cấp tư thục thu học phí giảng dạy chương trình giáo dục phổ thông theo quy định của Bộ Giáo dục và Đào tạo vào năm học mới tháng 09/2025 có phải tính nộp thuế GTGT không?",
+    "as_of_date": "2025-09-08",
+    "category": "NON_TAXABLE_GOODS",
+    "gold_citations": ["LUAT_48_2024_D5", "ND_181_2025_D4"],
+    "gold_atomic_facts": [
+      "Dịch vụ dạy học, dạy nghề theo quy định của pháp luật về giáo dục và đào tạo thuộc đối tượng không chịu thuế GTGT",
+      "Khoản tiền thu học phí chính khóa và các khoản thu phục vụ trực tiếp việc học tập theo quy định không phát sinh thuế GTGT đầu ra"
+    ],
+    "is_temporal_trap": false
+  },
+  {
+    "question_id": "VAT_097",
+    "question": "Doanh nghiệp thuê dịch vụ quảng cáo trực tuyến trên nền tảng của nước ngoài và nộp thuế nhà thầu GTGT thay cho phía nước ngoài theo tỷ lệ quy định vào tháng 11/2025 thì chứng từ nộp thuế thay có được dùng để khấu trừ thuế GTGT đầu vào không?",
+    "as_of_date": "2025-11-16",
+    "category": "INPUT_TAX_DEDUCTION",
+    "gold_citations": ["LUAT_48_2024_D14", "ND_181_2025_D25", "TT_69_2025_D6"],
+    "gold_atomic_facts": [
+      "Chứng từ nộp thuế GTGT thay cho phía nước ngoài (thuế nhà thầu) là căn cứ hợp pháp để kê khai khấu trừ thuế GTGT đầu vào của doanh nghiệp",
+      "Phải có hợp đồng cung cấp dịch vụ trực tuyến và chứng từ nộp thuế vào ngân sách nhà nước theo đúng quy định"
+    ],
+    "is_temporal_trap": false
+  },
+  {
+    "question_id": "VAT_098",
+    "question": "Viện nghiên cứu khoa học chuyển giao quyền sở hữu sáng chế quy trình công nghệ sinh học cho một doanh nghiệp dược phẩm với giá trị 2 tỷ đồng vào tháng 12/2025 thì giao dịch này có chịu thuế GTGT không?",
+    "as_of_date": "2025-12-18",
+    "category": "NON_TAXABLE_GOODS",
+    "gold_citations": ["LUAT_48_2024_D5", "ND_181_2025_D4"],
+    "gold_atomic_facts": [
+      "Chuyển giao công nghệ theo quy định của Luật Chuyển giao công nghệ và chuyển nhượng quyền sở hữu trí tuệ theo Luật Sở hữu trí tuệ thuộc đối tượng không chịu thuế GTGT",
+      "Hợp đồng chuyển giao công nghệ phải được lập bằng văn bản và đăng ký với cơ quan quản lý khoa học công nghệ nếu thuộc diện phải đăng ký"
+    ],
+    "is_temporal_trap": false
+  },
+  {
+    "question_id": "VAT_099",
+    "question": "Nhà máy sản xuất thức ăn gia súc gia cầm (cám hỗn hợp dạng viên) bán sản phẩm cho các trang trại chăn nuôi vào tháng 10/2025 thì áp dụng quy định thuế GTGT như thế nào theo Luật 48/2024?",
+    "as_of_date": "2025-10-26",
+    "category": "NON_TAXABLE_GOODS",
+    "gold_citations": ["LUAT_48_2024_D5", "ND_181_2025_D4"],
+    "gold_atomic_facts": [
+      "Thức ăn gia súc, gia cầm, thủy sản và thức ăn cho vật nuôi khác theo quy định của pháp luật thuộc đối tượng không chịu thuế GTGT",
+      "Doanh nghiệp sản xuất bán thức ăn chăn nuôi không phải tính thuế GTGT đầu ra nhưng không được khấu trừ thuế GTGT đầu vào của hoạt động này"
+    ],
+    "is_temporal_trap": false
+  },
+  {
+    "question_id": "VAT_100",
+    "question": "Công ty TNHH A tiến hành sáp nhập vào Công ty Cổ phần B vào tháng 12/2025. Tại thời điểm sáp nhập, Công ty A còn số thuế GTGT đầu vào chưa khấu trừ hết là 320 triệu đồng thì số thuế này được giải quyết như thế nào?",
+    "as_of_date": "2025-12-25",
+    "category": "INPUT_TAX_DEDUCTION",
+    "gold_citations": ["LUAT_48_2024_D14", "ND_181_2025_D23"],
+    "gold_atomic_facts": [
+      "Trường hợp chia tách, sáp nhập, hợp nhất doanh nghiệp, cơ sở kinh doanh bị sáp nhập được bàn giao số thuế GTGT đầu vào chưa được khấu trừ hết cho cơ sở kinh doanh nhận sáp nhập",
+      "Công ty nhận sáp nhập được tiếp tục kê khai khấu trừ số thuế GTGT đầu vào chuyển sang trên tờ khai thuế GTGT của các kỳ tiếp theo"
+    ],
+    "is_temporal_trap": false
+  }
+]

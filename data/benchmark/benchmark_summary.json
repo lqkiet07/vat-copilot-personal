@@ -1,0 +1,5310 @@
+{
+  "total_questions": 100,
+  "pipelines": [
+    "P1_FlatRAG",
+    "P2_TemporalGraphRAG",
+    "P3_FullSystem"
+  ],
+  "metrics_summary": {
+    "P1_FlatRAG": {
+      "precision": 0.022,
+      "recall": 0.0483,
+      "temporal_accuracy": 0.792,
+      "hallucination_rate": 0.0
+    },
+    "P2_TemporalGraphRAG": {
+      "precision": 0.216,
+      "recall": 0.4083,
+      "temporal_accuracy": 1.0,
+      "hallucination_rate": 0.0
+    },
+    "P3_FullSystem": {
+      "precision": 0.216,
+      "recall": 0.4083,
+      "temporal_accuracy": 1.0,
+      "hallucination_rate": 0.0
+    }
+  },
+  "runs": [
+    {
+      "question_id": "VAT_001",
+      "pipeline": "P1_FlatRAG",
+      "predicted_citations": [
+        "TT_69_2025_D9",
+        "ND_181_2025_D26",
+        "LUAT_48_2024_D10",
+        "LUAT_48_2024_D7",
+        "ND_181_2025_D22"
+      ],
+      "metrics": {
+        "precision": 0.0,
+        "recall": 0.0,
+        "temporal_accuracy": 1.0,
+        "hallucination_rate": 0.0
+      },
+      "as_of_date": "2025-08-15"
+    },
+    {
+      "question_id": "VAT_001",
+      "pipeline": "P2_TemporalGraphRAG",
+      "predicted_citations": [
+        "TT_69_2025_D9",
+        "LUAT_48_2024_D15",
+        "ND_181_2025_D17",
+        "LUAT_48_2024_D9",
+        "LUAT_48_2024_D4"
+      ],
+      "metrics": {
+        "precision": 0.4,
+        "recall": 1.0,
+        "temporal_accuracy": 1.0,
+        "hallucination_rate": 0.0
+      },
+      "as_of_date": "2025-08-15"
+    },
+    {
+      "question_id": "VAT_001",
+      "pipeline": "P3_FullSystem",
+      "predicted_citations": [
+        "TT_69_2025_D9",
+        "LUAT_48_2024_D15",
+        "ND_181_2025_D17",
+        "LUAT_48_2024_D9",
+        "LUAT_48_2024_D4"
+      ],
+      "metrics": {
+        "precision": 0.4,
+        "recall": 1.0,
+        "temporal_accuracy": 1.0,
+        "hallucination_rate": 0.0
+      },
+      "as_of_date": "2025-08-15"
+    },
+    {
+      "question_id": "VAT_002",
+      "pipeline": "P1_FlatRAG",
+      "predicted_citations": [
+        "ND_181_2025_D5",
+        "LUAT_48_2024_D9",
+        "ND_181_2025_D8",
+        "LUAT_48_2024_D4",
+        "TT_69_2025_D1"
+      ],
+      "metrics": {
+        "precision": 0.0,
+        "recall": 0.0,
+        "temporal_accuracy": 1.0,
+        "hallucination_rate": 0.0
+      },
+      "as_of_date": "2025-09-01"
+    },
+    {
+      "question_id": "VAT_002",
+      "pipeline": "P2_TemporalGraphRAG",
+      "predicted_citations": [
+        "TT_69_2025_D1",
+        "TT_69_2025_D7",
+        "ND_181_2025_D18",
+        "TT_69_2025_D4",
+        "LUAT_48_2024_D18"
+      ],
+      "metrics": {
+        "precision": 0.4,
+        "recall": 1.0,
+        "temporal_accuracy": 1.0,
+        "hallucination_rate": 0.0
+      },
+      "as_of_date": "2025-09-01"
+    },
+    {
+      "question_id": "VAT_002",
+      "pipeline": "P3_FullSystem",
+      "predicted_citations": [
+        "TT_69_2025_D1",
+        "TT_69_2025_D7",
+        "ND_181_2025_D18",
+        "TT_69_2025_D4",
+        "LUAT_48_2024_D18"
+      ],
+      "metrics": {
+        "precision": 0.4,
+        "recall": 1.0,
+        "temporal_accuracy": 1.0,
+        "hallucination_rate": 0.0
+      },
+      "as_of_date": "2025-09-01"
+    },
+    {
+      "question_id": "VAT_003",
+      "pipeline": "P1_FlatRAG",
+      "predicted_citations": [
+        "LUAT_48_2024_D18",
+        "LUAT_48_2024_D15",
+        "TT_69_2025_D2",
+        "ND_181_2025_D34",
+        "ND_181_2025_D26"
+      ],
+      "metrics": {
+        "precision": 0.0,
+        "recall": 0.0,
+        "temporal_accuracy": 1.0,
+        "hallucination_rate": 0.0
+      },
+      "as_of_date": "2025-07-20"
+    },
+    {
+      "question_id": "VAT_003",
+      "pipeline": "P2_TemporalGraphRAG",
+      "predicted_citations": [
+        "LUAT_48_2024_D15",
+        "ND_181_2025_D31",
+        "LUAT_48_2024_D5",
+        "LUAT_48_2024_D9",
+        "TT_69_2025_D1"
+      ],
+      "metrics": {
+        "precision": 0.2,
+        "recall": 0.5,
+        "temporal_accuracy": 1.0,
+        "hallucination_rate": 0.0
+      },
+      "as_of_date": "2025-07-20"
+    },
+    {
+      "question_id": "VAT_003",
+      "pipeline": "P3_FullSystem",
+      "predicted_citations": [
+        "LUAT_48_2024_D15",
+        "ND_181_2025_D31",
+        "LUAT_48_2024_D5",
+        "LUAT_48_2024_D9",
+        "TT_69_2025_D1"
+      ],
+      "metrics": {
+        "precision": 0.2,
+        "recall": 0.5,
+        "temporal_accuracy": 1.0,
+        "hallucination_rate": 0.0
+      },
+      "as_of_date": "2025-07-20"
+    },
+    {
+      "question_id": "VAT_004",
+      "pipeline": "P1_FlatRAG",
+      "predicted_citations": [
+        "ND_181_2025_D38",
+        "TT_69_2025_D9",
+        "LUAT_48_2024_D5",
+        "TT_69_2025_D8",
+        "TT_69_2025_D1"
+      ],
+      "metrics": {
+        "precision": 0.0,
+        "recall": 0.0,
+        "temporal_accuracy": 1.0,
+        "hallucination_rate": 0.0
+      },
+      "as_of_date": "2025-10-10"
+    },
+    {
+      "question_id": "VAT_004",
+      "pipeline": "P2_TemporalGraphRAG",
+      "predicted_citations": [
+        "LUAT_48_2024_D5",
+        "LUAT_48_2024_D9",
+        "TT_69_2025_D9",
+        "TT_69_2025_D1",
+        "ND_181_2025_D28"
+      ],
+      "metrics": {
+        "precision": 0.2,
+        "recall": 0.5,
+        "temporal_accuracy": 1.0,
+        "hallucination_rate": 0.0
+      },
+      "as_of_date": "2025-10-10"
+    },
+    {
+      "question_id": "VAT_004",
+      "pipeline": "P3_FullSystem",
+      "predicted_citations": [
+        "LUAT_48_2024_D5",
+        "LUAT_48_2024_D9",
+        "TT_69_2025_D9",
+        "TT_69_2025_D1",
+        "ND_181_2025_D28"
+      ],
+      "metrics": {
+        "precision": 0.2,
+        "recall": 0.5,
+        "temporal_accuracy": 1.0,
+        "hallucination_rate": 0.0
+      },
+      "as_of_date": "2025-10-10"
+    },
+    {
+      "question_id": "VAT_005",
+      "pipeline": "P1_FlatRAG",
+      "predicted_citations": [
+        "ND_181_2025_D23",
+        "ND_359_2025_D1",
+        "ND_181_2025_D32",
+        "TT_69_2025_D7",
+        "TT_69_2025_D9"
+      ],
+      "metrics": {
+        "precision": 0.0,
+        "recall": 0.0,
+        "temporal_accuracy": 0.8,
+        "hallucination_rate": 0.0
+      },
+      "as_of_date": "2025-11-15"
+    },
+    {
+      "question_id": "VAT_005",
+      "pipeline": "P2_TemporalGraphRAG",
+      "predicted_citations": [
+        "ND_181_2025_D31",
+        "ND_181_2025_D29",
+        "ND_181_2025_D23",
+        "LUAT_48_2024_D13",
+        "ND_181_2025_D19"
+      ],
+      "metrics": {
+        "precision": 0.0,
+        "recall": 0.0,
+        "temporal_accuracy": 1.0,
+        "hallucination_rate": 0.0
+      },
+      "as_of_date": "2025-11-15"
+    },
+    {
+      "question_id": "VAT_005",
+      "pipeline": "P3_FullSystem",
+      "predicted_citations": [
+        "ND_181_2025_D31",
+        "ND_181_2025_D29",
+        "ND_181_2025_D23",
+        "LUAT_48_2024_D13",
+        "ND_181_2025_D19"
+      ],
+      "metrics": {
+        "precision": 0.0,
+        "recall": 0.0,
+        "temporal_accuracy": 1.0,
+        "hallucination_rate": 0.0
+      },
+      "as_of_date": "2025-11-15"
+    },
+    {
+      "question_id": "VAT_006",
+      "pipeline": "P1_FlatRAG",
+      "predicted_citations": [
+        "ND_144_2026_D4",
+        "LUAT_48_2024_D17",
+        "ND_181_2025_D40",
+        "TT_69_2025_D7",
+        "TT_69_2025_D8"
+      ],
+      "metrics": {
+        "precision": 0.0,
+        "recall": 0.0,
+        "temporal_accuracy": 0.8,
+        "hallucination_rate": 0.0
+      },
+      "as_of_date": "2025-08-01"
+    },
+    {
+      "question_id": "VAT_006",
+      "pipeline": "P2_TemporalGraphRAG",
+      "predicted_citations": [
+        "ND_181_2025_D23",
+        "LUAT_48_2024_D13",
+        "LUAT_48_2024_D16",
+        "ND_181_2025_D9",
+        "ND_181_2025_D11"
+      ],
+      "metrics": {
+        "precision": 0.0,
+        "recall": 0.0,
+        "temporal_accuracy": 1.0,
+        "hallucination_rate": 0.0
+      },
+      "as_of_date": "2025-08-01"
+    },
+    {
+      "question_id": "VAT_006",
+      "pipeline": "P3_FullSystem",
+      "predicted_citations": [
+        "ND_181_2025_D23",
+        "LUAT_48_2024_D13",
+        "LUAT_48_2024_D16",
+        "ND_181_2025_D9",
+        "ND_181_2025_D11"
+      ],
+      "metrics": {
+        "precision": 0.0,
+        "recall": 0.0,
+        "temporal_accuracy": 1.0,
+        "hallucination_rate": 0.0
+      },
+      "as_of_date": "2025-08-01"
+    },
+    {
+      "question_id": "VAT_007",
+      "pipeline": "P1_FlatRAG",
+      "predicted_citations": [
+        "TT_69_2025_D8",
+        "LUAT_48_2024_D6",
+        "ND_181_2025_D33",
+        "ND_181_2025_D22",
+        "TT_69_2025_D9"
+      ],
+      "metrics": {
+        "precision": 0.0,
+        "recall": 0.0,
+        "temporal_accuracy": 1.0,
+        "hallucination_rate": 0.0
+      },
+      "as_of_date": "2025-09-15"
+    },
+    {
+      "question_id": "VAT_007",
+      "pipeline": "P2_TemporalGraphRAG",
+      "predicted_citations": [
+        "ND_181_2025_D23",
+        "LUAT_48_2024_D13",
+        "LUAT_48_2024_D15",
+        "TT_69_2025_D8",
+        "ND_181_2025_D31"
+      ],
+      "metrics": {
+        "precision": 0.0,
+        "recall": 0.0,
+        "temporal_accuracy": 1.0,
+        "hallucination_rate": 0.0
+      },
+      "as_of_date": "2025-09-15"
+    },
+    {
+      "question_id": "VAT_007",
+      "pipeline": "P3_FullSystem",
+      "predicted_citations": [
+        "ND_181_2025_D23",
+        "LUAT_48_2024_D13",
+        "LUAT_48_2024_D15",
+        "TT_69_2025_D8",
+        "ND_181_2025_D31"
+      ],
+      "metrics": {
+        "precision": 0.0,
+        "recall": 0.0,
+        "temporal_accuracy": 1.0,
+        "hallucination_rate": 0.0
+      },
+      "as_of_date": "2025-09-15"
+    },
+    {
+      "question_id": "VAT_008",
+      "pipeline": "P1_FlatRAG",
+      "predicted_citations": [
+        "ND_144_2026_D3",
+        "ND_181_2025_D9",
+        "LUAT_48_2024_D18",
+        "ND_181_2025_D11",
+        "ND_181_2025_D2"
+      ],
+      "metrics": {
+        "precision": 0.0,
+        "recall": 0.0,
+        "temporal_accuracy": 0.8,
+        "hallucination_rate": 0.0
+      },
+      "as_of_date": "2025-10-05"
+    },
+    {
+      "question_id": "VAT_008",
+      "pipeline": "P2_TemporalGraphRAG",
+      "predicted_citations": [
+        "ND_181_2025_D28",
+        "ND_181_2025_D23",
+        "LUAT_48_2024_D13",
+        "ND_181_2025_D26",
+        "ND_181_2025_D11"
+      ],
+      "metrics": {
+        "precision": 0.2,
+        "recall": 1.0,
+        "temporal_accuracy": 1.0,
+        "hallucination_rate": 0.0
+      },
+      "as_of_date": "2025-10-05"
+    },
+    {
+      "question_id": "VAT_008",
+      "pipeline": "P3_FullSystem",
+      "predicted_citations": [
+        "ND_181_2025_D28",
+        "ND_181_2025_D23",
+        "LUAT_48_2024_D13",
+        "ND_181_2025_D26",
+        "ND_181_2025_D11"
+      ],
+      "metrics": {
+        "precision": 0.2,
+        "recall": 1.0,
+        "temporal_accuracy": 1.0,
+        "hallucination_rate": 0.0
+      },
+      "as_of_date": "2025-10-05"
+    },
+    {
+      "question_id": "VAT_009",
+      "pipeline": "P1_FlatRAG",
+      "predicted_citations": [
+        "ND_181_2025_D6",
+        "ND_181_2025_D32",
+        "ND_144_2026_D1",
+        "ND_181_2025_D39",
+        "ND_181_2025_D21"
+      ],
+      "metrics": {
+        "precision": 0.0,
+        "recall": 0.0,
+        "temporal_accuracy": 0.8,
+        "hallucination_rate": 0.0
+      },
+      "as_of_date": "2025-08-20"
+    },
+    {
+      "question_id": "VAT_009",
+      "pipeline": "P2_TemporalGraphRAG",
+      "predicted_citations": [
+        "ND_181_2025_D26",
+        "ND_181_2025_D21",
+        "ND_181_2025_D39",
+        "ND_181_2025_D30",
+        "ND_181_2025_D31"
+      ],
+      "metrics": {
+        "precision": 0.2,
+        "recall": 1.0,
+        "temporal_accuracy": 1.0,
+        "hallucination_rate": 0.0
+      },
+      "as_of_date": "2025-08-20"
+    },
+    {
+      "question_id": "VAT_009",
+      "pipeline": "P3_FullSystem",
+      "predicted_citations": [
+        "ND_181_2025_D26",
+        "ND_181_2025_D21",
+        "ND_181_2025_D39",
+        "ND_181_2025_D30",
+        "ND_181_2025_D31"
+      ],
+      "metrics": {
+        "precision": 0.2,
+        "recall": 1.0,
+        "temporal_accuracy": 1.0,
+        "hallucination_rate": 0.0
+      },
+      "as_of_date": "2025-08-20"
+    },
+    {
+      "question_id": "VAT_010",
+      "pipeline": "P1_FlatRAG",
+      "predicted_citations": [
+        "LUAT_48_2024_D8",
+        "ND_144_2026_D1",
+        "ND_181_2025_D34",
+        "ND_181_2025_D40",
+        "LUAT_48_2024_D17"
+      ],
+      "metrics": {
+        "precision": 0.0,
+        "recall": 0.0,
+        "temporal_accuracy": 0.8,
+        "hallucination_rate": 0.0
+      },
+      "as_of_date": "2025-11-01"
+    },
+    {
+      "question_id": "VAT_010",
+      "pipeline": "P2_TemporalGraphRAG",
+      "predicted_citations": [
+        "ND_181_2025_D8",
+        "ND_181_2025_D28",
+        "ND_181_2025_D17",
+        "ND_181_2025_D37",
+        "ND_181_2025_D23"
+      ],
+      "metrics": {
+        "precision": 0.0,
+        "recall": 0.0,
+        "temporal_accuracy": 1.0,
+        "hallucination_rate": 0.0
+      },
+      "as_of_date": "2025-11-01"
+    },
+    {
+      "question_id": "VAT_010",
+      "pipeline": "P3_FullSystem",
+      "predicted_citations": [
+        "ND_181_2025_D8",
+        "ND_181_2025_D28",
+        "ND_181_2025_D17",
+        "ND_181_2025_D37",
+        "ND_181_2025_D23"
+      ],
+      "metrics": {
+        "precision": 0.0,
+        "recall": 0.0,
+        "temporal_accuracy": 1.0,
+        "hallucination_rate": 0.0
+      },
+      "as_of_date": "2025-11-01"
+    },
+    {
+      "question_id": "VAT_011",
+      "pipeline": "P1_FlatRAG",
+      "predicted_citations": [
+        "ND_181_2025_D27",
+        "TT_69_2025_D3",
+        "LUAT_48_2024_D7",
+        "ND_181_2025_D29",
+        "ND_144_2026_D6"
+      ],
+      "metrics": {
+        "precision": 0.0,
+        "recall": 0.0,
+        "temporal_accuracy": 0.8,
+        "hallucination_rate": 0.0
+      },
+      "as_of_date": "2025-07-15"
+    },
+    {
+      "question_id": "VAT_011",
+      "pipeline": "P2_TemporalGraphRAG",
+      "predicted_citations": [
+        "LUAT_48_2024_D4",
+        "ND_181_2025_D19",
+        "ND_181_2025_D4",
+        "ND_181_2025_D40",
+        "ND_181_2025_D32"
+      ],
+      "metrics": {
+        "precision": 0.2,
+        "recall": 0.5,
+        "temporal_accuracy": 1.0,
+        "hallucination_rate": 0.0
+      },
+      "as_of_date": "2025-07-15"
+    },
+    {
+      "question_id": "VAT_011",
+      "pipeline": "P3_FullSystem",
+      "predicted_citations": [
+        "LUAT_48_2024_D4",
+        "ND_181_2025_D19",
+        "ND_181_2025_D4",
+        "ND_181_2025_D40",
+        "ND_181_2025_D32"
+      ],
+      "metrics": {
+        "precision": 0.2,
+        "recall": 0.5,
+        "temporal_accuracy": 1.0,
+        "hallucination_rate": 0.0
+      },
+      "as_of_date": "2025-07-15"
+    },
+    {
+      "question_id": "VAT_012",
+      "pipeline": "P1_FlatRAG",
+      "predicted_citations": [
+        "LUAT_48_2024_D6",
+        "ND_181_2025_D13",
+        "TT_69_2025_D7",
+        "ND_181_2025_D25",
+        "TT_69_2025_D1"
+      ],
+      "metrics": {
+        "precision": 0.0,
+        "recall": 0.0,
+        "temporal_accuracy": 1.0,
+        "hallucination_rate": 0.0
+      },
+      "as_of_date": "2025-08-10"
+    },
+    {
+      "question_id": "VAT_012",
+      "pipeline": "P2_TemporalGraphRAG",
+      "predicted_citations": [
+        "TT_69_2025_D1",
+        "ND_181_2025_D8",
+        "LUAT_48_2024_D18",
+        "LUAT_48_2024_D5",
+        "ND_181_2025_D23"
+      ],
+      "metrics": {
+        "precision": 0.2,
+        "recall": 1.0,
+        "temporal_accuracy": 1.0,
+        "hallucination_rate": 0.0
+      },
+      "as_of_date": "2025-08-10"
+    },
+    {
+      "question_id": "VAT_012",
+      "pipeline": "P3_FullSystem",
+      "predicted_citations": [
+        "TT_69_2025_D1",
+        "ND_181_2025_D8",
+        "LUAT_48_2024_D18",
+        "LUAT_48_2024_D5",
+        "ND_181_2025_D23"
+      ],
+      "metrics": {
+        "precision": 0.2,
+        "recall": 1.0,
+        "temporal_accuracy": 1.0,
+        "hallucination_rate": 0.0
+      },
+      "as_of_date": "2025-08-10"
+    },
+    {
+      "question_id": "VAT_013",
+      "pipeline": "P1_FlatRAG",
+      "predicted_citations": [
+        "ND_181_2025_D30",
+        "ND_144_2026_D5",
+        "TT_69_2025_D6",
+        "ND_181_2025_D31",
+        "ND_181_2025_D33"
+      ],
+      "metrics": {
+        "precision": 0.0,
+        "recall": 0.0,
+        "temporal_accuracy": 0.8,
+        "hallucination_rate": 0.0
+      },
+      "as_of_date": "2025-09-05"
+    },
+    {
+      "question_id": "VAT_013",
+      "pipeline": "P2_TemporalGraphRAG",
+      "predicted_citations": [
+        "ND_181_2025_D19",
+        "ND_181_2025_D4",
+        "ND_181_2025_D33",
+        "ND_181_2025_D15",
+        "TT_69_2025_D6"
+      ],
+      "metrics": {
+        "precision": 0.2,
+        "recall": 0.5,
+        "temporal_accuracy": 1.0,
+        "hallucination_rate": 0.0
+      },
+      "as_of_date": "2025-09-05"
+    },
+    {
+      "question_id": "VAT_013",
+      "pipeline": "P3_FullSystem",
+      "predicted_citations": [
+        "ND_181_2025_D19",
+        "ND_181_2025_D4",
+        "ND_181_2025_D33",
+        "ND_181_2025_D15",
+        "TT_69_2025_D6"
+      ],
+      "metrics": {
+        "precision": 0.2,
+        "recall": 0.5,
+        "temporal_accuracy": 1.0,
+        "hallucination_rate": 0.0
+      },
+      "as_of_date": "2025-09-05"
+    },
+    {
+      "question_id": "VAT_014",
+      "pipeline": "P1_FlatRAG",
+      "predicted_citations": [
+        "ND_181_2025_D1",
+        "ND_181_2025_D31",
+        "ND_181_2025_D11",
+        "ND_181_2025_D9",
+        "LUAT_48_2024_D6"
+      ],
+      "metrics": {
+        "precision": 0.0,
+        "recall": 0.0,
+        "temporal_accuracy": 1.0,
+        "hallucination_rate": 0.0
+      },
+      "as_of_date": "2025-10-01"
+    },
+    {
+      "question_id": "VAT_014",
+      "pipeline": "P2_TemporalGraphRAG",
+      "predicted_citations": [
+        "ND_181_2025_D31",
+        "ND_181_2025_D19",
+        "ND_181_2025_D4",
+        "ND_181_2025_D28",
+        "LUAT_48_2024_D15"
+      ],
+      "metrics": {
+        "precision": 0.2,
+        "recall": 0.5,
+        "temporal_accuracy": 1.0,
+        "hallucination_rate": 0.0
+      },
+      "as_of_date": "2025-10-01"
+    },
+    {
+      "question_id": "VAT_014",
+      "pipeline": "P3_FullSystem",
+      "predicted_citations": [
+        "ND_181_2025_D31",
+        "ND_181_2025_D19",
+        "ND_181_2025_D4",
+        "ND_181_2025_D28",
+        "LUAT_48_2024_D15"
+      ],
+      "metrics": {
+        "precision": 0.2,
+        "recall": 0.5,
+        "temporal_accuracy": 1.0,
+        "hallucination_rate": 0.0
+      },
+      "as_of_date": "2025-10-01"
+    },
+    {
+      "question_id": "VAT_015",
+      "pipeline": "P1_FlatRAG",
+      "predicted_citations": [
+        "ND_181_2025_D16",
+        "TT_69_2025_D4",
+        "ND_181_2025_D7",
+        "LUAT_48_2024_D1",
+        "ND_181_2025_D22"
+      ],
+      "metrics": {
+        "precision": 0.0,
+        "recall": 0.0,
+        "temporal_accuracy": 1.0,
+        "hallucination_rate": 0.0
+      },
+      "as_of_date": "2025-07-25"
+    },
+    {
+      "question_id": "VAT_015",
+      "pipeline": "P2_TemporalGraphRAG",
+      "predicted_citations": [
+        "ND_181_2025_D16",
+        "TT_69_2025_D4",
+        "LUAT_48_2024_D18",
+        "LUAT_48_2024_D9",
+        "LUAT_48_2024_D5"
+      ],
+      "metrics": {
+        "precision": 0.2,
+        "recall": 1.0,
+        "temporal_accuracy": 1.0,
+        "hallucination_rate": 0.0
+      },
+      "as_of_date": "2025-07-25"
+    },
+    {
+      "question_id": "VAT_015",
+      "pipeline": "P3_FullSystem",
+      "predicted_citations": [
+        "ND_181_2025_D16",
+        "TT_69_2025_D4",
+        "LUAT_48_2024_D18",
+        "LUAT_48_2024_D9",
+        "LUAT_48_2024_D5"
+      ],
+      "metrics": {
+        "precision": 0.2,
+        "recall": 1.0,
+        "temporal_accuracy": 1.0,
+        "hallucination_rate": 0.0
+      },
+      "as_of_date": "2025-07-25"
+    },
+    {
+      "question_id": "VAT_016",
+      "pipeline": "P1_FlatRAG",
+      "predicted_citations": [
+        "LUAT_48_2024_D9",
+        "ND_181_2025_D1",
+        "ND_181_2025_D9",
+        "ND_144_2026_D2",
+        "ND_144_2026_D6"
+      ],
+      "metrics": {
+        "precision": 0.0,
+        "recall": 0.0,
+        "temporal_accuracy": 0.6,
+        "hallucination_rate": 0.0
+      },
+      "as_of_date": "2025-09-20"
+    },
+    {
+      "question_id": "VAT_016",
+      "pipeline": "P2_TemporalGraphRAG",
+      "predicted_citations": [
+        "LUAT_48_2024_D9",
+        "ND_181_2025_D4",
+        "LUAT_48_2024_D3",
+        "ND_181_2025_D1",
+        "ND_181_2025_D19"
+      ],
+      "metrics": {
+        "precision": 0.2,
+        "recall": 0.5,
+        "temporal_accuracy": 1.0,
+        "hallucination_rate": 0.0
+      },
+      "as_of_date": "2025-09-20"
+    },
+    {
+      "question_id": "VAT_016",
+      "pipeline": "P3_FullSystem",
+      "predicted_citations": [
+        "LUAT_48_2024_D9",
+        "ND_181_2025_D4",
+        "LUAT_48_2024_D3",
+        "ND_181_2025_D1",
+        "ND_181_2025_D19"
+      ],
+      "metrics": {
+        "precision": 0.2,
+        "recall": 0.5,
+        "temporal_accuracy": 1.0,
+        "hallucination_rate": 0.0
+      },
+      "as_of_date": "2025-09-20"
+    },
+    {
+      "question_id": "VAT_017",
+      "pipeline": "P1_FlatRAG",
+      "predicted_citations": [
+        "ND_181_2025_D8",
+        "ND_144_2026_D2",
+        "LUAT_48_2024_D9",
+        "TT_69_2025_D10",
+        "TT_69_2025_D1"
+      ],
+      "metrics": {
+        "precision": 0.0,
+        "recall": 0.0,
+        "temporal_accuracy": 0.8,
+        "hallucination_rate": 0.0
+      },
+      "as_of_date": "2025-11-20"
+    },
+    {
+      "question_id": "VAT_017",
+      "pipeline": "P2_TemporalGraphRAG",
+      "predicted_citations": [
+        "ND_181_2025_D26",
+        "LUAT_48_2024_D9",
+        "ND_181_2025_D8",
+        "ND_181_2025_D25",
+        "ND_181_2025_D5"
+      ],
+      "metrics": {
+        "precision": 0.0,
+        "recall": 0.0,
+        "temporal_accuracy": 1.0,
+        "hallucination_rate": 0.0
+      },
+      "as_of_date": "2025-11-20"
+    },
+    {
+      "question_id": "VAT_017",
+      "pipeline": "P3_FullSystem",
+      "predicted_citations": [
+        "ND_181_2025_D26",
+        "LUAT_48_2024_D9",
+        "ND_181_2025_D8",
+        "ND_181_2025_D25",
+        "ND_181_2025_D5"
+      ],
+      "metrics": {
+        "precision": 0.0,
+        "recall": 0.0,
+        "temporal_accuracy": 1.0,
+        "hallucination_rate": 0.0
+      },
+      "as_of_date": "2025-11-20"
+    },
+    {
+      "question_id": "VAT_018",
+      "pipeline": "P1_FlatRAG",
+      "predicted_citations": [
+        "LUAT_48_2024_D7",
+        "ND_181_2025_D26",
+        "LUAT_48_2024_D5",
+        "ND_181_2025_D35",
+        "ND_359_2025_D2"
+      ],
+      "metrics": {
+        "precision": 0.0,
+        "recall": 0.0,
+        "temporal_accuracy": 0.8,
+        "hallucination_rate": 0.0
+      },
+      "as_of_date": "2025-12-01"
+    },
+    {
+      "question_id": "VAT_018",
+      "pipeline": "P2_TemporalGraphRAG",
+      "predicted_citations": [
+        "LUAT_48_2024_D5",
+        "LUAT_48_2024_D9",
+        "TT_69_2025_D1",
+        "TT_69_2025_D5",
+        "ND_181_2025_D33"
+      ],
+      "metrics": {
+        "precision": 0.0,
+        "recall": 0.0,
+        "temporal_accuracy": 1.0,
+        "hallucination_rate": 0.0
+      },
+      "as_of_date": "2025-12-01"
+    },
+    {
+      "question_id": "VAT_018",
+      "pipeline": "P3_FullSystem",
+      "predicted_citations": [
+        "LUAT_48_2024_D5",
+        "LUAT_48_2024_D9",
+        "TT_69_2025_D1",
+        "TT_69_2025_D5",
+        "ND_181_2025_D33"
+      ],
+      "metrics": {
+        "precision": 0.0,
+        "recall": 0.0,
+        "temporal_accuracy": 1.0,
+        "hallucination_rate": 0.0
+      },
+      "as_of_date": "2025-12-01"
+    },
+    {
+      "question_id": "VAT_019",
+      "pipeline": "P1_FlatRAG",
+      "predicted_citations": [
+        "LUAT_48_2024_D12",
+        "LUAT_48_2024_D11",
+        "ND_181_2025_D16",
+        "TT_69_2025_D7",
+        "ND_144_2026_D5"
+      ],
+      "metrics": {
+        "precision": 0.0,
+        "recall": 0.0,
+        "temporal_accuracy": 0.8,
+        "hallucination_rate": 0.0
+      },
+      "as_of_date": "2025-08-05"
+    },
+    {
+      "question_id": "VAT_019",
+      "pipeline": "P2_TemporalGraphRAG",
+      "predicted_citations": [
+        "TT_69_2025_D5",
+        "LUAT_48_2024_D5",
+        "LUAT_48_2024_D9",
+        "LUAT_48_2024_D12",
+        "ND_181_2025_D16"
+      ],
+      "metrics": {
+        "precision": 0.2,
+        "recall": 0.5,
+        "temporal_accuracy": 1.0,
+        "hallucination_rate": 0.0
+      },
+      "as_of_date": "2025-08-05"
+    },
+    {
+      "question_id": "VAT_019",
+      "pipeline": "P3_FullSystem",
+      "predicted_citations": [
+        "TT_69_2025_D5",
+        "LUAT_48_2024_D5",
+        "LUAT_48_2024_D9",
+        "LUAT_48_2024_D12",
+        "ND_181_2025_D16"
+      ],
+      "metrics": {
+        "precision": 0.2,
+        "recall": 0.5,
+        "temporal_accuracy": 1.0,
+        "hallucination_rate": 0.0
+      },
+      "as_of_date": "2025-08-05"
+    },
+    {
+      "question_id": "VAT_020",
+      "pipeline": "P1_FlatRAG",
+      "predicted_citations": [
+        "ND_181_2025_D36",
+        "TT_69_2025_D2",
+        "ND_181_2025_D13",
+        "ND_181_2025_D20",
+        "ND_181_2025_D22"
+      ],
+      "metrics": {
+        "precision": 0.0,
+        "recall": 0.0,
+        "temporal_accuracy": 1.0,
+        "hallucination_rate": 0.0
+      },
+      "as_of_date": "2025-08-25"
+    },
+    {
+      "question_id": "VAT_020",
+      "pipeline": "P2_TemporalGraphRAG",
+      "predicted_citations": [
+        "TT_69_2025_D10",
+        "ND_181_2025_D19",
+        "ND_181_2025_D4",
+        "ND_181_2025_D39",
+        "ND_181_2025_D30"
+      ],
+      "metrics": {
+        "precision": 0.2,
+        "recall": 0.5,
+        "temporal_accuracy": 1.0,
+        "hallucination_rate": 0.0
+      },
+      "as_of_date": "2025-08-25"
+    },
+    {
+      "question_id": "VAT_020",
+      "pipeline": "P3_FullSystem",
+      "predicted_citations": [
+        "TT_69_2025_D10",
+        "ND_181_2025_D19",
+        "ND_181_2025_D4",
+        "ND_181_2025_D39",
+        "ND_181_2025_D30"
+      ],
+      "metrics": {
+        "precision": 0.2,
+        "recall": 0.5,
+        "temporal_accuracy": 1.0,
+        "hallucination_rate": 0.0
+      },
+      "as_of_date": "2025-08-25"
+    },
+    {
+      "question_id": "VAT_021",
+      "pipeline": "P1_FlatRAG",
+      "predicted_citations": [
+        "ND_181_2025_D37",
+        "TT_69_2025_D9",
+        "LUAT_48_2024_D6",
+        "ND_181_2025_D2",
+        "ND_181_2025_D4"
+      ],
+      "metrics": {
+        "precision": 0.0,
+        "recall": 0.0,
+        "temporal_accuracy": 1.0,
+        "hallucination_rate": 0.0
+      },
+      "as_of_date": "2025-09-10"
+    },
+    {
+      "question_id": "VAT_021",
+      "pipeline": "P2_TemporalGraphRAG",
+      "predicted_citations": [
+        "ND_181_2025_D19",
+        "ND_181_2025_D4",
+        "LUAT_48_2024_D9",
+        "ND_181_2025_D23",
+        "LUAT_48_2024_D13"
+      ],
+      "metrics": {
+        "precision": 0.4,
+        "recall": 1.0,
+        "temporal_accuracy": 1.0,
+        "hallucination_rate": 0.0
+      },
+      "as_of_date": "2025-09-10"
+    },
+    {
+      "question_id": "VAT_021",
+      "pipeline": "P3_FullSystem",
+      "predicted_citations": [
+        "ND_181_2025_D19",
+        "ND_181_2025_D4",
+        "LUAT_48_2024_D9",
+        "ND_181_2025_D23",
+        "LUAT_48_2024_D13"
+      ],
+      "metrics": {
+        "precision": 0.4,
+        "recall": 1.0,
+        "temporal_accuracy": 1.0,
+        "hallucination_rate": 0.0
+      },
+      "as_of_date": "2025-09-10"
+    },
+    {
+      "question_id": "VAT_022",
+      "pipeline": "P1_FlatRAG",
+      "predicted_citations": [
+        "ND_144_2026_D3",
+        "ND_144_2026_D2",
+        "LUAT_48_2024_D15",
+        "ND_181_2025_D14",
+        "ND_359_2025_D2"
+      ],
+      "metrics": {
+        "precision": 0.0,
+        "recall": 0.0,
+        "temporal_accuracy": 0.4,
+        "hallucination_rate": 0.0
+      },
+      "as_of_date": "2025-10-15"
+    },
+    {
+      "question_id": "VAT_022",
+      "pipeline": "P2_TemporalGraphRAG",
+      "predicted_citations": [
+        "LUAT_48_2024_D15",
+        "ND_181_2025_D6",
+        "TT_69_2025_D4",
+        "LUAT_48_2024_D18",
+        "LUAT_48_2024_D9"
+      ],
+      "metrics": {
+        "precision": 0.2,
+        "recall": 0.5,
+        "temporal_accuracy": 1.0,
+        "hallucination_rate": 0.0
+      },
+      "as_of_date": "2025-10-15"
+    },
+    {
+      "question_id": "VAT_022",
+      "pipeline": "P3_FullSystem",
+      "predicted_citations": [
+        "LUAT_48_2024_D15",
+        "ND_181_2025_D6",
+        "TT_69_2025_D4",
+        "LUAT_48_2024_D18",
+        "LUAT_48_2024_D9"
+      ],
+      "metrics": {
+        "precision": 0.2,
+        "recall": 0.5,
+        "temporal_accuracy": 1.0,
+        "hallucination_rate": 0.0
+      },
+      "as_of_date": "2025-10-15"
+    },
+    {
+      "question_id": "VAT_023",
+      "pipeline": "P1_FlatRAG",
+      "predicted_citations": [
+        "ND_181_2025_D3",
+        "LUAT_48_2024_D13",
+        "ND_144_2026_D2",
+        "TT_69_2025_D3",
+        "ND_181_2025_D35"
+      ],
+      "metrics": {
+        "precision": 0.0,
+        "recall": 0.0,
+        "temporal_accuracy": 0.8,
+        "hallucination_rate": 0.0
+      },
+      "as_of_date": "2025-07-10"
+    },
+    {
+      "question_id": "VAT_023",
+      "pipeline": "P2_TemporalGraphRAG",
+      "predicted_citations": [
+        "ND_181_2025_D20",
+        "ND_181_2025_D28",
+        "TT_69_2025_D8",
+        "ND_181_2025_D24",
+        "ND_181_2025_D39"
+      ],
+      "metrics": {
+        "precision": 0.0,
+        "recall": 0.0,
+        "temporal_accuracy": 1.0,
+        "hallucination_rate": 0.0
+      },
+      "as_of_date": "2025-07-10"
+    },
+    {
+      "question_id": "VAT_023",
+      "pipeline": "P3_FullSystem",
+      "predicted_citations": [
+        "ND_181_2025_D20",
+        "ND_181_2025_D28",
+        "TT_69_2025_D8",
+        "ND_181_2025_D24",
+        "ND_181_2025_D39"
+      ],
+      "metrics": {
+        "precision": 0.0,
+        "recall": 0.0,
+        "temporal_accuracy": 1.0,
+        "hallucination_rate": 0.0
+      },
+      "as_of_date": "2025-07-10"
+    },
+    {
+      "question_id": "VAT_024",
+      "pipeline": "P1_FlatRAG",
+      "predicted_citations": [
+        "ND_181_2025_D11",
+        "LUAT_48_2024_D14",
+        "LUAT_48_2024_D15",
+        "LUAT_48_2024_D8",
+        "ND_144_2026_D1"
+      ],
+      "metrics": {
+        "precision": 0.2,
+        "recall": 0.5,
+        "temporal_accuracy": 0.8,
+        "hallucination_rate": 0.0
+      },
+      "as_of_date": "2025-08-30"
+    },
+    {
+      "question_id": "VAT_024",
+      "pipeline": "P2_TemporalGraphRAG",
+      "predicted_citations": [
+        "LUAT_48_2024_D15",
+        "ND_181_2025_D28",
+        "ND_181_2025_D4",
+        "LUAT_48_2024_D9",
+        "ND_181_2025_D23"
+      ],
+      "metrics": {
+        "precision": 0.2,
+        "recall": 0.5,
+        "temporal_accuracy": 1.0,
+        "hallucination_rate": 0.0
+      },
+      "as_of_date": "2025-08-30"
+    },
+    {
+      "question_id": "VAT_024",
+      "pipeline": "P3_FullSystem",
+      "predicted_citations": [
+        "LUAT_48_2024_D15",
+        "ND_181_2025_D28",
+        "ND_181_2025_D4",
+        "LUAT_48_2024_D9",
+        "ND_181_2025_D23"
+      ],
+      "metrics": {
+        "precision": 0.2,
+        "recall": 0.5,
+        "temporal_accuracy": 1.0,
+        "hallucination_rate": 0.0
+      },
+      "as_of_date": "2025-08-30"
+    },
+    {
+      "question_id": "VAT_025",
+      "pipeline": "P1_FlatRAG",
+      "predicted_citations": [
+        "ND_359_2025_D2",
+        "ND_181_2025_D39",
+        "ND_144_2026_D2",
+        "TT_69_2025_D1",
+        "ND_181_2025_D11"
+      ],
+      "metrics": {
+        "precision": 0.0,
+        "recall": 0.0,
+        "temporal_accuracy": 0.6,
+        "hallucination_rate": 0.0
+      },
+      "as_of_date": "2025-09-25"
+    },
+    {
+      "question_id": "VAT_025",
+      "pipeline": "P2_TemporalGraphRAG",
+      "predicted_citations": [
+        "ND_181_2025_D28",
+        "ND_181_2025_D26",
+        "ND_181_2025_D23",
+        "LUAT_48_2024_D13",
+        "ND_181_2025_D31"
+      ],
+      "metrics": {
+        "precision": 0.0,
+        "recall": 0.0,
+        "temporal_accuracy": 1.0,
+        "hallucination_rate": 0.0
+      },
+      "as_of_date": "2025-09-25"
+    },
+    {
+      "question_id": "VAT_025",
+      "pipeline": "P3_FullSystem",
+      "predicted_citations": [
+        "ND_181_2025_D28",
+        "ND_181_2025_D26",
+        "ND_181_2025_D23",
+        "LUAT_48_2024_D13",
+        "ND_181_2025_D31"
+      ],
+      "metrics": {
+        "precision": 0.0,
+        "recall": 0.0,
+        "temporal_accuracy": 1.0,
+        "hallucination_rate": 0.0
+      },
+      "as_of_date": "2025-09-25"
+    },
+    {
+      "question_id": "VAT_026",
+      "pipeline": "P1_FlatRAG",
+      "predicted_citations": [
+        "ND_181_2025_D39",
+        "ND_144_2026_D5",
+        "TT_69_2025_D4",
+        "ND_181_2025_D36",
+        "ND_144_2026_D2"
+      ],
+      "metrics": {
+        "precision": 0.0,
+        "recall": 0.0,
+        "temporal_accuracy": 0.6,
+        "hallucination_rate": 0.0
+      },
+      "as_of_date": "2025-10-25"
+    },
+    {
+      "question_id": "VAT_026",
+      "pipeline": "P2_TemporalGraphRAG",
+      "predicted_citations": [
+        "LUAT_48_2024_D5",
+        "LUAT_48_2024_D9",
+        "ND_181_2025_D24",
+        "ND_181_2025_D32",
+        "ND_181_2025_D4"
+      ],
+      "metrics": {
+        "precision": 0.0,
+        "recall": 0.0,
+        "temporal_accuracy": 1.0,
+        "hallucination_rate": 0.0
+      },
+      "as_of_date": "2025-10-25"
+    },
+    {
+      "question_id": "VAT_026",
+      "pipeline": "P3_FullSystem",
+      "predicted_citations": [
+        "LUAT_48_2024_D5",
+        "LUAT_48_2024_D9",
+        "ND_181_2025_D24",
+        "ND_181_2025_D32",
+        "ND_181_2025_D4"
+      ],
+      "metrics": {
+        "precision": 0.0,
+        "recall": 0.0,
+        "temporal_accuracy": 1.0,
+        "hallucination_rate": 0.0
+      },
+      "as_of_date": "2025-10-25"
+    },
+    {
+      "question_id": "VAT_027",
+      "pipeline": "P1_FlatRAG",
+      "predicted_citations": [
+        "ND_181_2025_D36",
+        "ND_181_2025_D29",
+        "LUAT_48_2024_D13",
+        "TT_69_2025_D6",
+        "TT_69_2025_D10"
+      ],
+      "metrics": {
+        "precision": 0.0,
+        "recall": 0.0,
+        "temporal_accuracy": 1.0,
+        "hallucination_rate": 0.0
+      },
+      "as_of_date": "2025-11-10"
+    },
+    {
+      "question_id": "VAT_027",
+      "pipeline": "P2_TemporalGraphRAG",
+      "predicted_citations": [
+        "ND_181_2025_D29",
+        "ND_181_2025_D31",
+        "ND_181_2025_D15",
+        "LUAT_48_2024_D13",
+        "LUAT_48_2024_D5"
+      ],
+      "metrics": {
+        "precision": 0.0,
+        "recall": 0.0,
+        "temporal_accuracy": 1.0,
+        "hallucination_rate": 0.0
+      },
+      "as_of_date": "2025-11-10"
+    },
+    {
+      "question_id": "VAT_027",
+      "pipeline": "P3_FullSystem",
+      "predicted_citations": [
+        "ND_181_2025_D29",
+        "ND_181_2025_D31",
+        "ND_181_2025_D15",
+        "LUAT_48_2024_D13",
+        "LUAT_48_2024_D5"
+      ],
+      "metrics": {
+        "precision": 0.0,
+        "recall": 0.0,
+        "temporal_accuracy": 1.0,
+        "hallucination_rate": 0.0
+      },
+      "as_of_date": "2025-11-10"
+    },
+    {
+      "question_id": "VAT_028",
+      "pipeline": "P1_FlatRAG",
+      "predicted_citations": [
+        "ND_181_2025_D15",
+        "ND_181_2025_D39",
+        "TT_69_2025_D1",
+        "ND_181_2025_D37",
+        "ND_181_2025_D34"
+      ],
+      "metrics": {
+        "precision": 0.0,
+        "recall": 0.0,
+        "temporal_accuracy": 1.0,
+        "hallucination_rate": 0.0
+      },
+      "as_of_date": "2025-12-15"
+    },
+    {
+      "question_id": "VAT_028",
+      "pipeline": "P2_TemporalGraphRAG",
+      "predicted_citations": [
+        "ND_181_2025_D37",
+        "ND_181_2025_D23",
+        "ND_181_2025_D40",
+        "ND_181_2025_D32",
+        "ND_181_2025_D21"
+      ],
+      "metrics": {
+        "precision": 0.2,
+        "recall": 0.5,
+        "temporal_accuracy": 1.0,
+        "hallucination_rate": 0.0
+      },
+      "as_of_date": "2025-12-15"
+    },
+    {
+      "question_id": "VAT_028",
+      "pipeline": "P3_FullSystem",
+      "predicted_citations": [
+        "ND_181_2025_D37",
+        "ND_181_2025_D23",
+        "ND_181_2025_D40",
+        "ND_181_2025_D32",
+        "ND_181_2025_D21"
+      ],
+      "metrics": {
+        "precision": 0.2,
+        "recall": 0.5,
+        "temporal_accuracy": 1.0,
+        "hallucination_rate": 0.0
+      },
+      "as_of_date": "2025-12-15"
+    },
+    {
+      "question_id": "VAT_029",
+      "pipeline": "P1_FlatRAG",
+      "predicted_citations": [
+        "ND_181_2025_D38",
+        "ND_181_2025_D9",
+        "ND_181_2025_D6",
+        "ND_181_2025_D30",
+        "ND_181_2025_D13"
+      ],
+      "metrics": {
+        "precision": 0.2,
+        "recall": 0.5,
+        "temporal_accuracy": 1.0,
+        "hallucination_rate": 0.0
+      },
+      "as_of_date": "2025-08-18"
+    },
+    {
+      "question_id": "VAT_029",
+      "pipeline": "P2_TemporalGraphRAG",
+      "predicted_citations": [
+        "ND_181_2025_D30",
+        "ND_181_2025_D32",
+        "LUAT_48_2024_D14",
+        "LUAT_48_2024_D15",
+        "ND_181_2025_D9"
+      ],
+      "metrics": {
+        "precision": 0.4,
+        "recall": 1.0,
+        "temporal_accuracy": 1.0,
+        "hallucination_rate": 0.0
+      },
+      "as_of_date": "2025-08-18"
+    },
+    {
+      "question_id": "VAT_029",
+      "pipeline": "P3_FullSystem",
+      "predicted_citations": [
+        "ND_181_2025_D30",
+        "ND_181_2025_D32",
+        "LUAT_48_2024_D14",
+        "LUAT_48_2024_D15",
+        "ND_181_2025_D9"
+      ],
+      "metrics": {
+        "precision": 0.4,
+        "recall": 1.0,
+        "temporal_accuracy": 1.0,
+        "hallucination_rate": 0.0
+      },
+      "as_of_date": "2025-08-18"
+    },
+    {
+      "question_id": "VAT_030",
+      "pipeline": "P1_FlatRAG",
+      "predicted_citations": [
+        "ND_181_2025_D10",
+        "LUAT_48_2024_D4",
+        "ND_359_2025_D2",
+        "ND_181_2025_D40",
+        "TT_69_2025_D5"
+      ],
+      "metrics": {
+        "precision": 0.0,
+        "recall": 0.0,
+        "temporal_accuracy": 0.8,
+        "hallucination_rate": 0.0
+      },
+      "as_of_date": "2025-09-18"
+    },
+    {
+      "question_id": "VAT_030",
+      "pipeline": "P2_TemporalGraphRAG",
+      "predicted_citations": [
+        "ND_181_2025_D31",
+        "ND_181_2025_D10",
+        "ND_181_2025_D40",
+        "ND_181_2025_D23",
+        "LUAT_48_2024_D13"
+      ],
+      "metrics": {
+        "precision": 0.0,
+        "recall": 0.0,
+        "temporal_accuracy": 1.0,
+        "hallucination_rate": 0.0
+      },
+      "as_of_date": "2025-09-18"
+    },
+    {
+      "question_id": "VAT_030",
+      "pipeline": "P3_FullSystem",
+      "predicted_citations": [
+        "ND_181_2025_D31",
+        "ND_181_2025_D10",
+        "ND_181_2025_D40",
+        "ND_181_2025_D23",
+        "LUAT_48_2024_D13"
+      ],
+      "metrics": {
+        "precision": 0.0,
+        "recall": 0.0,
+        "temporal_accuracy": 1.0,
+        "hallucination_rate": 0.0
+      },
+      "as_of_date": "2025-09-18"
+    },
+    {
+      "question_id": "VAT_031",
+      "pipeline": "P1_FlatRAG",
+      "predicted_citations": [
+        "ND_181_2025_D1",
+        "ND_181_2025_D25",
+        "TT_69_2025_D3",
+        "ND_181_2025_D34",
+        "ND_181_2025_D3"
+      ],
+      "metrics": {
+        "precision": 0.0,
+        "recall": 0.0,
+        "temporal_accuracy": 1.0,
+        "hallucination_rate": 0.0
+      },
+      "as_of_date": "2025-10-18"
+    },
+    {
+      "question_id": "VAT_031",
+      "pipeline": "P2_TemporalGraphRAG",
+      "predicted_citations": [
+        "ND_181_2025_D25",
+        "ND_181_2025_D29",
+        "ND_181_2025_D23",
+        "LUAT_48_2024_D13",
+        "ND_181_2025_D37"
+      ],
+      "metrics": {
+        "precision": 0.0,
+        "recall": 0.0,
+        "temporal_accuracy": 1.0,
+        "hallucination_rate": 0.0
+      },
+      "as_of_date": "2025-10-18"
+    },
+    {
+      "question_id": "VAT_031",
+      "pipeline": "P3_FullSystem",
+      "predicted_citations": [
+        "ND_181_2025_D25",
+        "ND_181_2025_D29",
+        "ND_181_2025_D23",
+        "LUAT_48_2024_D13",
+        "ND_181_2025_D37"
+      ],
+      "metrics": {
+        "precision": 0.0,
+        "recall": 0.0,
+        "temporal_accuracy": 1.0,
+        "hallucination_rate": 0.0
+      },
+      "as_of_date": "2025-10-18"
+    },
+    {
+      "question_id": "VAT_032",
+      "pipeline": "P1_FlatRAG",
+      "predicted_citations": [
+        "TT_69_2025_D4",
+        "TT_69_2025_D3",
+        "ND_181_2025_D25",
+        "ND_181_2025_D11",
+        "ND_181_2025_D21"
+      ],
+      "metrics": {
+        "precision": 0.0,
+        "recall": 0.0,
+        "temporal_accuracy": 1.0,
+        "hallucination_rate": 0.0
+      },
+      "as_of_date": "2025-11-18"
+    },
+    {
+      "question_id": "VAT_032",
+      "pipeline": "P2_TemporalGraphRAG",
+      "predicted_citations": [
+        "TT_69_2025_D3",
+        "LUAT_48_2024_D5",
+        "TT_69_2025_D4",
+        "LUAT_48_2024_D18",
+        "LUAT_48_2024_D9"
+      ],
+      "metrics": {
+        "precision": 0.0,
+        "recall": 0.0,
+        "temporal_accuracy": 1.0,
+        "hallucination_rate": 0.0
+      },
+      "as_of_date": "2025-11-18"
+    },
+    {
+      "question_id": "VAT_032",
+      "pipeline": "P3_FullSystem",
+      "predicted_citations": [
+        "TT_69_2025_D3",
+        "LUAT_48_2024_D5",
+        "TT_69_2025_D4",
+        "LUAT_48_2024_D18",
+        "LUAT_48_2024_D9"
+      ],
+      "metrics": {
+        "precision": 0.0,
+        "recall": 0.0,
+        "temporal_accuracy": 1.0,
+        "hallucination_rate": 0.0
+      },
+      "as_of_date": "2025-11-18"
+    },
+    {
+      "question_id": "VAT_033",
+      "pipeline": "P1_FlatRAG",
+      "predicted_citations": [
+        "ND_144_2026_D4",
+        "LUAT_48_2024_D3",
+        "ND_181_2025_D30",
+        "ND_181_2025_D2",
+        "ND_181_2025_D16"
+      ],
+      "metrics": {
+        "precision": 0.0,
+        "recall": 0.0,
+        "temporal_accuracy": 0.8,
+        "hallucination_rate": 0.0
+      },
+      "as_of_date": "2025-12-05"
+    },
+    {
+      "question_id": "VAT_033",
+      "pipeline": "P2_TemporalGraphRAG",
+      "predicted_citations": [
+        "ND_181_2025_D15",
+        "ND_181_2025_D37",
+        "ND_181_2025_D23",
+        "LUAT_48_2024_D5",
+        "LUAT_48_2024_D9"
+      ],
+      "metrics": {
+        "precision": 0.0,
+        "recall": 0.0,
+        "temporal_accuracy": 1.0,
+        "hallucination_rate": 0.0
+      },
+      "as_of_date": "2025-12-05"
+    },
+    {
+      "question_id": "VAT_033",
+      "pipeline": "P3_FullSystem",
+      "predicted_citations": [
+        "ND_181_2025_D15",
+        "ND_181_2025_D37",
+        "ND_181_2025_D23",
+        "LUAT_48_2024_D5",
+        "LUAT_48_2024_D9"
+      ],
+      "metrics": {
+        "precision": 0.0,
+        "recall": 0.0,
+        "temporal_accuracy": 1.0,
+        "hallucination_rate": 0.0
+      },
+      "as_of_date": "2025-12-05"
+    },
+    {
+      "question_id": "VAT_034",
+      "pipeline": "P1_FlatRAG",
+      "predicted_citations": [
+        "ND_181_2025_D37",
+        "ND_181_2025_D9",
+        "LUAT_48_2024_D5",
+        "LUAT_48_2024_D2",
+        "ND_181_2025_D1"
+      ],
+      "metrics": {
+        "precision": 0.0,
+        "recall": 0.0,
+        "temporal_accuracy": 1.0,
+        "hallucination_rate": 0.0
+      },
+      "as_of_date": "2025-12-20"
+    },
+    {
+      "question_id": "VAT_034",
+      "pipeline": "P2_TemporalGraphRAG",
+      "predicted_citations": [
+        "ND_181_2025_D37",
+        "ND_181_2025_D23",
+        "LUAT_48_2024_D5",
+        "LUAT_48_2024_D9",
+        "ND_181_2025_D30"
+      ],
+      "metrics": {
+        "precision": 0.0,
+        "recall": 0.0,
+        "temporal_accuracy": 1.0,
+        "hallucination_rate": 0.0
+      },
+      "as_of_date": "2025-12-20"
+    },
+    {
+      "question_id": "VAT_034",
+      "pipeline": "P3_FullSystem",
+      "predicted_citations": [
+        "ND_181_2025_D37",
+        "ND_181_2025_D23",
+        "LUAT_48_2024_D5",
+        "LUAT_48_2024_D9",
+        "ND_181_2025_D30"
+      ],
+      "metrics": {
+        "precision": 0.0,
+        "recall": 0.0,
+        "temporal_accuracy": 1.0,
+        "hallucination_rate": 0.0
+      },
+      "as_of_date": "2025-12-20"
+    },
+    {
+      "question_id": "VAT_035",
+      "pipeline": "P1_FlatRAG",
+      "predicted_citations": [
+        "ND_181_2025_D4",
+        "ND_181_2025_D40",
+        "ND_181_2025_D6",
+        "ND_359_2025_D1",
+        "TT_69_2025_D3"
+      ],
+      "metrics": {
+        "precision": 0.2,
+        "recall": 1.0,
+        "temporal_accuracy": 0.8,
+        "hallucination_rate": 0.0
+      },
+      "as_of_date": "2025-08-12"
+    },
+    {
+      "question_id": "VAT_035",
+      "pipeline": "P2_TemporalGraphRAG",
+      "predicted_citations": [
+        "ND_181_2025_D6",
+        "ND_181_2025_D40",
+        "ND_181_2025_D4",
+        "LUAT_48_2024_D9",
+        "ND_181_2025_D14"
+      ],
+      "metrics": {
+        "precision": 0.2,
+        "recall": 1.0,
+        "temporal_accuracy": 1.0,
+        "hallucination_rate": 0.0
+      },
+      "as_of_date": "2025-08-12"
+    },
+    {
+      "question_id": "VAT_035",
+      "pipeline": "P3_FullSystem",
+      "predicted_citations": [
+        "ND_181_2025_D6",
+        "ND_181_2025_D40",
+        "ND_181_2025_D4",
+        "LUAT_48_2024_D9",
+        "ND_181_2025_D14"
+      ],
+      "metrics": {
+        "precision": 0.2,
+        "recall": 1.0,
+        "temporal_accuracy": 1.0,
+        "hallucination_rate": 0.0
+      },
+      "as_of_date": "2025-08-12"
+    },
+    {
+      "question_id": "VAT_036",
+      "pipeline": "P1_FlatRAG",
+      "predicted_citations": [
+        "LUAT_48_2024_D16",
+        "ND_181_2025_D14",
+        "TT_69_2025_D4",
+        "LUAT_48_2024_D7",
+        "LUAT_48_2024_D10"
+      ],
+      "metrics": {
+        "precision": 0.0,
+        "recall": 0.0,
+        "temporal_accuracy": 1.0,
+        "hallucination_rate": 0.0
+      },
+      "as_of_date": "2025-08-28"
+    },
+    {
+      "question_id": "VAT_036",
+      "pipeline": "P2_TemporalGraphRAG",
+      "predicted_citations": [
+        "ND_181_2025_D1",
+        "ND_181_2025_D11",
+        "ND_181_2025_D37",
+        "ND_181_2025_D23",
+        "LUAT_48_2024_D4"
+      ],
+      "metrics": {
+        "precision": 0.0,
+        "recall": 0.0,
+        "temporal_accuracy": 1.0,
+        "hallucination_rate": 0.0
+      },
+      "as_of_date": "2025-08-28"
+    },
+    {
+      "question_id": "VAT_036",
+      "pipeline": "P3_FullSystem",
+      "predicted_citations": [
+        "ND_181_2025_D1",
+        "ND_181_2025_D11",
+        "ND_181_2025_D37",
+        "ND_181_2025_D23",
+        "LUAT_48_2024_D4"
+      ],
+      "metrics": {
+        "precision": 0.0,
+        "recall": 0.0,
+        "temporal_accuracy": 1.0,
+        "hallucination_rate": 0.0
+      },
+      "as_of_date": "2025-08-28"
+    },
+    {
+      "question_id": "VAT_037",
+      "pipeline": "P1_FlatRAG",
+      "predicted_citations": [
+        "ND_181_2025_D35",
+        "ND_181_2025_D14",
+        "ND_181_2025_D32",
+        "ND_181_2025_D34",
+        "ND_181_2025_D8"
+      ],
+      "metrics": {
+        "precision": 0.0,
+        "recall": 0.0,
+        "temporal_accuracy": 1.0,
+        "hallucination_rate": 0.0
+      },
+      "as_of_date": "2025-09-28"
+    },
+    {
+      "question_id": "VAT_037",
+      "pipeline": "P2_TemporalGraphRAG",
+      "predicted_citations": [
+        "ND_181_2025_D8",
+        "ND_181_2025_D16",
+        "TT_69_2025_D4",
+        "LUAT_48_2024_D18",
+        "LUAT_48_2024_D9"
+      ],
+      "metrics": {
+        "precision": 0.2,
+        "recall": 1.0,
+        "temporal_accuracy": 1.0,
+        "hallucination_rate": 0.0
+      },
+      "as_of_date": "2025-09-28"
+    },
+    {
+      "question_id": "VAT_037",
+      "pipeline": "P3_FullSystem",
+      "predicted_citations": [
+        "ND_181_2025_D8",
+        "ND_181_2025_D16",
+        "TT_69_2025_D4",
+        "LUAT_48_2024_D18",
+        "LUAT_48_2024_D9"
+      ],
+      "metrics": {
+        "precision": 0.2,
+        "recall": 1.0,
+        "temporal_accuracy": 1.0,
+        "hallucination_rate": 0.0
+      },
+      "as_of_date": "2025-09-28"
+    },
+    {
+      "question_id": "VAT_038",
+      "pipeline": "P1_FlatRAG",
+      "predicted_citations": [
+        "ND_181_2025_D40",
+        "TT_69_2025_D8",
+        "LUAT_48_2024_D6",
+        "ND_144_2026_D4",
+        "LUAT_48_2024_D14"
+      ],
+      "metrics": {
+        "precision": 0.0,
+        "recall": 0.0,
+        "temporal_accuracy": 0.8,
+        "hallucination_rate": 0.0
+      },
+      "as_of_date": "2025-10-28"
+    },
+    {
+      "question_id": "VAT_038",
+      "pipeline": "P2_TemporalGraphRAG",
+      "predicted_citations": [
+        "TT_69_2025_D8",
+        "ND_181_2025_D8",
+        "ND_181_2025_D17",
+        "LUAT_48_2024_D12",
+        "TT_69_2025_D7"
+      ],
+      "metrics": {
+        "precision": 0.2,
+        "recall": 1.0,
+        "temporal_accuracy": 1.0,
+        "hallucination_rate": 0.0
+      },
+      "as_of_date": "2025-10-28"
+    },
+    {
+      "question_id": "VAT_038",
+      "pipeline": "P3_FullSystem",
+      "predicted_citations": [
+        "TT_69_2025_D8",
+        "ND_181_2025_D8",
+        "ND_181_2025_D17",
+        "LUAT_48_2024_D12",
+        "TT_69_2025_D7"
+      ],
+      "metrics": {
+        "precision": 0.2,
+        "recall": 1.0,
+        "temporal_accuracy": 1.0,
+        "hallucination_rate": 0.0
+      },
+      "as_of_date": "2025-10-28"
+    },
+    {
+      "question_id": "VAT_039",
+      "pipeline": "P1_FlatRAG",
+      "predicted_citations": [
+        "ND_181_2025_D15",
+        "ND_181_2025_D25",
+        "ND_181_2025_D21",
+        "LUAT_48_2024_D16",
+        "TT_69_2025_D6"
+      ],
+      "metrics": {
+        "precision": 0.0,
+        "recall": 0.0,
+        "temporal_accuracy": 1.0,
+        "hallucination_rate": 0.0
+      },
+      "as_of_date": "2025-11-28"
+    },
+    {
+      "question_id": "VAT_039",
+      "pipeline": "P2_TemporalGraphRAG",
+      "predicted_citations": [
+        "ND_181_2025_D31",
+        "TT_69_2025_D5",
+        "LUAT_48_2024_D12",
+        "ND_181_2025_D21",
+        "ND_181_2025_D17"
+      ],
+      "metrics": {
+        "precision": 0.4,
+        "recall": 1.0,
+        "temporal_accuracy": 1.0,
+        "hallucination_rate": 0.0
+      },
+      "as_of_date": "2025-11-28"
+    },
+    {
+      "question_id": "VAT_039",
+      "pipeline": "P3_FullSystem",
+      "predicted_citations": [
+        "ND_181_2025_D31",
+        "TT_69_2025_D5",
+        "LUAT_48_2024_D12",
+        "ND_181_2025_D21",
+        "ND_181_2025_D17"
+      ],
+      "metrics": {
+        "precision": 0.4,
+        "recall": 1.0,
+        "temporal_accuracy": 1.0,
+        "hallucination_rate": 0.0
+      },
+      "as_of_date": "2025-11-28"
+    },
+    {
+      "question_id": "VAT_040",
+      "pipeline": "P1_FlatRAG",
+      "predicted_citations": [
+        "LUAT_48_2024_D12",
+        "LUAT_48_2024_D18",
+        "ND_359_2025_D2",
+        "LUAT_48_2024_D4",
+        "ND_181_2025_D32"
+      ],
+      "metrics": {
+        "precision": 0.0,
+        "recall": 0.0,
+        "temporal_accuracy": 0.8,
+        "hallucination_rate": 0.0
+      },
+      "as_of_date": "2025-12-28"
+    },
+    {
+      "question_id": "VAT_040",
+      "pipeline": "P2_TemporalGraphRAG",
+      "predicted_citations": [
+        "ND_181_2025_D23",
+        "LUAT_48_2024_D13",
+        "ND_181_2025_D20",
+        "LUAT_48_2024_D12",
+        "ND_181_2025_D32"
+      ],
+      "metrics": {
+        "precision": 0.0,
+        "recall": 0.0,
+        "temporal_accuracy": 1.0,
+        "hallucination_rate": 0.0
+      },
+      "as_of_date": "2025-12-28"
+    },
+    {
+      "question_id": "VAT_040",
+      "pipeline": "P3_FullSystem",
+      "predicted_citations": [
+        "ND_181_2025_D23",
+        "LUAT_48_2024_D13",
+        "ND_181_2025_D20",
+        "LUAT_48_2024_D12",
+        "ND_181_2025_D32"
+      ],
+      "metrics": {
+        "precision": 0.0,
+        "recall": 0.0,
+        "temporal_accuracy": 1.0,
+        "hallucination_rate": 0.0
+      },
+      "as_of_date": "2025-12-28"
+    },
+    {
+      "question_id": "VAT_041",
+      "pipeline": "P1_FlatRAG",
+      "predicted_citations": [
+        "ND_181_2025_D40",
+        "ND_181_2025_D39",
+        "TT_69_2025_D8",
+        "ND_181_2025_D2",
+        "ND_181_2025_D15"
+      ],
+      "metrics": {
+        "precision": 0.0,
+        "recall": 0.0,
+        "temporal_accuracy": 0.0,
+        "hallucination_rate": 0.0
+      },
+      "as_of_date": "2024-03-15"
+    },
+    {
+      "question_id": "VAT_041",
+      "pipeline": "P2_TemporalGraphRAG",
+      "predicted_citations": [],
+      "metrics": {
+        "precision": 1.0,
+        "recall": 1.0,
+        "temporal_accuracy": 1.0,
+        "hallucination_rate": 0.0
+      },
+      "as_of_date": "2024-03-15"
+    },
+    {
+      "question_id": "VAT_041",
+      "pipeline": "P3_FullSystem",
+      "predicted_citations": [],
+      "metrics": {
+        "precision": 1.0,
+        "recall": 1.0,
+        "temporal_accuracy": 1.0,
+        "hallucination_rate": 0.0
+      },
+      "as_of_date": "2024-03-15"
+    },
+    {
+      "question_id": "VAT_042",
+      "pipeline": "P1_FlatRAG",
+      "predicted_citations": [
+        "ND_181_2025_D20",
+        "LUAT_48_2024_D18",
+        "ND_359_2025_D2",
+        "ND_181_2025_D8",
+        "LUAT_48_2024_D11"
+      ],
+      "metrics": {
+        "precision": 0.0,
+        "recall": 0.0,
+        "temporal_accuracy": 0.0,
+        "hallucination_rate": 0.0
+      },
+      "as_of_date": "2025-01-10"
+    },
+    {
+      "question_id": "VAT_042",
+      "pipeline": "P2_TemporalGraphRAG",
+      "predicted_citations": [],
+      "metrics": {
+        "precision": 1.0,
+        "recall": 1.0,
+        "temporal_accuracy": 1.0,
+        "hallucination_rate": 0.0
+      },
+      "as_of_date": "2025-01-10"
+    },
+    {
+      "question_id": "VAT_042",
+      "pipeline": "P3_FullSystem",
+      "predicted_citations": [],
+      "metrics": {
+        "precision": 1.0,
+        "recall": 1.0,
+        "temporal_accuracy": 1.0,
+        "hallucination_rate": 0.0
+      },
+      "as_of_date": "2025-01-10"
+    },
+    {
+      "question_id": "VAT_043",
+      "pipeline": "P1_FlatRAG",
+      "predicted_citations": [
+        "ND_181_2025_D9",
+        "ND_181_2025_D8",
+        "ND_181_2025_D15",
+        "ND_181_2025_D3",
+        "TT_69_2025_D8"
+      ],
+      "metrics": {
+        "precision": 0.0,
+        "recall": 0.0,
+        "temporal_accuracy": 0.0,
+        "hallucination_rate": 0.0
+      },
+      "as_of_date": "2025-05-20"
+    },
+    {
+      "question_id": "VAT_043",
+      "pipeline": "P2_TemporalGraphRAG",
+      "predicted_citations": [],
+      "metrics": {
+        "precision": 1.0,
+        "recall": 1.0,
+        "temporal_accuracy": 1.0,
+        "hallucination_rate": 0.0
+      },
+      "as_of_date": "2025-05-20"
+    },
+    {
+      "question_id": "VAT_043",
+      "pipeline": "P3_FullSystem",
+      "predicted_citations": [],
+      "metrics": {
+        "precision": 1.0,
+        "recall": 1.0,
+        "temporal_accuracy": 1.0,
+        "hallucination_rate": 0.0
+      },
+      "as_of_date": "2025-05-20"
+    },
+    {
+      "question_id": "VAT_044",
+      "pipeline": "P1_FlatRAG",
+      "predicted_citations": [
+        "ND_181_2025_D21",
+        "TT_69_2025_D5",
+        "ND_181_2025_D27",
+        "ND_181_2025_D32",
+        "LUAT_48_2024_D15"
+      ],
+      "metrics": {
+        "precision": 0.0,
+        "recall": 0.0,
+        "temporal_accuracy": 0.0,
+        "hallucination_rate": 0.0
+      },
+      "as_of_date": "2025-04-15"
+    },
+    {
+      "question_id": "VAT_044",
+      "pipeline": "P2_TemporalGraphRAG",
+      "predicted_citations": [],
+      "metrics": {
+        "precision": 1.0,
+        "recall": 1.0,
+        "temporal_accuracy": 1.0,
+        "hallucination_rate": 0.0
+      },
+      "as_of_date": "2025-04-15"
+    },
+    {
+      "question_id": "VAT_044",
+      "pipeline": "P3_FullSystem",
+      "predicted_citations": [],
+      "metrics": {
+        "precision": 1.0,
+        "recall": 1.0,
+        "temporal_accuracy": 1.0,
+        "hallucination_rate": 0.0
+      },
+      "as_of_date": "2025-04-15"
+    },
+    {
+      "question_id": "VAT_045",
+      "pipeline": "P1_FlatRAG",
+      "predicted_citations": [
+        "ND_181_2025_D12",
+        "LUAT_48_2024_D12",
+        "TT_69_2025_D2",
+        "ND_181_2025_D18",
+        "ND_144_2026_D5"
+      ],
+      "metrics": {
+        "precision": 0.0,
+        "recall": 0.0,
+        "temporal_accuracy": 0.0,
+        "hallucination_rate": 0.0
+      },
+      "as_of_date": "2025-02-28"
+    },
+    {
+      "question_id": "VAT_045",
+      "pipeline": "P2_TemporalGraphRAG",
+      "predicted_citations": [],
+      "metrics": {
+        "precision": 1.0,
+        "recall": 1.0,
+        "temporal_accuracy": 1.0,
+        "hallucination_rate": 0.0
+      },
+      "as_of_date": "2025-02-28"
+    },
+    {
+      "question_id": "VAT_045",
+      "pipeline": "P3_FullSystem",
+      "predicted_citations": [],
+      "metrics": {
+        "precision": 1.0,
+        "recall": 1.0,
+        "temporal_accuracy": 1.0,
+        "hallucination_rate": 0.0
+      },
+      "as_of_date": "2025-02-28"
+    },
+    {
+      "question_id": "VAT_046",
+      "pipeline": "P1_FlatRAG",
+      "predicted_citations": [
+        "ND_181_2025_D7",
+        "ND_181_2025_D2",
+        "ND_181_2025_D32",
+        "LUAT_48_2024_D10",
+        "ND_181_2025_D21"
+      ],
+      "metrics": {
+        "precision": 0.0,
+        "recall": 0.0,
+        "temporal_accuracy": 1.0,
+        "hallucination_rate": 0.0
+      },
+      "as_of_date": "2025-08-15"
+    },
+    {
+      "question_id": "VAT_046",
+      "pipeline": "P2_TemporalGraphRAG",
+      "predicted_citations": [
+        "LUAT_48_2024_D18",
+        "LUAT_48_2024_D5",
+        "ND_181_2025_D2",
+        "ND_181_2025_D3",
+        "TT_69_2025_D1"
+      ],
+      "metrics": {
+        "precision": 0.0,
+        "recall": 0.0,
+        "temporal_accuracy": 1.0,
+        "hallucination_rate": 0.0
+      },
+      "as_of_date": "2025-08-15"
+    },
+    {
+      "question_id": "VAT_046",
+      "pipeline": "P3_FullSystem",
+      "predicted_citations": [
+        "LUAT_48_2024_D18",
+        "LUAT_48_2024_D5",
+        "ND_181_2025_D2",
+        "ND_181_2025_D3",
+        "TT_69_2025_D1"
+      ],
+      "metrics": {
+        "precision": 0.0,
+        "recall": 0.0,
+        "temporal_accuracy": 1.0,
+        "hallucination_rate": 0.0
+      },
+      "as_of_date": "2025-08-15"
+    },
+    {
+      "question_id": "VAT_047",
+      "pipeline": "P1_FlatRAG",
+      "predicted_citations": [
+        "TT_69_2025_D7",
+        "TT_69_2025_D9",
+        "LUAT_48_2024_D10",
+        "LUAT_48_2024_D7",
+        "ND_181_2025_D31"
+      ],
+      "metrics": {
+        "precision": 0.0,
+        "recall": 0.0,
+        "temporal_accuracy": 1.0,
+        "hallucination_rate": 0.0
+      },
+      "as_of_date": "2026-07-15"
+    },
+    {
+      "question_id": "VAT_047",
+      "pipeline": "P2_TemporalGraphRAG",
+      "predicted_citations": [
+        "ND_144_2026_D2",
+        "TT_69_2025_D7",
+        "ND_181_2025_D21",
+        "ND_181_2025_D16",
+        "LUAT_48_2024_D7"
+      ],
+      "metrics": {
+        "precision": 0.2,
+        "recall": 0.5,
+        "temporal_accuracy": 1.0,
+        "hallucination_rate": 0.0
+      },
+      "as_of_date": "2026-07-15"
+    },
+    {
+      "question_id": "VAT_047",
+      "pipeline": "P3_FullSystem",
+      "predicted_citations": [
+        "ND_144_2026_D2",
+        "TT_69_2025_D7",
+        "ND_181_2025_D21",
+        "ND_181_2025_D16",
+        "LUAT_48_2024_D7"
+      ],
+      "metrics": {
+        "precision": 0.2,
+        "recall": 0.5,
+        "temporal_accuracy": 1.0,
+        "hallucination_rate": 0.0
+      },
+      "as_of_date": "2026-07-15"
+    },
+    {
+      "question_id": "VAT_048",
+      "pipeline": "P1_FlatRAG",
+      "predicted_citations": [
+        "ND_181_2025_D9",
+        "ND_181_2025_D17",
+        "ND_181_2025_D13",
+        "TT_69_2025_D3",
+        "ND_144_2026_D6"
+      ],
+      "metrics": {
+        "precision": 0.0,
+        "recall": 0.0,
+        "temporal_accuracy": 1.0,
+        "hallucination_rate": 0.0
+      },
+      "as_of_date": "2026-08-10"
+    },
+    {
+      "question_id": "VAT_048",
+      "pipeline": "P2_TemporalGraphRAG",
+      "predicted_citations": [
+        "ND_181_2025_D20",
+        "ND_181_2025_D26",
+        "ND_144_2026_D4",
+        "TT_69_2025_D1",
+        "ND_181_2025_D25"
+      ],
+      "metrics": {
+        "precision": 0.4,
+        "recall": 1.0,
+        "temporal_accuracy": 1.0,
+        "hallucination_rate": 0.0
+      },
+      "as_of_date": "2026-08-10"
+    },
+    {
+      "question_id": "VAT_048",
+      "pipeline": "P3_FullSystem",
+      "predicted_citations": [
+        "ND_181_2025_D20",
+        "ND_181_2025_D26",
+        "ND_144_2026_D4",
+        "TT_69_2025_D1",
+        "ND_181_2025_D25"
+      ],
+      "metrics": {
+        "precision": 0.4,
+        "recall": 1.0,
+        "temporal_accuracy": 1.0,
+        "hallucination_rate": 0.0
+      },
+      "as_of_date": "2026-08-10"
+    },
+    {
+      "question_id": "VAT_049",
+      "pipeline": "P1_FlatRAG",
+      "predicted_citations": [
+        "ND_181_2025_D40",
+        "ND_144_2026_D3",
+        "ND_181_2025_D37",
+        "ND_181_2025_D4",
+        "ND_181_2025_D9"
+      ],
+      "metrics": {
+        "precision": 0.0,
+        "recall": 0.0,
+        "temporal_accuracy": 0.8,
+        "hallucination_rate": 0.0
+      },
+      "as_of_date": "2026-02-15"
+    },
+    {
+      "question_id": "VAT_049",
+      "pipeline": "P2_TemporalGraphRAG",
+      "predicted_citations": [
+        "ND_181_2025_D39",
+        "ND_181_2025_D30",
+        "ND_181_2025_D31",
+        "ND_181_2025_D37",
+        "ND_359_2025_D1"
+      ],
+      "metrics": {
+        "precision": 0.2,
+        "recall": 1.0,
+        "temporal_accuracy": 1.0,
+        "hallucination_rate": 0.0
+      },
+      "as_of_date": "2026-02-15"
+    },
+    {
+      "question_id": "VAT_049",
+      "pipeline": "P3_FullSystem",
+      "predicted_citations": [
+        "ND_181_2025_D39",
+        "ND_181_2025_D30",
+        "ND_181_2025_D31",
+        "ND_181_2025_D37",
+        "ND_359_2025_D1"
+      ],
+      "metrics": {
+        "precision": 0.2,
+        "recall": 1.0,
+        "temporal_accuracy": 1.0,
+        "hallucination_rate": 0.0
+      },
+      "as_of_date": "2026-02-15"
+    },
+    {
+      "question_id": "VAT_050",
+      "pipeline": "P1_FlatRAG",
+      "predicted_citations": [
+        "LUAT_48_2024_D3",
+        "ND_181_2025_D26",
+        "TT_69_2025_D8",
+        "ND_144_2026_D6",
+        "TT_69_2025_D9"
+      ],
+      "metrics": {
+        "precision": 0.0,
+        "recall": 0.0,
+        "temporal_accuracy": 1.0,
+        "hallucination_rate": 0.0
+      },
+      "as_of_date": "2026-07-20"
+    },
+    {
+      "question_id": "VAT_050",
+      "pipeline": "P2_TemporalGraphRAG",
+      "predicted_citations": [
+        "ND_144_2026_D6",
+        "ND_359_2025_D1",
+        "TT_69_2025_D2",
+        "LUAT_48_2024_D3",
+        "TT_69_2025_D8"
+      ],
+      "metrics": {
+        "precision": 0.0,
+        "recall": 0.0,
+        "temporal_accuracy": 1.0,
+        "hallucination_rate": 0.0
+      },
+      "as_of_date": "2026-07-20"
+    },
+    {
+      "question_id": "VAT_050",
+      "pipeline": "P3_FullSystem",
+      "predicted_citations": [
+        "ND_144_2026_D6",
+        "ND_359_2025_D1",
+        "TT_69_2025_D2",
+        "LUAT_48_2024_D3",
+        "TT_69_2025_D8"
+      ],
+      "metrics": {
+        "precision": 0.0,
+        "recall": 0.0,
+        "temporal_accuracy": 1.0,
+        "hallucination_rate": 0.0
+      },
+      "as_of_date": "2026-07-20"
+    },
+    {
+      "question_id": "VAT_051",
+      "pipeline": "P1_FlatRAG",
+      "predicted_citations": [
+        "ND_144_2026_D1",
+        "ND_181_2025_D4",
+        "ND_181_2025_D12",
+        "LUAT_48_2024_D5",
+        "ND_181_2025_D11"
+      ],
+      "metrics": {
+        "precision": 0.0,
+        "recall": 0.0,
+        "temporal_accuracy": 0.0,
+        "hallucination_rate": 0.0
+      },
+      "as_of_date": "2024-08-20"
+    },
+    {
+      "question_id": "VAT_051",
+      "pipeline": "P2_TemporalGraphRAG",
+      "predicted_citations": [],
+      "metrics": {
+        "precision": 1.0,
+        "recall": 1.0,
+        "temporal_accuracy": 1.0,
+        "hallucination_rate": 0.0
+      },
+      "as_of_date": "2024-08-20"
+    },
+    {
+      "question_id": "VAT_051",
+      "pipeline": "P3_FullSystem",
+      "predicted_citations": [],
+      "metrics": {
+        "precision": 1.0,
+        "recall": 1.0,
+        "temporal_accuracy": 1.0,
+        "hallucination_rate": 0.0
+      },
+      "as_of_date": "2024-08-20"
+    },
+    {
+      "question_id": "VAT_052",
+      "pipeline": "P1_FlatRAG",
+      "predicted_citations": [
+        "TT_69_2025_D9",
+        "ND_144_2026_D4",
+        "ND_181_2025_D13",
+        "ND_181_2025_D12",
+        "ND_181_2025_D1"
+      ],
+      "metrics": {
+        "precision": 0.0,
+        "recall": 0.0,
+        "temporal_accuracy": 0.0,
+        "hallucination_rate": 0.0
+      },
+      "as_of_date": "2024-11-15"
+    },
+    {
+      "question_id": "VAT_052",
+      "pipeline": "P2_TemporalGraphRAG",
+      "predicted_citations": [],
+      "metrics": {
+        "precision": 1.0,
+        "recall": 1.0,
+        "temporal_accuracy": 1.0,
+        "hallucination_rate": 0.0
+      },
+      "as_of_date": "2024-11-15"
+    },
+    {
+      "question_id": "VAT_052",
+      "pipeline": "P3_FullSystem",
+      "predicted_citations": [],
+      "metrics": {
+        "precision": 1.0,
+        "recall": 1.0,
+        "temporal_accuracy": 1.0,
+        "hallucination_rate": 0.0
+      },
+      "as_of_date": "2024-11-15"
+    },
+    {
+      "question_id": "VAT_053",
+      "pipeline": "P1_FlatRAG",
+      "predicted_citations": [
+        "ND_181_2025_D35",
+        "TT_69_2025_D3",
+        "ND_181_2025_D22",
+        "LUAT_48_2024_D15",
+        "LUAT_48_2024_D6"
+      ],
+      "metrics": {
+        "precision": 0.0,
+        "recall": 0.0,
+        "temporal_accuracy": 0.0,
+        "hallucination_rate": 0.0
+      },
+      "as_of_date": "2025-02-20"
+    },
+    {
+      "question_id": "VAT_053",
+      "pipeline": "P2_TemporalGraphRAG",
+      "predicted_citations": [],
+      "metrics": {
+        "precision": 1.0,
+        "recall": 1.0,
+        "temporal_accuracy": 1.0,
+        "hallucination_rate": 0.0
+      },
+      "as_of_date": "2025-02-20"
+    },
+    {
+      "question_id": "VAT_053",
+      "pipeline": "P3_FullSystem",
+      "predicted_citations": [],
+      "metrics": {
+        "precision": 1.0,
+        "recall": 1.0,
+        "temporal_accuracy": 1.0,
+        "hallucination_rate": 0.0
+      },
+      "as_of_date": "2025-02-20"
+    },
+    {
+      "question_id": "VAT_054",
+      "pipeline": "P1_FlatRAG",
+      "predicted_citations": [
+        "ND_181_2025_D27",
+        "ND_144_2026_D4",
+        "ND_181_2025_D13",
+        "LUAT_48_2024_D5",
+        "ND_181_2025_D9"
+      ],
+      "metrics": {
+        "precision": 0.0,
+        "recall": 0.0,
+        "temporal_accuracy": 0.0,
+        "hallucination_rate": 0.0
+      },
+      "as_of_date": "2025-04-10"
+    },
+    {
+      "question_id": "VAT_054",
+      "pipeline": "P2_TemporalGraphRAG",
+      "predicted_citations": [],
+      "metrics": {
+        "precision": 1.0,
+        "recall": 1.0,
+        "temporal_accuracy": 1.0,
+        "hallucination_rate": 0.0
+      },
+      "as_of_date": "2025-04-10"
+    },
+    {
+      "question_id": "VAT_054",
+      "pipeline": "P3_FullSystem",
+      "predicted_citations": [],
+      "metrics": {
+        "precision": 1.0,
+        "recall": 1.0,
+        "temporal_accuracy": 1.0,
+        "hallucination_rate": 0.0
+      },
+      "as_of_date": "2025-04-10"
+    },
+    {
+      "question_id": "VAT_055",
+      "pipeline": "P1_FlatRAG",
+      "predicted_citations": [
+        "LUAT_48_2024_D6",
+        "TT_69_2025_D7",
+        "ND_181_2025_D6",
+        "TT_69_2025_D4",
+        "ND_181_2025_D26"
+      ],
+      "metrics": {
+        "precision": 0.0,
+        "recall": 0.0,
+        "temporal_accuracy": 0.0,
+        "hallucination_rate": 0.0
+      },
+      "as_of_date": "2025-06-12"
+    },
+    {
+      "question_id": "VAT_055",
+      "pipeline": "P2_TemporalGraphRAG",
+      "predicted_citations": [],
+      "metrics": {
+        "precision": 1.0,
+        "recall": 1.0,
+        "temporal_accuracy": 1.0,
+        "hallucination_rate": 0.0
+      },
+      "as_of_date": "2025-06-12"
+    },
+    {
+      "question_id": "VAT_055",
+      "pipeline": "P3_FullSystem",
+      "predicted_citations": [],
+      "metrics": {
+        "precision": 1.0,
+        "recall": 1.0,
+        "temporal_accuracy": 1.0,
+        "hallucination_rate": 0.0
+      },
+      "as_of_date": "2025-06-12"
+    },
+    {
+      "question_id": "VAT_056",
+      "pipeline": "P1_FlatRAG",
+      "predicted_citations": [
+        "TT_69_2025_D3",
+        "ND_181_2025_D32",
+        "ND_181_2025_D38",
+        "ND_181_2025_D25",
+        "LUAT_48_2024_D9"
+      ],
+      "metrics": {
+        "precision": 0.0,
+        "recall": 0.0,
+        "temporal_accuracy": 1.0,
+        "hallucination_rate": 0.0
+      },
+      "as_of_date": "2026-07-15"
+    },
+    {
+      "question_id": "VAT_056",
+      "pipeline": "P2_TemporalGraphRAG",
+      "predicted_citations": [
+        "LUAT_48_2024_D9",
+        "TT_69_2025_D3",
+        "LUAT_48_2024_D5",
+        "TT_69_2025_D7",
+        "ND_181_2025_D19"
+      ],
+      "metrics": {
+        "precision": 0.0,
+        "recall": 0.0,
+        "temporal_accuracy": 1.0,
+        "hallucination_rate": 0.0
+      },
+      "as_of_date": "2026-07-15"
+    },
+    {
+      "question_id": "VAT_056",
+      "pipeline": "P3_FullSystem",
+      "predicted_citations": [
+        "LUAT_48_2024_D9",
+        "TT_69_2025_D3",
+        "LUAT_48_2024_D5",
+        "TT_69_2025_D7",
+        "ND_181_2025_D19"
+      ],
+      "metrics": {
+        "precision": 0.0,
+        "recall": 0.0,
+        "temporal_accuracy": 1.0,
+        "hallucination_rate": 0.0
+      },
+      "as_of_date": "2026-07-15"
+    },
+    {
+      "question_id": "VAT_057",
+      "pipeline": "P1_FlatRAG",
+      "predicted_citations": [
+        "ND_181_2025_D16",
+        "ND_181_2025_D11",
+        "ND_181_2025_D15",
+        "TT_69_2025_D5",
+        "LUAT_48_2024_D6"
+      ],
+      "metrics": {
+        "precision": 0.0,
+        "recall": 0.0,
+        "temporal_accuracy": 1.0,
+        "hallucination_rate": 0.0
+      },
+      "as_of_date": "2026-08-20"
+    },
+    {
+      "question_id": "VAT_057",
+      "pipeline": "P2_TemporalGraphRAG",
+      "predicted_citations": [
+        "ND_181_2025_D11",
+        "ND_181_2025_D10",
+        "ND_181_2025_D28",
+        "ND_181_2025_D30",
+        "ND_181_2025_D40"
+      ],
+      "metrics": {
+        "precision": 0.0,
+        "recall": 0.0,
+        "temporal_accuracy": 1.0,
+        "hallucination_rate": 0.0
+      },
+      "as_of_date": "2026-08-20"
+    },
+    {
+      "question_id": "VAT_057",
+      "pipeline": "P3_FullSystem",
+      "predicted_citations": [
+        "ND_181_2025_D11",
+        "ND_181_2025_D10",
+        "ND_181_2025_D28",
+        "ND_181_2025_D30",
+        "ND_181_2025_D40"
+      ],
+      "metrics": {
+        "precision": 0.0,
+        "recall": 0.0,
+        "temporal_accuracy": 1.0,
+        "hallucination_rate": 0.0
+      },
+      "as_of_date": "2026-08-20"
+    },
+    {
+      "question_id": "VAT_058",
+      "pipeline": "P1_FlatRAG",
+      "predicted_citations": [
+        "TT_69_2025_D6",
+        "ND_181_2025_D32",
+        "ND_181_2025_D16",
+        "ND_181_2025_D28",
+        "LUAT_48_2024_D14"
+      ],
+      "metrics": {
+        "precision": 0.0,
+        "recall": 0.0,
+        "temporal_accuracy": 1.0,
+        "hallucination_rate": 0.0
+      },
+      "as_of_date": "2026-09-05"
+    },
+    {
+      "question_id": "VAT_058",
+      "pipeline": "P2_TemporalGraphRAG",
+      "predicted_citations": [
+        "ND_181_2025_D20",
+        "ND_181_2025_D31",
+        "ND_181_2025_D29",
+        "ND_181_2025_D28",
+        "ND_181_2025_D32"
+      ],
+      "metrics": {
+        "precision": 0.0,
+        "recall": 0.0,
+        "temporal_accuracy": 1.0,
+        "hallucination_rate": 0.0
+      },
+      "as_of_date": "2026-09-05"
+    },
+    {
+      "question_id": "VAT_058",
+      "pipeline": "P3_FullSystem",
+      "predicted_citations": [
+        "ND_181_2025_D20",
+        "ND_181_2025_D31",
+        "ND_181_2025_D29",
+        "ND_181_2025_D28",
+        "ND_181_2025_D32"
+      ],
+      "metrics": {
+        "precision": 0.0,
+        "recall": 0.0,
+        "temporal_accuracy": 1.0,
+        "hallucination_rate": 0.0
+      },
+      "as_of_date": "2026-09-05"
+    },
+    {
+      "question_id": "VAT_059",
+      "pipeline": "P1_FlatRAG",
+      "predicted_citations": [
+        "LUAT_48_2024_D9",
+        "ND_181_2025_D25",
+        "LUAT_48_2024_D18",
+        "ND_181_2025_D8",
+        "ND_181_2025_D22"
+      ],
+      "metrics": {
+        "precision": 0.0,
+        "recall": 0.0,
+        "temporal_accuracy": 1.0,
+        "hallucination_rate": 0.0
+      },
+      "as_of_date": "2025-09-25"
+    },
+    {
+      "question_id": "VAT_059",
+      "pipeline": "P2_TemporalGraphRAG",
+      "predicted_citations": [
+        "TT_69_2025_D2",
+        "LUAT_48_2024_D3",
+        "LUAT_48_2024_D18",
+        "LUAT_48_2024_D5",
+        "TT_69_2025_D8"
+      ],
+      "metrics": {
+        "precision": 0.0,
+        "recall": 0.0,
+        "temporal_accuracy": 1.0,
+        "hallucination_rate": 0.0
+      },
+      "as_of_date": "2025-09-25"
+    },
+    {
+      "question_id": "VAT_059",
+      "pipeline": "P3_FullSystem",
+      "predicted_citations": [
+        "TT_69_2025_D2",
+        "LUAT_48_2024_D3",
+        "LUAT_48_2024_D18",
+        "LUAT_48_2024_D5",
+        "TT_69_2025_D8"
+      ],
+      "metrics": {
+        "precision": 0.0,
+        "recall": 0.0,
+        "temporal_accuracy": 1.0,
+        "hallucination_rate": 0.0
+      },
+      "as_of_date": "2025-09-25"
+    },
+    {
+      "question_id": "VAT_060",
+      "pipeline": "P1_FlatRAG",
+      "predicted_citations": [
+        "ND_181_2025_D26",
+        "ND_144_2026_D3",
+        "ND_181_2025_D14",
+        "ND_359_2025_D2",
+        "LUAT_48_2024_D16"
+      ],
+      "metrics": {
+        "precision": 0.0,
+        "recall": 0.0,
+        "temporal_accuracy": 0.6,
+        "hallucination_rate": 0.0
+      },
+      "as_of_date": "2025-11-10"
+    },
+    {
+      "question_id": "VAT_060",
+      "pipeline": "P2_TemporalGraphRAG",
+      "predicted_citations": [
+        "TT_69_2025_D3",
+        "LUAT_48_2024_D5",
+        "ND_181_2025_D26",
+        "ND_181_2025_D1",
+        "TT_69_2025_D6"
+      ],
+      "metrics": {
+        "precision": 0.0,
+        "recall": 0.0,
+        "temporal_accuracy": 1.0,
+        "hallucination_rate": 0.0
+      },
+      "as_of_date": "2025-11-10"
+    },
+    {
+      "question_id": "VAT_060",
+      "pipeline": "P3_FullSystem",
+      "predicted_citations": [
+        "TT_69_2025_D3",
+        "LUAT_48_2024_D5",
+        "ND_181_2025_D26",
+        "ND_181_2025_D1",
+        "TT_69_2025_D6"
+      ],
+      "metrics": {
+        "precision": 0.0,
+        "recall": 0.0,
+        "temporal_accuracy": 1.0,
+        "hallucination_rate": 0.0
+      },
+      "as_of_date": "2025-11-10"
+    },
+    {
+      "question_id": "VAT_061",
+      "pipeline": "P1_FlatRAG",
+      "predicted_citations": [
+        "LUAT_48_2024_D4",
+        "ND_181_2025_D2",
+        "ND_181_2025_D17",
+        "ND_181_2025_D31",
+        "ND_181_2025_D38"
+      ],
+      "metrics": {
+        "precision": 0.0,
+        "recall": 0.0,
+        "temporal_accuracy": 1.0,
+        "hallucination_rate": 0.0
+      },
+      "as_of_date": "2025-08-25"
+    },
+    {
+      "question_id": "VAT_061",
+      "pipeline": "P2_TemporalGraphRAG",
+      "predicted_citations": [
+        "ND_181_2025_D31",
+        "ND_181_2025_D29",
+        "LUAT_48_2024_D4",
+        "ND_181_2025_D23",
+        "LUAT_48_2024_D13"
+      ],
+      "metrics": {
+        "precision": 0.0,
+        "recall": 0.0,
+        "temporal_accuracy": 1.0,
+        "hallucination_rate": 0.0
+      },
+      "as_of_date": "2025-08-25"
+    },
+    {
+      "question_id": "VAT_061",
+      "pipeline": "P3_FullSystem",
+      "predicted_citations": [
+        "ND_181_2025_D31",
+        "ND_181_2025_D29",
+        "LUAT_48_2024_D4",
+        "ND_181_2025_D23",
+        "LUAT_48_2024_D13"
+      ],
+      "metrics": {
+        "precision": 0.0,
+        "recall": 0.0,
+        "temporal_accuracy": 1.0,
+        "hallucination_rate": 0.0
+      },
+      "as_of_date": "2025-08-25"
+    },
+    {
+      "question_id": "VAT_062",
+      "pipeline": "P1_FlatRAG",
+      "predicted_citations": [
+        "ND_181_2025_D12",
+        "ND_181_2025_D23",
+        "TT_69_2025_D3",
+        "ND_181_2025_D28",
+        "ND_181_2025_D11"
+      ],
+      "metrics": {
+        "precision": 0.0,
+        "recall": 0.0,
+        "temporal_accuracy": 1.0,
+        "hallucination_rate": 0.0
+      },
+      "as_of_date": "2025-10-15"
+    },
+    {
+      "question_id": "VAT_062",
+      "pipeline": "P2_TemporalGraphRAG",
+      "predicted_citations": [
+        "ND_181_2025_D23",
+        "LUAT_48_2024_D13",
+        "ND_181_2025_D28",
+        "ND_181_2025_D29",
+        "ND_181_2025_D11"
+      ],
+      "metrics": {
+        "precision": 0.0,
+        "recall": 0.0,
+        "temporal_accuracy": 1.0,
+        "hallucination_rate": 0.0
+      },
+      "as_of_date": "2025-10-15"
+    },
+    {
+      "question_id": "VAT_062",
+      "pipeline": "P3_FullSystem",
+      "predicted_citations": [
+        "ND_181_2025_D23",
+        "LUAT_48_2024_D13",
+        "ND_181_2025_D28",
+        "ND_181_2025_D29",
+        "ND_181_2025_D11"
+      ],
+      "metrics": {
+        "precision": 0.0,
+        "recall": 0.0,
+        "temporal_accuracy": 1.0,
+        "hallucination_rate": 0.0
+      },
+      "as_of_date": "2025-10-15"
+    },
+    {
+      "question_id": "VAT_063",
+      "pipeline": "P1_FlatRAG",
+      "predicted_citations": [
+        "ND_144_2026_D6",
+        "ND_181_2025_D9",
+        "ND_181_2025_D28",
+        "LUAT_48_2024_D18",
+        "ND_144_2026_D1"
+      ],
+      "metrics": {
+        "precision": 0.0,
+        "recall": 0.0,
+        "temporal_accuracy": 0.6,
+        "hallucination_rate": 0.0
+      },
+      "as_of_date": "2025-09-20"
+    },
+    {
+      "question_id": "VAT_063",
+      "pipeline": "P2_TemporalGraphRAG",
+      "predicted_citations": [
+        "LUAT_48_2024_D15",
+        "ND_181_2025_D28",
+        "ND_181_2025_D7",
+        "ND_181_2025_D31",
+        "TT_69_2025_D8"
+      ],
+      "metrics": {
+        "precision": 0.0,
+        "recall": 0.0,
+        "temporal_accuracy": 1.0,
+        "hallucination_rate": 0.0
+      },
+      "as_of_date": "2025-09-20"
+    },
+    {
+      "question_id": "VAT_063",
+      "pipeline": "P3_FullSystem",
+      "predicted_citations": [
+        "LUAT_48_2024_D15",
+        "ND_181_2025_D28",
+        "ND_181_2025_D7",
+        "ND_181_2025_D31",
+        "TT_69_2025_D8"
+      ],
+      "metrics": {
+        "precision": 0.0,
+        "recall": 0.0,
+        "temporal_accuracy": 1.0,
+        "hallucination_rate": 0.0
+      },
+      "as_of_date": "2025-09-20"
+    },
+    {
+      "question_id": "VAT_064",
+      "pipeline": "P1_FlatRAG",
+      "predicted_citations": [
+        "ND_181_2025_D33",
+        "ND_359_2025_D2",
+        "ND_144_2026_D5",
+        "ND_181_2025_D2",
+        "LUAT_48_2024_D1"
+      ],
+      "metrics": {
+        "precision": 0.0,
+        "recall": 0.0,
+        "temporal_accuracy": 0.6,
+        "hallucination_rate": 0.0
+      },
+      "as_of_date": "2025-11-10"
+    },
+    {
+      "question_id": "VAT_064",
+      "pipeline": "P2_TemporalGraphRAG",
+      "predicted_citations": [
+        "ND_181_2025_D23",
+        "LUAT_48_2024_D13",
+        "ND_181_2025_D11",
+        "ND_181_2025_D31",
+        "ND_181_2025_D21"
+      ],
+      "metrics": {
+        "precision": 0.0,
+        "recall": 0.0,
+        "temporal_accuracy": 1.0,
+        "hallucination_rate": 0.0
+      },
+      "as_of_date": "2025-11-10"
+    },
+    {
+      "question_id": "VAT_064",
+      "pipeline": "P3_FullSystem",
+      "predicted_citations": [
+        "ND_181_2025_D23",
+        "LUAT_48_2024_D13",
+        "ND_181_2025_D11",
+        "ND_181_2025_D31",
+        "ND_181_2025_D21"
+      ],
+      "metrics": {
+        "precision": 0.0,
+        "recall": 0.0,
+        "temporal_accuracy": 1.0,
+        "hallucination_rate": 0.0
+      },
+      "as_of_date": "2025-11-10"
+    },
+    {
+      "question_id": "VAT_065",
+      "pipeline": "P1_FlatRAG",
+      "predicted_citations": [
+        "TT_69_2025_D5",
+        "LUAT_48_2024_D7",
+        "ND_181_2025_D35",
+        "ND_144_2026_D5",
+        "LUAT_48_2024_D3"
+      ],
+      "metrics": {
+        "precision": 0.0,
+        "recall": 0.0,
+        "temporal_accuracy": 0.8,
+        "hallucination_rate": 0.0
+      },
+      "as_of_date": "2025-08-30"
+    },
+    {
+      "question_id": "VAT_065",
+      "pipeline": "P2_TemporalGraphRAG",
+      "predicted_citations": [
+        "ND_181_2025_D26",
+        "ND_181_2025_D35",
+        "ND_181_2025_D9",
+        "ND_181_2025_D28",
+        "ND_181_2025_D31"
+      ],
+      "metrics": {
+        "precision": 0.2,
+        "recall": 0.5,
+        "temporal_accuracy": 1.0,
+        "hallucination_rate": 0.0
+      },
+      "as_of_date": "2025-08-30"
+    },
+    {
+      "question_id": "VAT_065",
+      "pipeline": "P3_FullSystem",
+      "predicted_citations": [
+        "ND_181_2025_D26",
+        "ND_181_2025_D35",
+        "ND_181_2025_D9",
+        "ND_181_2025_D28",
+        "ND_181_2025_D31"
+      ],
+      "metrics": {
+        "precision": 0.2,
+        "recall": 0.5,
+        "temporal_accuracy": 1.0,
+        "hallucination_rate": 0.0
+      },
+      "as_of_date": "2025-08-30"
+    },
+    {
+      "question_id": "VAT_066",
+      "pipeline": "P1_FlatRAG",
+      "predicted_citations": [
+        "ND_144_2026_D6",
+        "LUAT_48_2024_D7",
+        "LUAT_48_2024_D17",
+        "ND_181_2025_D20",
+        "ND_181_2025_D26"
+      ],
+      "metrics": {
+        "precision": 0.2,
+        "recall": 0.5,
+        "temporal_accuracy": 0.8,
+        "hallucination_rate": 0.0
+      },
+      "as_of_date": "2025-10-22"
+    },
+    {
+      "question_id": "VAT_066",
+      "pipeline": "P2_TemporalGraphRAG",
+      "predicted_citations": [
+        "ND_181_2025_D26",
+        "ND_181_2025_D29",
+        "ND_181_2025_D27",
+        "TT_69_2025_D9",
+        "ND_181_2025_D28"
+      ],
+      "metrics": {
+        "precision": 0.2,
+        "recall": 0.5,
+        "temporal_accuracy": 1.0,
+        "hallucination_rate": 0.0
+      },
+      "as_of_date": "2025-10-22"
+    },
+    {
+      "question_id": "VAT_066",
+      "pipeline": "P3_FullSystem",
+      "predicted_citations": [
+        "ND_181_2025_D26",
+        "ND_181_2025_D29",
+        "ND_181_2025_D27",
+        "TT_69_2025_D9",
+        "ND_181_2025_D28"
+      ],
+      "metrics": {
+        "precision": 0.2,
+        "recall": 0.5,
+        "temporal_accuracy": 1.0,
+        "hallucination_rate": 0.0
+      },
+      "as_of_date": "2025-10-22"
+    },
+    {
+      "question_id": "VAT_067",
+      "pipeline": "P1_FlatRAG",
+      "predicted_citations": [
+        "TT_69_2025_D3",
+        "ND_181_2025_D4",
+        "ND_181_2025_D36",
+        "ND_181_2025_D17",
+        "ND_144_2026_D1"
+      ],
+      "metrics": {
+        "precision": 0.4,
+        "recall": 0.6666666666666666,
+        "temporal_accuracy": 0.8,
+        "hallucination_rate": 0.0
+      },
+      "as_of_date": "2025-09-18"
+    },
+    {
+      "question_id": "VAT_067",
+      "pipeline": "P2_TemporalGraphRAG",
+      "predicted_citations": [
+        "ND_181_2025_D4",
+        "LUAT_48_2024_D9",
+        "LUAT_48_2024_D5",
+        "LUAT_48_2024_D15",
+        "ND_181_2025_D23"
+      ],
+      "metrics": {
+        "precision": 0.4,
+        "recall": 0.6666666666666666,
+        "temporal_accuracy": 1.0,
+        "hallucination_rate": 0.0
+      },
+      "as_of_date": "2025-09-18"
+    },
+    {
+      "question_id": "VAT_067",
+      "pipeline": "P3_FullSystem",
+      "predicted_citations": [
+        "ND_181_2025_D4",
+        "LUAT_48_2024_D9",
+        "LUAT_48_2024_D5",
+        "LUAT_48_2024_D15",
+        "ND_181_2025_D23"
+      ],
+      "metrics": {
+        "precision": 0.4,
+        "recall": 0.6666666666666666,
+        "temporal_accuracy": 1.0,
+        "hallucination_rate": 0.0
+      },
+      "as_of_date": "2025-09-18"
+    },
+    {
+      "question_id": "VAT_068",
+      "pipeline": "P1_FlatRAG",
+      "predicted_citations": [
+        "LUAT_48_2024_D6",
+        "LUAT_48_2024_D18",
+        "ND_181_2025_D9",
+        "ND_181_2025_D11",
+        "ND_181_2025_D30"
+      ],
+      "metrics": {
+        "precision": 0.0,
+        "recall": 0.0,
+        "temporal_accuracy": 1.0,
+        "hallucination_rate": 0.0
+      },
+      "as_of_date": "2025-11-12"
+    },
+    {
+      "question_id": "VAT_068",
+      "pipeline": "P2_TemporalGraphRAG",
+      "predicted_citations": [
+        "ND_181_2025_D22",
+        "LUAT_48_2024_D5",
+        "LUAT_48_2024_D9",
+        "LUAT_48_2024_D18",
+        "ND_181_2025_D17"
+      ],
+      "metrics": {
+        "precision": 0.2,
+        "recall": 0.5,
+        "temporal_accuracy": 1.0,
+        "hallucination_rate": 0.0
+      },
+      "as_of_date": "2025-11-12"
+    },
+    {
+      "question_id": "VAT_068",
+      "pipeline": "P3_FullSystem",
+      "predicted_citations": [
+        "ND_181_2025_D22",
+        "LUAT_48_2024_D5",
+        "LUAT_48_2024_D9",
+        "LUAT_48_2024_D18",
+        "ND_181_2025_D17"
+      ],
+      "metrics": {
+        "precision": 0.2,
+        "recall": 0.5,
+        "temporal_accuracy": 1.0,
+        "hallucination_rate": 0.0
+      },
+      "as_of_date": "2025-11-12"
+    },
+    {
+      "question_id": "VAT_069",
+      "pipeline": "P1_FlatRAG",
+      "predicted_citations": [
+        "ND_181_2025_D33",
+        "TT_69_2025_D5",
+        "ND_181_2025_D38",
+        "ND_181_2025_D2",
+        "ND_181_2025_D29"
+      ],
+      "metrics": {
+        "precision": 0.0,
+        "recall": 0.0,
+        "temporal_accuracy": 1.0,
+        "hallucination_rate": 0.0
+      },
+      "as_of_date": "2025-08-28"
+    },
+    {
+      "question_id": "VAT_069",
+      "pipeline": "P2_TemporalGraphRAG",
+      "predicted_citations": [
+        "ND_181_2025_D29",
+        "ND_181_2025_D27",
+        "ND_181_2025_D39",
+        "ND_181_2025_D30",
+        "ND_181_2025_D31"
+      ],
+      "metrics": {
+        "precision": 0.0,
+        "recall": 0.0,
+        "temporal_accuracy": 1.0,
+        "hallucination_rate": 0.0
+      },
+      "as_of_date": "2025-08-28"
+    },
+    {
+      "question_id": "VAT_069",
+      "pipeline": "P3_FullSystem",
+      "predicted_citations": [
+        "ND_181_2025_D29",
+        "ND_181_2025_D27",
+        "ND_181_2025_D39",
+        "ND_181_2025_D30",
+        "ND_181_2025_D31"
+      ],
+      "metrics": {
+        "precision": 0.0,
+        "recall": 0.0,
+        "temporal_accuracy": 1.0,
+        "hallucination_rate": 0.0
+      },
+      "as_of_date": "2025-08-28"
+    },
+    {
+      "question_id": "VAT_070",
+      "pipeline": "P1_FlatRAG",
+      "predicted_citations": [
+        "TT_69_2025_D7",
+        "ND_144_2026_D4",
+        "LUAT_48_2024_D4",
+        "LUAT_48_2024_D10",
+        "ND_181_2025_D12"
+      ],
+      "metrics": {
+        "precision": 0.0,
+        "recall": 0.0,
+        "temporal_accuracy": 0.8,
+        "hallucination_rate": 0.0
+      },
+      "as_of_date": "2025-12-10"
+    },
+    {
+      "question_id": "VAT_070",
+      "pipeline": "P2_TemporalGraphRAG",
+      "predicted_citations": [
+        "LUAT_48_2024_D9",
+        "LUAT_48_2024_D4",
+        "ND_181_2025_D12",
+        "LUAT_48_2024_D5",
+        "ND_181_2025_D28"
+      ],
+      "metrics": {
+        "precision": 0.2,
+        "recall": 0.3333333333333333,
+        "temporal_accuracy": 1.0,
+        "hallucination_rate": 0.0
+      },
+      "as_of_date": "2025-12-10"
+    },
+    {
+      "question_id": "VAT_070",
+      "pipeline": "P3_FullSystem",
+      "predicted_citations": [
+        "LUAT_48_2024_D9",
+        "LUAT_48_2024_D4",
+        "ND_181_2025_D12",
+        "LUAT_48_2024_D5",
+        "ND_181_2025_D28"
+      ],
+      "metrics": {
+        "precision": 0.2,
+        "recall": 0.3333333333333333,
+        "temporal_accuracy": 1.0,
+        "hallucination_rate": 0.0
+      },
+      "as_of_date": "2025-12-10"
+    },
+    {
+      "question_id": "VAT_071",
+      "pipeline": "P1_FlatRAG",
+      "predicted_citations": [
+        "LUAT_48_2024_D8",
+        "ND_181_2025_D30",
+        "ND_181_2025_D36",
+        "ND_181_2025_D35",
+        "ND_144_2026_D6"
+      ],
+      "metrics": {
+        "precision": 0.0,
+        "recall": 0.0,
+        "temporal_accuracy": 0.8,
+        "hallucination_rate": 0.0
+      },
+      "as_of_date": "2025-09-15"
+    },
+    {
+      "question_id": "VAT_071",
+      "pipeline": "P2_TemporalGraphRAG",
+      "predicted_citations": [
+        "ND_181_2025_D23",
+        "LUAT_48_2024_D13",
+        "ND_181_2025_D29",
+        "ND_181_2025_D35",
+        "ND_181_2025_D26"
+      ],
+      "metrics": {
+        "precision": 0.2,
+        "recall": 0.25,
+        "temporal_accuracy": 1.0,
+        "hallucination_rate": 0.0
+      },
+      "as_of_date": "2025-09-15"
+    },
+    {
+      "question_id": "VAT_071",
+      "pipeline": "P3_FullSystem",
+      "predicted_citations": [
+        "ND_181_2025_D23",
+        "LUAT_48_2024_D13",
+        "ND_181_2025_D29",
+        "ND_181_2025_D35",
+        "ND_181_2025_D26"
+      ],
+      "metrics": {
+        "precision": 0.2,
+        "recall": 0.25,
+        "temporal_accuracy": 1.0,
+        "hallucination_rate": 0.0
+      },
+      "as_of_date": "2025-09-15"
+    },
+    {
+      "question_id": "VAT_072",
+      "pipeline": "P1_FlatRAG",
+      "predicted_citations": [
+        "ND_181_2025_D21",
+        "ND_181_2025_D3",
+        "ND_181_2025_D27",
+        "LUAT_48_2024_D10",
+        "ND_181_2025_D9"
+      ],
+      "metrics": {
+        "precision": 0.0,
+        "recall": 0.0,
+        "temporal_accuracy": 1.0,
+        "hallucination_rate": 0.0
+      },
+      "as_of_date": "2025-10-08"
+    },
+    {
+      "question_id": "VAT_072",
+      "pipeline": "P2_TemporalGraphRAG",
+      "predicted_citations": [
+        "ND_181_2025_D27",
+        "ND_181_2025_D24",
+        "ND_181_2025_D9",
+        "ND_181_2025_D23",
+        "LUAT_48_2024_D13"
+      ],
+      "metrics": {
+        "precision": 0.0,
+        "recall": 0.0,
+        "temporal_accuracy": 1.0,
+        "hallucination_rate": 0.0
+      },
+      "as_of_date": "2025-10-08"
+    },
+    {
+      "question_id": "VAT_072",
+      "pipeline": "P3_FullSystem",
+      "predicted_citations": [
+        "ND_181_2025_D27",
+        "ND_181_2025_D24",
+        "ND_181_2025_D9",
+        "ND_181_2025_D23",
+        "LUAT_48_2024_D13"
+      ],
+      "metrics": {
+        "precision": 0.0,
+        "recall": 0.0,
+        "temporal_accuracy": 1.0,
+        "hallucination_rate": 0.0
+      },
+      "as_of_date": "2025-10-08"
+    },
+    {
+      "question_id": "VAT_073",
+      "pipeline": "P1_FlatRAG",
+      "predicted_citations": [
+        "LUAT_48_2024_D10",
+        "ND_181_2025_D34",
+        "ND_181_2025_D3",
+        "ND_181_2025_D27",
+        "ND_181_2025_D31"
+      ],
+      "metrics": {
+        "precision": 0.0,
+        "recall": 0.0,
+        "temporal_accuracy": 1.0,
+        "hallucination_rate": 0.0
+      },
+      "as_of_date": "2025-09-28"
+    },
+    {
+      "question_id": "VAT_073",
+      "pipeline": "P2_TemporalGraphRAG",
+      "predicted_citations": [
+        "ND_181_2025_D27",
+        "ND_181_2025_D31",
+        "ND_181_2025_D9",
+        "LUAT_48_2024_D18",
+        "LUAT_48_2024_D5"
+      ],
+      "metrics": {
+        "precision": 0.0,
+        "recall": 0.0,
+        "temporal_accuracy": 1.0,
+        "hallucination_rate": 0.0
+      },
+      "as_of_date": "2025-09-28"
+    },
+    {
+      "question_id": "VAT_073",
+      "pipeline": "P3_FullSystem",
+      "predicted_citations": [
+        "ND_181_2025_D27",
+        "ND_181_2025_D31",
+        "ND_181_2025_D9",
+        "LUAT_48_2024_D18",
+        "LUAT_48_2024_D5"
+      ],
+      "metrics": {
+        "precision": 0.0,
+        "recall": 0.0,
+        "temporal_accuracy": 1.0,
+        "hallucination_rate": 0.0
+      },
+      "as_of_date": "2025-09-28"
+    },
+    {
+      "question_id": "VAT_074",
+      "pipeline": "P1_FlatRAG",
+      "predicted_citations": [
+        "LUAT_48_2024_D15",
+        "TT_69_2025_D4",
+        "ND_359_2025_D2",
+        "LUAT_48_2024_D18",
+        "ND_181_2025_D37"
+      ],
+      "metrics": {
+        "precision": 0.0,
+        "recall": 0.0,
+        "temporal_accuracy": 0.8,
+        "hallucination_rate": 0.0
+      },
+      "as_of_date": "2025-11-20"
+    },
+    {
+      "question_id": "VAT_074",
+      "pipeline": "P2_TemporalGraphRAG",
+      "predicted_citations": [
+        "ND_181_2025_D6",
+        "ND_181_2025_D4",
+        "LUAT_48_2024_D9",
+        "ND_181_2025_D14",
+        "ND_181_2025_D5"
+      ],
+      "metrics": {
+        "precision": 0.2,
+        "recall": 0.5,
+        "temporal_accuracy": 1.0,
+        "hallucination_rate": 0.0
+      },
+      "as_of_date": "2025-11-20"
+    },
+    {
+      "question_id": "VAT_074",
+      "pipeline": "P3_FullSystem",
+      "predicted_citations": [
+        "ND_181_2025_D6",
+        "ND_181_2025_D4",
+        "LUAT_48_2024_D9",
+        "ND_181_2025_D14",
+        "ND_181_2025_D5"
+      ],
+      "metrics": {
+        "precision": 0.2,
+        "recall": 0.5,
+        "temporal_accuracy": 1.0,
+        "hallucination_rate": 0.0
+      },
+      "as_of_date": "2025-11-20"
+    },
+    {
+      "question_id": "VAT_075",
+      "pipeline": "P1_FlatRAG",
+      "predicted_citations": [
+        "ND_359_2025_D2",
+        "LUAT_48_2024_D6",
+        "ND_181_2025_D13",
+        "ND_181_2025_D12",
+        "ND_181_2025_D3"
+      ],
+      "metrics": {
+        "precision": 0.4,
+        "recall": 0.5,
+        "temporal_accuracy": 0.8,
+        "hallucination_rate": 0.0
+      },
+      "as_of_date": "2025-10-18"
+    },
+    {
+      "question_id": "VAT_075",
+      "pipeline": "P2_TemporalGraphRAG",
+      "predicted_citations": [
+        "ND_181_2025_D13",
+        "TT_69_2025_D6",
+        "ND_181_2025_D23",
+        "LUAT_48_2024_D13",
+        "ND_181_2025_D4"
+      ],
+      "metrics": {
+        "precision": 0.2,
+        "recall": 0.25,
+        "temporal_accuracy": 1.0,
+        "hallucination_rate": 0.0
+      },
+      "as_of_date": "2025-10-18"
+    },
+    {
+      "question_id": "VAT_075",
+      "pipeline": "P3_FullSystem",
+      "predicted_citations": [
+        "ND_181_2025_D13",
+        "TT_69_2025_D6",
+        "ND_181_2025_D23",
+        "LUAT_48_2024_D13",
+        "ND_181_2025_D4"
+      ],
+      "metrics": {
+        "precision": 0.2,
+        "recall": 0.25,
+        "temporal_accuracy": 1.0,
+        "hallucination_rate": 0.0
+      },
+      "as_of_date": "2025-10-18"
+    },
+    {
+      "question_id": "VAT_076",
+      "pipeline": "P1_FlatRAG",
+      "predicted_citations": [
+        "ND_181_2025_D30",
+        "ND_181_2025_D24",
+        "ND_181_2025_D16",
+        "TT_69_2025_D4",
+        "LUAT_48_2024_D6"
+      ],
+      "metrics": {
+        "precision": 0.0,
+        "recall": 0.0,
+        "temporal_accuracy": 1.0,
+        "hallucination_rate": 0.0
+      },
+      "as_of_date": "2025-12-15"
+    },
+    {
+      "question_id": "VAT_076",
+      "pipeline": "P2_TemporalGraphRAG",
+      "predicted_citations": [
+        "ND_181_2025_D1",
+        "ND_181_2025_D24",
+        "TT_69_2025_D4",
+        "LUAT_48_2024_D18",
+        "LUAT_48_2024_D9"
+      ],
+      "metrics": {
+        "precision": 0.2,
+        "recall": 0.3333333333333333,
+        "temporal_accuracy": 1.0,
+        "hallucination_rate": 0.0
+      },
+      "as_of_date": "2025-12-15"
+    },
+    {
+      "question_id": "VAT_076",
+      "pipeline": "P3_FullSystem",
+      "predicted_citations": [
+        "ND_181_2025_D1",
+        "ND_181_2025_D24",
+        "TT_69_2025_D4",
+        "LUAT_48_2024_D18",
+        "LUAT_48_2024_D9"
+      ],
+      "metrics": {
+        "precision": 0.2,
+        "recall": 0.3333333333333333,
+        "temporal_accuracy": 1.0,
+        "hallucination_rate": 0.0
+      },
+      "as_of_date": "2025-12-15"
+    },
+    {
+      "question_id": "VAT_077",
+      "pipeline": "P1_FlatRAG",
+      "predicted_citations": [
+        "ND_181_2025_D35",
+        "ND_181_2025_D10",
+        "ND_181_2025_D40",
+        "LUAT_48_2024_D4",
+        "ND_181_2025_D1"
+      ],
+      "metrics": {
+        "precision": 0.0,
+        "recall": 0.0,
+        "temporal_accuracy": 1.0,
+        "hallucination_rate": 0.0
+      },
+      "as_of_date": "2025-10-10"
+    },
+    {
+      "question_id": "VAT_077",
+      "pipeline": "P2_TemporalGraphRAG",
+      "predicted_citations": [
+        "ND_181_2025_D40",
+        "LUAT_48_2024_D15",
+        "ND_181_2025_D23",
+        "LUAT_48_2024_D13",
+        "ND_181_2025_D18"
+      ],
+      "metrics": {
+        "precision": 0.2,
+        "recall": 0.3333333333333333,
+        "temporal_accuracy": 1.0,
+        "hallucination_rate": 0.0
+      },
+      "as_of_date": "2025-10-10"
+    },
+    {
+      "question_id": "VAT_077",
+      "pipeline": "P3_FullSystem",
+      "predicted_citations": [
+        "ND_181_2025_D40",
+        "LUAT_48_2024_D15",
+        "ND_181_2025_D23",
+        "LUAT_48_2024_D13",
+        "ND_181_2025_D18"
+      ],
+      "metrics": {
+        "precision": 0.2,
+        "recall": 0.3333333333333333,
+        "temporal_accuracy": 1.0,
+        "hallucination_rate": 0.0
+      },
+      "as_of_date": "2025-10-10"
+    },
+    {
+      "question_id": "VAT_078",
+      "pipeline": "P1_FlatRAG",
+      "predicted_citations": [
+        "ND_181_2025_D7",
+        "ND_181_2025_D2",
+        "LUAT_48_2024_D6",
+        "ND_181_2025_D21",
+        "TT_69_2025_D5"
+      ],
+      "metrics": {
+        "precision": 0.0,
+        "recall": 0.0,
+        "temporal_accuracy": 1.0,
+        "hallucination_rate": 0.0
+      },
+      "as_of_date": "2025-10-05"
+    },
+    {
+      "question_id": "VAT_078",
+      "pipeline": "P2_TemporalGraphRAG",
+      "predicted_citations": [
+        "ND_181_2025_D29",
+        "ND_181_2025_D27",
+        "ND_181_2025_D16",
+        "ND_181_2025_D28",
+        "ND_181_2025_D39"
+      ],
+      "metrics": {
+        "precision": 0.4,
+        "recall": 0.6666666666666666,
+        "temporal_accuracy": 1.0,
+        "hallucination_rate": 0.0
+      },
+      "as_of_date": "2025-10-05"
+    },
+    {
+      "question_id": "VAT_078",
+      "pipeline": "P3_FullSystem",
+      "predicted_citations": [
+        "ND_181_2025_D29",
+        "ND_181_2025_D27",
+        "ND_181_2025_D16",
+        "ND_181_2025_D28",
+        "ND_181_2025_D39"
+      ],
+      "metrics": {
+        "precision": 0.4,
+        "recall": 0.6666666666666666,
+        "temporal_accuracy": 1.0,
+        "hallucination_rate": 0.0
+      },
+      "as_of_date": "2025-10-05"
+    },
+    {
+      "question_id": "VAT_079",
+      "pipeline": "P1_FlatRAG",
+      "predicted_citations": [
+        "TT_69_2025_D6",
+        "ND_359_2025_D1",
+        "ND_181_2025_D10",
+        "ND_144_2026_D1",
+        "ND_181_2025_D27"
+      ],
+      "metrics": {
+        "precision": 0.0,
+        "recall": 0.0,
+        "temporal_accuracy": 0.6,
+        "hallucination_rate": 0.0
+      },
+      "as_of_date": "2025-08-05"
+    },
+    {
+      "question_id": "VAT_079",
+      "pipeline": "P2_TemporalGraphRAG",
+      "predicted_citations": [
+        "ND_181_2025_D27",
+        "ND_181_2025_D15",
+        "LUAT_48_2024_D9",
+        "ND_181_2025_D16",
+        "ND_181_2025_D5"
+      ],
+      "metrics": {
+        "precision": 0.2,
+        "recall": 0.5,
+        "temporal_accuracy": 1.0,
+        "hallucination_rate": 0.0
+      },
+      "as_of_date": "2025-08-05"
+    },
+    {
+      "question_id": "VAT_079",
+      "pipeline": "P3_FullSystem",
+      "predicted_citations": [
+        "ND_181_2025_D27",
+        "ND_181_2025_D15",
+        "LUAT_48_2024_D9",
+        "ND_181_2025_D16",
+        "ND_181_2025_D5"
+      ],
+      "metrics": {
+        "precision": 0.2,
+        "recall": 0.5,
+        "temporal_accuracy": 1.0,
+        "hallucination_rate": 0.0
+      },
+      "as_of_date": "2025-08-05"
+    },
+    {
+      "question_id": "VAT_080",
+      "pipeline": "P1_FlatRAG",
+      "predicted_citations": [
+        "LUAT_48_2024_D2",
+        "ND_181_2025_D5",
+        "ND_181_2025_D7",
+        "ND_181_2025_D18",
+        "ND_144_2026_D5"
+      ],
+      "metrics": {
+        "precision": 0.0,
+        "recall": 0.0,
+        "temporal_accuracy": 0.8,
+        "hallucination_rate": 0.0
+      },
+      "as_of_date": "2025-09-12"
+    },
+    {
+      "question_id": "VAT_080",
+      "pipeline": "P2_TemporalGraphRAG",
+      "predicted_citations": [
+        "ND_181_2025_D5",
+        "ND_181_2025_D7",
+        "ND_181_2025_D40",
+        "ND_181_2025_D26",
+        "LUAT_48_2024_D15"
+      ],
+      "metrics": {
+        "precision": 0.0,
+        "recall": 0.0,
+        "temporal_accuracy": 1.0,
+        "hallucination_rate": 0.0
+      },
+      "as_of_date": "2025-09-12"
+    },
+    {
+      "question_id": "VAT_080",
+      "pipeline": "P3_FullSystem",
+      "predicted_citations": [
+        "ND_181_2025_D5",
+        "ND_181_2025_D7",
+        "ND_181_2025_D40",
+        "ND_181_2025_D26",
+        "LUAT_48_2024_D15"
+      ],
+      "metrics": {
+        "precision": 0.0,
+        "recall": 0.0,
+        "temporal_accuracy": 1.0,
+        "hallucination_rate": 0.0
+      },
+      "as_of_date": "2025-09-12"
+    },
+    {
+      "question_id": "VAT_081",
+      "pipeline": "P1_FlatRAG",
+      "predicted_citations": [
+        "ND_181_2025_D39",
+        "ND_181_2025_D25",
+        "LUAT_48_2024_D11",
+        "ND_181_2025_D1",
+        "LUAT_48_2024_D4"
+      ],
+      "metrics": {
+        "precision": 0.0,
+        "recall": 0.0,
+        "temporal_accuracy": 1.0,
+        "hallucination_rate": 0.0
+      },
+      "as_of_date": "2025-11-25"
+    },
+    {
+      "question_id": "VAT_081",
+      "pipeline": "P2_TemporalGraphRAG",
+      "predicted_citations": [
+        "ND_181_2025_D39",
+        "ND_181_2025_D30",
+        "ND_181_2025_D31",
+        "ND_181_2025_D37",
+        "ND_181_2025_D7"
+      ],
+      "metrics": {
+        "precision": 0.0,
+        "recall": 0.0,
+        "temporal_accuracy": 1.0,
+        "hallucination_rate": 0.0
+      },
+      "as_of_date": "2025-11-25"
+    },
+    {
+      "question_id": "VAT_081",
+      "pipeline": "P3_FullSystem",
+      "predicted_citations": [
+        "ND_181_2025_D39",
+        "ND_181_2025_D30",
+        "ND_181_2025_D31",
+        "ND_181_2025_D37",
+        "ND_181_2025_D7"
+      ],
+      "metrics": {
+        "precision": 0.0,
+        "recall": 0.0,
+        "temporal_accuracy": 1.0,
+        "hallucination_rate": 0.0
+      },
+      "as_of_date": "2025-11-25"
+    },
+    {
+      "question_id": "VAT_082",
+      "pipeline": "P1_FlatRAG",
+      "predicted_citations": [
+        "ND_144_2026_D1",
+        "ND_181_2025_D4",
+        "TT_69_2025_D9",
+        "ND_181_2025_D21",
+        "TT_69_2025_D7"
+      ],
+      "metrics": {
+        "precision": 0.0,
+        "recall": 0.0,
+        "temporal_accuracy": 0.8,
+        "hallucination_rate": 0.0
+      },
+      "as_of_date": "2025-12-30"
+    },
+    {
+      "question_id": "VAT_082",
+      "pipeline": "P2_TemporalGraphRAG",
+      "predicted_citations": [
+        "ND_181_2025_D23",
+        "LUAT_48_2024_D13",
+        "ND_181_2025_D20",
+        "ND_181_2025_D28",
+        "ND_181_2025_D31"
+      ],
+      "metrics": {
+        "precision": 0.0,
+        "recall": 0.0,
+        "temporal_accuracy": 1.0,
+        "hallucination_rate": 0.0
+      },
+      "as_of_date": "2025-12-30"
+    },
+    {
+      "question_id": "VAT_082",
+      "pipeline": "P3_FullSystem",
+      "predicted_citations": [
+        "ND_181_2025_D23",
+        "LUAT_48_2024_D13",
+        "ND_181_2025_D20",
+        "ND_181_2025_D28",
+        "ND_181_2025_D31"
+      ],
+      "metrics": {
+        "precision": 0.0,
+        "recall": 0.0,
+        "temporal_accuracy": 1.0,
+        "hallucination_rate": 0.0
+      },
+      "as_of_date": "2025-12-30"
+    },
+    {
+      "question_id": "VAT_083",
+      "pipeline": "P1_FlatRAG",
+      "predicted_citations": [
+        "LUAT_48_2024_D2",
+        "LUAT_48_2024_D1",
+        "ND_181_2025_D18",
+        "ND_181_2025_D33",
+        "ND_359_2025_D2"
+      ],
+      "metrics": {
+        "precision": 0.0,
+        "recall": 0.0,
+        "temporal_accuracy": 0.8,
+        "hallucination_rate": 0.0
+      },
+      "as_of_date": "2025-10-31"
+    },
+    {
+      "question_id": "VAT_083",
+      "pipeline": "P2_TemporalGraphRAG",
+      "predicted_citations": [
+        "ND_181_2025_D7",
+        "ND_181_2025_D16",
+        "ND_181_2025_D39",
+        "ND_181_2025_D30",
+        "ND_181_2025_D31"
+      ],
+      "metrics": {
+        "precision": 0.2,
+        "recall": 0.5,
+        "temporal_accuracy": 1.0,
+        "hallucination_rate": 0.0
+      },
+      "as_of_date": "2025-10-31"
+    },
+    {
+      "question_id": "VAT_083",
+      "pipeline": "P3_FullSystem",
+      "predicted_citations": [
+        "ND_181_2025_D7",
+        "ND_181_2025_D16",
+        "ND_181_2025_D39",
+        "ND_181_2025_D30",
+        "ND_181_2025_D31"
+      ],
+      "metrics": {
+        "precision": 0.2,
+        "recall": 0.5,
+        "temporal_accuracy": 1.0,
+        "hallucination_rate": 0.0
+      },
+      "as_of_date": "2025-10-31"
+    },
+    {
+      "question_id": "VAT_084",
+      "pipeline": "P1_FlatRAG",
+      "predicted_citations": [
+        "TT_69_2025_D4",
+        "TT_69_2025_D8",
+        "ND_181_2025_D33",
+        "ND_181_2025_D35",
+        "ND_181_2025_D8"
+      ],
+      "metrics": {
+        "precision": 0.0,
+        "recall": 0.0,
+        "temporal_accuracy": 1.0,
+        "hallucination_rate": 0.0
+      },
+      "as_of_date": "2025-08-18"
+    },
+    {
+      "question_id": "VAT_084",
+      "pipeline": "P2_TemporalGraphRAG",
+      "predicted_citations": [
+        "ND_181_2025_D8",
+        "ND_181_2025_D39",
+        "ND_181_2025_D30",
+        "ND_181_2025_D31",
+        "ND_181_2025_D37"
+      ],
+      "metrics": {
+        "precision": 0.0,
+        "recall": 0.0,
+        "temporal_accuracy": 1.0,
+        "hallucination_rate": 0.0
+      },
+      "as_of_date": "2025-08-18"
+    },
+    {
+      "question_id": "VAT_084",
+      "pipeline": "P3_FullSystem",
+      "predicted_citations": [
+        "ND_181_2025_D8",
+        "ND_181_2025_D39",
+        "ND_181_2025_D30",
+        "ND_181_2025_D31",
+        "ND_181_2025_D37"
+      ],
+      "metrics": {
+        "precision": 0.0,
+        "recall": 0.0,
+        "temporal_accuracy": 1.0,
+        "hallucination_rate": 0.0
+      },
+      "as_of_date": "2025-08-18"
+    },
+    {
+      "question_id": "VAT_085",
+      "pipeline": "P1_FlatRAG",
+      "predicted_citations": [
+        "LUAT_48_2024_D3",
+        "LUAT_48_2024_D9",
+        "LUAT_48_2024_D8",
+        "ND_144_2026_D6",
+        "ND_144_2026_D3"
+      ],
+      "metrics": {
+        "precision": 0.0,
+        "recall": 0.0,
+        "temporal_accuracy": 0.6,
+        "hallucination_rate": 0.0
+      },
+      "as_of_date": "2025-11-22"
+    },
+    {
+      "question_id": "VAT_085",
+      "pipeline": "P2_TemporalGraphRAG",
+      "predicted_citations": [
+        "ND_181_2025_D23",
+        "LUAT_48_2024_D13",
+        "ND_181_2025_D27",
+        "ND_181_2025_D17",
+        "LUAT_48_2024_D9"
+      ],
+      "metrics": {
+        "precision": 0.0,
+        "recall": 0.0,
+        "temporal_accuracy": 1.0,
+        "hallucination_rate": 0.0
+      },
+      "as_of_date": "2025-11-22"
+    },
+    {
+      "question_id": "VAT_085",
+      "pipeline": "P3_FullSystem",
+      "predicted_citations": [
+        "ND_181_2025_D23",
+        "LUAT_48_2024_D13",
+        "ND_181_2025_D27",
+        "ND_181_2025_D17",
+        "LUAT_48_2024_D9"
+      ],
+      "metrics": {
+        "precision": 0.0,
+        "recall": 0.0,
+        "temporal_accuracy": 1.0,
+        "hallucination_rate": 0.0
+      },
+      "as_of_date": "2025-11-22"
+    },
+    {
+      "question_id": "VAT_086",
+      "pipeline": "P1_FlatRAG",
+      "predicted_citations": [
+        "ND_144_2026_D1",
+        "TT_69_2025_D4",
+        "ND_181_2025_D32",
+        "ND_144_2026_D3",
+        "LUAT_48_2024_D6"
+      ],
+      "metrics": {
+        "precision": 0.0,
+        "recall": 0.0,
+        "temporal_accuracy": 0.6,
+        "hallucination_rate": 0.0
+      },
+      "as_of_date": "2025-10-25"
+    },
+    {
+      "question_id": "VAT_086",
+      "pipeline": "P2_TemporalGraphRAG",
+      "predicted_citations": [
+        "ND_181_2025_D23",
+        "LUAT_48_2024_D13",
+        "ND_181_2025_D32",
+        "ND_181_2025_D29",
+        "ND_181_2025_D20"
+      ],
+      "metrics": {
+        "precision": 0.2,
+        "recall": 0.5,
+        "temporal_accuracy": 1.0,
+        "hallucination_rate": 0.0
+      },
+      "as_of_date": "2025-10-25"
+    },
+    {
+      "question_id": "VAT_086",
+      "pipeline": "P3_FullSystem",
+      "predicted_citations": [
+        "ND_181_2025_D23",
+        "LUAT_48_2024_D13",
+        "ND_181_2025_D32",
+        "ND_181_2025_D29",
+        "ND_181_2025_D20"
+      ],
+      "metrics": {
+        "precision": 0.2,
+        "recall": 0.5,
+        "temporal_accuracy": 1.0,
+        "hallucination_rate": 0.0
+      },
+      "as_of_date": "2025-10-25"
+    },
+    {
+      "question_id": "VAT_087",
+      "pipeline": "P1_FlatRAG",
+      "predicted_citations": [
+        "ND_181_2025_D20",
+        "ND_181_2025_D25",
+        "ND_144_2026_D5",
+        "TT_69_2025_D5",
+        "ND_181_2025_D2"
+      ],
+      "metrics": {
+        "precision": 0.0,
+        "recall": 0.0,
+        "temporal_accuracy": 0.8,
+        "hallucination_rate": 0.0
+      },
+      "as_of_date": "2025-11-30"
+    },
+    {
+      "question_id": "VAT_087",
+      "pipeline": "P2_TemporalGraphRAG",
+      "predicted_citations": [
+        "LUAT_48_2024_D5",
+        "LUAT_48_2024_D9",
+        "ND_181_2025_D20",
+        "ND_181_2025_D4",
+        "ND_181_2025_D26"
+      ],
+      "metrics": {
+        "precision": 0.0,
+        "recall": 0.0,
+        "temporal_accuracy": 1.0,
+        "hallucination_rate": 0.0
+      },
+      "as_of_date": "2025-11-30"
+    },
+    {
+      "question_id": "VAT_087",
+      "pipeline": "P3_FullSystem",
+      "predicted_citations": [
+        "LUAT_48_2024_D5",
+        "LUAT_48_2024_D9",
+        "ND_181_2025_D20",
+        "ND_181_2025_D4",
+        "ND_181_2025_D26"
+      ],
+      "metrics": {
+        "precision": 0.0,
+        "recall": 0.0,
+        "temporal_accuracy": 1.0,
+        "hallucination_rate": 0.0
+      },
+      "as_of_date": "2025-11-30"
+    },
+    {
+      "question_id": "VAT_088",
+      "pipeline": "P1_FlatRAG",
+      "predicted_citations": [
+        "LUAT_48_2024_D4",
+        "LUAT_48_2024_D8",
+        "TT_69_2025_D3",
+        "ND_181_2025_D36",
+        "ND_181_2025_D31"
+      ],
+      "metrics": {
+        "precision": 0.0,
+        "recall": 0.0,
+        "temporal_accuracy": 1.0,
+        "hallucination_rate": 0.0
+      },
+      "as_of_date": "2025-08-31"
+    },
+    {
+      "question_id": "VAT_088",
+      "pipeline": "P2_TemporalGraphRAG",
+      "predicted_citations": [
+        "ND_181_2025_D31",
+        "ND_181_2025_D8",
+        "TT_69_2025_D8",
+        "ND_181_2025_D24",
+        "ND_181_2025_D17"
+      ],
+      "metrics": {
+        "precision": 0.0,
+        "recall": 0.0,
+        "temporal_accuracy": 1.0,
+        "hallucination_rate": 0.0
+      },
+      "as_of_date": "2025-08-31"
+    },
+    {
+      "question_id": "VAT_088",
+      "pipeline": "P3_FullSystem",
+      "predicted_citations": [
+        "ND_181_2025_D31",
+        "ND_181_2025_D8",
+        "TT_69_2025_D8",
+        "ND_181_2025_D24",
+        "ND_181_2025_D17"
+      ],
+      "metrics": {
+        "precision": 0.0,
+        "recall": 0.0,
+        "temporal_accuracy": 1.0,
+        "hallucination_rate": 0.0
+      },
+      "as_of_date": "2025-08-31"
+    },
+    {
+      "question_id": "VAT_089",
+      "pipeline": "P1_FlatRAG",
+      "predicted_citations": [
+        "ND_181_2025_D38",
+        "ND_181_2025_D2",
+        "ND_181_2025_D37",
+        "LUAT_48_2024_D2",
+        "ND_181_2025_D6"
+      ],
+      "metrics": {
+        "precision": 0.0,
+        "recall": 0.0,
+        "temporal_accuracy": 1.0,
+        "hallucination_rate": 0.0
+      },
+      "as_of_date": "2025-12-20"
+    },
+    {
+      "question_id": "VAT_089",
+      "pipeline": "P2_TemporalGraphRAG",
+      "predicted_citations": [
+        "LUAT_48_2024_D15",
+        "ND_181_2025_D8",
+        "ND_181_2025_D11",
+        "ND_181_2025_D27",
+        "ND_181_2025_D37"
+      ],
+      "metrics": {
+        "precision": 0.2,
+        "recall": 0.5,
+        "temporal_accuracy": 1.0,
+        "hallucination_rate": 0.0
+      },
+      "as_of_date": "2025-12-20"
+    },
+    {
+      "question_id": "VAT_089",
+      "pipeline": "P3_FullSystem",
+      "predicted_citations": [
+        "LUAT_48_2024_D15",
+        "ND_181_2025_D8",
+        "ND_181_2025_D11",
+        "ND_181_2025_D27",
+        "ND_181_2025_D37"
+      ],
+      "metrics": {
+        "precision": 0.2,
+        "recall": 0.5,
+        "temporal_accuracy": 1.0,
+        "hallucination_rate": 0.0
+      },
+      "as_of_date": "2025-12-20"
+    },
+    {
+      "question_id": "VAT_090",
+      "pipeline": "P1_FlatRAG",
+      "predicted_citations": [
+        "ND_181_2025_D30",
+        "TT_69_2025_D4",
+        "ND_181_2025_D6",
+        "ND_181_2025_D38",
+        "LUAT_48_2024_D2"
+      ],
+      "metrics": {
+        "precision": 0.0,
+        "recall": 0.0,
+        "temporal_accuracy": 1.0,
+        "hallucination_rate": 0.0
+      },
+      "as_of_date": "2025-09-25"
+    },
+    {
+      "question_id": "VAT_090",
+      "pipeline": "P2_TemporalGraphRAG",
+      "predicted_citations": [
+        "ND_181_2025_D24",
+        "ND_181_2025_D8",
+        "ND_181_2025_D32",
+        "ND_181_2025_D28",
+        "ND_181_2025_D27"
+      ],
+      "metrics": {
+        "precision": 0.0,
+        "recall": 0.0,
+        "temporal_accuracy": 1.0,
+        "hallucination_rate": 0.0
+      },
+      "as_of_date": "2025-09-25"
+    },
+    {
+      "question_id": "VAT_090",
+      "pipeline": "P3_FullSystem",
+      "predicted_citations": [
+        "ND_181_2025_D24",
+        "ND_181_2025_D8",
+        "ND_181_2025_D32",
+        "ND_181_2025_D28",
+        "ND_181_2025_D27"
+      ],
+      "metrics": {
+        "precision": 0.0,
+        "recall": 0.0,
+        "temporal_accuracy": 1.0,
+        "hallucination_rate": 0.0
+      },
+      "as_of_date": "2025-09-25"
+    },
+    {
+      "question_id": "VAT_091",
+      "pipeline": "P1_FlatRAG",
+      "predicted_citations": [
+        "LUAT_48_2024_D4",
+        "ND_181_2025_D33",
+        "ND_181_2025_D8",
+        "TT_69_2025_D3",
+        "LUAT_48_2024_D18"
+      ],
+      "metrics": {
+        "precision": 0.2,
+        "recall": 0.5,
+        "temporal_accuracy": 1.0,
+        "hallucination_rate": 0.0
+      },
+      "as_of_date": "2025-11-18"
+    },
+    {
+      "question_id": "VAT_091",
+      "pipeline": "P2_TemporalGraphRAG",
+      "predicted_citations": [
+        "ND_181_2025_D28",
+        "ND_181_2025_D33",
+        "ND_181_2025_D4",
+        "LUAT_48_2024_D9",
+        "TT_69_2025_D7"
+      ],
+      "metrics": {
+        "precision": 0.2,
+        "recall": 0.5,
+        "temporal_accuracy": 1.0,
+        "hallucination_rate": 0.0
+      },
+      "as_of_date": "2025-11-18"
+    },
+    {
+      "question_id": "VAT_091",
+      "pipeline": "P3_FullSystem",
+      "predicted_citations": [
+        "ND_181_2025_D28",
+        "ND_181_2025_D33",
+        "ND_181_2025_D4",
+        "LUAT_48_2024_D9",
+        "TT_69_2025_D7"
+      ],
+      "metrics": {
+        "precision": 0.2,
+        "recall": 0.5,
+        "temporal_accuracy": 1.0,
+        "hallucination_rate": 0.0
+      },
+      "as_of_date": "2025-11-18"
+    },
+    {
+      "question_id": "VAT_092",
+      "pipeline": "P1_FlatRAG",
+      "predicted_citations": [
+        "TT_69_2025_D8",
+        "LUAT_48_2024_D7",
+        "TT_69_2025_D7",
+        "LUAT_48_2024_D3",
+        "ND_359_2025_D1"
+      ],
+      "metrics": {
+        "precision": 0.0,
+        "recall": 0.0,
+        "temporal_accuracy": 0.8,
+        "hallucination_rate": 0.0
+      },
+      "as_of_date": "2025-08-12"
+    },
+    {
+      "question_id": "VAT_092",
+      "pipeline": "P2_TemporalGraphRAG",
+      "predicted_citations": [
+        "TT_69_2025_D8",
+        "TT_69_2025_D7",
+        "TT_69_2025_D3",
+        "LUAT_48_2024_D5",
+        "ND_181_2025_D12"
+      ],
+      "metrics": {
+        "precision": 0.2,
+        "recall": 0.5,
+        "temporal_accuracy": 1.0,
+        "hallucination_rate": 0.0
+      },
+      "as_of_date": "2025-08-12"
+    },
+    {
+      "question_id": "VAT_092",
+      "pipeline": "P3_FullSystem",
+      "predicted_citations": [
+        "TT_69_2025_D8",
+        "TT_69_2025_D7",
+        "TT_69_2025_D3",
+        "LUAT_48_2024_D5",
+        "ND_181_2025_D12"
+      ],
+      "metrics": {
+        "precision": 0.2,
+        "recall": 0.5,
+        "temporal_accuracy": 1.0,
+        "hallucination_rate": 0.0
+      },
+      "as_of_date": "2025-08-12"
+    },
+    {
+      "question_id": "VAT_093",
+      "pipeline": "P1_FlatRAG",
+      "predicted_citations": [
+        "ND_144_2026_D5",
+        "ND_181_2025_D3",
+        "ND_181_2025_D15",
+        "ND_181_2025_D27",
+        "TT_69_2025_D3"
+      ],
+      "metrics": {
+        "precision": 0.0,
+        "recall": 0.0,
+        "temporal_accuracy": 0.8,
+        "hallucination_rate": 0.0
+      },
+      "as_of_date": "2025-10-14"
+    },
+    {
+      "question_id": "VAT_093",
+      "pipeline": "P2_TemporalGraphRAG",
+      "predicted_citations": [
+        "ND_181_2025_D27",
+        "ND_181_2025_D9",
+        "LUAT_48_2024_D9",
+        "ND_181_2025_D1",
+        "TT_69_2025_D3"
+      ],
+      "metrics": {
+        "precision": 0.2,
+        "recall": 0.5,
+        "temporal_accuracy": 1.0,
+        "hallucination_rate": 0.0
+      },
+      "as_of_date": "2025-10-14"
+    },
+    {
+      "question_id": "VAT_093",
+      "pipeline": "P3_FullSystem",
+      "predicted_citations": [
+        "ND_181_2025_D27",
+        "ND_181_2025_D9",
+        "LUAT_48_2024_D9",
+        "ND_181_2025_D1",
+        "TT_69_2025_D3"
+      ],
+      "metrics": {
+        "precision": 0.2,
+        "recall": 0.5,
+        "temporal_accuracy": 1.0,
+        "hallucination_rate": 0.0
+      },
+      "as_of_date": "2025-10-14"
+    },
+    {
+      "question_id": "VAT_094",
+      "pipeline": "P1_FlatRAG",
+      "predicted_citations": [
+        "TT_69_2025_D7",
+        "LUAT_48_2024_D15",
+        "ND_181_2025_D24",
+        "ND_181_2025_D32",
+        "ND_181_2025_D35"
+      ],
+      "metrics": {
+        "precision": 0.0,
+        "recall": 0.0,
+        "temporal_accuracy": 1.0,
+        "hallucination_rate": 0.0
+      },
+      "as_of_date": "2025-09-30"
+    },
+    {
+      "question_id": "VAT_094",
+      "pipeline": "P2_TemporalGraphRAG",
+      "predicted_citations": [
+        "ND_181_2025_D24",
+        "LUAT_48_2024_D15",
+        "ND_181_2025_D16",
+        "ND_181_2025_D32",
+        "TT_69_2025_D7"
+      ],
+      "metrics": {
+        "precision": 0.0,
+        "recall": 0.0,
+        "temporal_accuracy": 1.0,
+        "hallucination_rate": 0.0
+      },
+      "as_of_date": "2025-09-30"
+    },
+    {
+      "question_id": "VAT_094",
+      "pipeline": "P3_FullSystem",
+      "predicted_citations": [
+        "ND_181_2025_D24",
+        "LUAT_48_2024_D15",
+        "ND_181_2025_D16",
+        "ND_181_2025_D32",
+        "TT_69_2025_D7"
+      ],
+      "metrics": {
+        "precision": 0.0,
+        "recall": 0.0,
+        "temporal_accuracy": 1.0,
+        "hallucination_rate": 0.0
+      },
+      "as_of_date": "2025-09-30"
+    },
+    {
+      "question_id": "VAT_095",
+      "pipeline": "P1_FlatRAG",
+      "predicted_citations": [
+        "LUAT_48_2024_D5",
+        "ND_181_2025_D27",
+        "ND_144_2026_D3",
+        "TT_69_2025_D8",
+        "ND_181_2025_D40"
+      ],
+      "metrics": {
+        "precision": 0.2,
+        "recall": 0.3333333333333333,
+        "temporal_accuracy": 0.8,
+        "hallucination_rate": 0.0
+      },
+      "as_of_date": "2025-10-28"
+    },
+    {
+      "question_id": "VAT_095",
+      "pipeline": "P2_TemporalGraphRAG",
+      "predicted_citations": [
+        "ND_181_2025_D40",
+        "LUAT_48_2024_D5",
+        "LUAT_48_2024_D9",
+        "ND_181_2025_D27",
+        "TT_69_2025_D4"
+      ],
+      "metrics": {
+        "precision": 0.2,
+        "recall": 0.3333333333333333,
+        "temporal_accuracy": 1.0,
+        "hallucination_rate": 0.0
+      },
+      "as_of_date": "2025-10-28"
+    },
+    {
+      "question_id": "VAT_095",
+      "pipeline": "P3_FullSystem",
+      "predicted_citations": [
+        "ND_181_2025_D40",
+        "LUAT_48_2024_D5",
+        "LUAT_48_2024_D9",
+        "ND_181_2025_D27",
+        "TT_69_2025_D4"
+      ],
+      "metrics": {
+        "precision": 0.2,
+        "recall": 0.3333333333333333,
+        "temporal_accuracy": 1.0,
+        "hallucination_rate": 0.0
+      },
+      "as_of_date": "2025-10-28"
+    },
+    {
+      "question_id": "VAT_096",
+      "pipeline": "P1_FlatRAG",
+      "predicted_citations": [
+        "LUAT_48_2024_D16",
+        "ND_181_2025_D23",
+        "LUAT_48_2024_D18",
+        "ND_181_2025_D19",
+        "LUAT_48_2024_D4"
+      ],
+      "metrics": {
+        "precision": 0.0,
+        "recall": 0.0,
+        "temporal_accuracy": 1.0,
+        "hallucination_rate": 0.0
+      },
+      "as_of_date": "2025-09-08"
+    },
+    {
+      "question_id": "VAT_096",
+      "pipeline": "P2_TemporalGraphRAG",
+      "predicted_citations": [
+        "ND_181_2025_D23",
+        "LUAT_48_2024_D13",
+        "ND_181_2025_D4",
+        "LUAT_48_2024_D9",
+        "TT_69_2025_D8"
+      ],
+      "metrics": {
+        "precision": 0.2,
+        "recall": 0.5,
+        "temporal_accuracy": 1.0,
+        "hallucination_rate": 0.0
+      },
+      "as_of_date": "2025-09-08"
+    },
+    {
+      "question_id": "VAT_096",
+      "pipeline": "P3_FullSystem",
+      "predicted_citations": [
+        "ND_181_2025_D23",
+        "LUAT_48_2024_D13",
+        "ND_181_2025_D4",
+        "LUAT_48_2024_D9",
+        "TT_69_2025_D8"
+      ],
+      "metrics": {
+        "precision": 0.2,
+        "recall": 0.5,
+        "temporal_accuracy": 1.0,
+        "hallucination_rate": 0.0
+      },
+      "as_of_date": "2025-09-08"
+    },
+    {
+      "question_id": "VAT_097",
+      "pipeline": "P1_FlatRAG",
+      "predicted_citations": [
+        "TT_69_2025_D6",
+        "ND_181_2025_D4",
+        "ND_181_2025_D27",
+        "ND_181_2025_D26",
+        "LUAT_48_2024_D15"
+      ],
+      "metrics": {
+        "precision": 0.2,
+        "recall": 0.3333333333333333,
+        "temporal_accuracy": 1.0,
+        "hallucination_rate": 0.0
+      },
+      "as_of_date": "2025-11-16"
+    },
+    {
+      "question_id": "VAT_097",
+      "pipeline": "P2_TemporalGraphRAG",
+      "predicted_citations": [
+        "TT_69_2025_D6",
+        "ND_181_2025_D4",
+        "LUAT_48_2024_D9",
+        "ND_181_2025_D25",
+        "ND_181_2025_D27"
+      ],
+      "metrics": {
+        "precision": 0.4,
+        "recall": 0.6666666666666666,
+        "temporal_accuracy": 1.0,
+        "hallucination_rate": 0.0
+      },
+      "as_of_date": "2025-11-16"
+    },
+    {
+      "question_id": "VAT_097",
+      "pipeline": "P3_FullSystem",
+      "predicted_citations": [
+        "TT_69_2025_D6",
+        "ND_181_2025_D4",
+        "LUAT_48_2024_D9",
+        "ND_181_2025_D25",
+        "ND_181_2025_D27"
+      ],
+      "metrics": {
+        "precision": 0.4,
+        "recall": 0.6666666666666666,
+        "temporal_accuracy": 1.0,
+        "hallucination_rate": 0.0
+      },
+      "as_of_date": "2025-11-16"
+    },
+    {
+      "question_id": "VAT_098",
+      "pipeline": "P1_FlatRAG",
+      "predicted_citations": [
+        "ND_181_2025_D19",
+        "LUAT_48_2024_D4",
+        "ND_181_2025_D7",
+        "TT_69_2025_D9",
+        "ND_181_2025_D2"
+      ],
+      "metrics": {
+        "precision": 0.0,
+        "recall": 0.0,
+        "temporal_accuracy": 1.0,
+        "hallucination_rate": 0.0
+      },
+      "as_of_date": "2025-12-18"
+    },
+    {
+      "question_id": "VAT_098",
+      "pipeline": "P2_TemporalGraphRAG",
+      "predicted_citations": [
+        "ND_181_2025_D31",
+        "ND_181_2025_D7",
+        "ND_181_2025_D16",
+        "TT_69_2025_D1",
+        "ND_181_2025_D29"
+      ],
+      "metrics": {
+        "precision": 0.0,
+        "recall": 0.0,
+        "temporal_accuracy": 1.0,
+        "hallucination_rate": 0.0
+      },
+      "as_of_date": "2025-12-18"
+    },
+    {
+      "question_id": "VAT_098",
+      "pipeline": "P3_FullSystem",
+      "predicted_citations": [
+        "ND_181_2025_D31",
+        "ND_181_2025_D7",
+        "ND_181_2025_D16",
+        "TT_69_2025_D1",
+        "ND_181_2025_D29"
+      ],
+      "metrics": {
+        "precision": 0.0,
+        "recall": 0.0,
+        "temporal_accuracy": 1.0,
+        "hallucination_rate": 0.0
+      },
+      "as_of_date": "2025-12-18"
+    },
+    {
+      "question_id": "VAT_099",
+      "pipeline": "P1_FlatRAG",
+      "predicted_citations": [
+        "ND_181_2025_D37",
+        "ND_181_2025_D1",
+        "ND_144_2026_D1",
+        "ND_181_2025_D19",
+        "TT_69_2025_D8"
+      ],
+      "metrics": {
+        "precision": 0.0,
+        "recall": 0.0,
+        "temporal_accuracy": 0.8,
+        "hallucination_rate": 0.0
+      },
+      "as_of_date": "2025-10-26"
+    },
+    {
+      "question_id": "VAT_099",
+      "pipeline": "P2_TemporalGraphRAG",
+      "predicted_citations": [
+        "ND_181_2025_D19",
+        "ND_181_2025_D4",
+        "LUAT_48_2024_D9",
+        "ND_181_2025_D23",
+        "LUAT_48_2024_D13"
+      ],
+      "metrics": {
+        "precision": 0.2,
+        "recall": 0.5,
+        "temporal_accuracy": 1.0,
+        "hallucination_rate": 0.0
+      },
+      "as_of_date": "2025-10-26"
+    },
+    {
+      "question_id": "VAT_099",
+      "pipeline": "P3_FullSystem",
+      "predicted_citations": [
+        "ND_181_2025_D19",
+        "ND_181_2025_D4",
+        "LUAT_48_2024_D9",
+        "ND_181_2025_D23",
+        "LUAT_48_2024_D13"
+      ],
+      "metrics": {
+        "precision": 0.2,
+        "recall": 0.5,
+        "temporal_accuracy": 1.0,
+        "hallucination_rate": 0.0
+      },
+      "as_of_date": "2025-10-26"
+    },
+    {
+      "question_id": "VAT_100",
+      "pipeline": "P1_FlatRAG",
+      "predicted_citations": [
+        "ND_181_2025_D40",
+        "LUAT_48_2024_D18",
+        "ND_181_2025_D11",
+        "ND_181_2025_D35",
+        "ND_181_2025_D14"
+      ],
+      "metrics": {
+        "precision": 0.0,
+        "recall": 0.0,
+        "temporal_accuracy": 1.0,
+        "hallucination_rate": 0.0
+      },
+      "as_of_date": "2025-12-25"
+    },
+    {
+      "question_id": "VAT_100",
+      "pipeline": "P2_TemporalGraphRAG",
+      "predicted_citations": [
+        "ND_181_2025_D16",
+        "ND_181_2025_D24",
+        "ND_181_2025_D11",
+        "ND_181_2025_D8",
+        "LUAT_48_2024_D14"
+      ],
+      "metrics": {
+        "precision": 0.2,
+        "recall": 0.5,
+        "temporal_accuracy": 1.0,
+        "hallucination_rate": 0.0
+      },
+      "as_of_date": "2025-12-25"
+    },
+    {
+      "question_id": "VAT_100",
+      "pipeline": "P3_FullSystem",
+      "predicted_citations": [
+        "ND_181_2025_D16",
+        "ND_181_2025_D24",
+        "ND_181_2025_D11",
+        "ND_181_2025_D8",
+        "LUAT_48_2024_D14"
+      ],
+      "metrics": {
+        "precision": 0.2,
+        "recall": 0.5,
+        "temporal_accuracy": 1.0,
+        "hallucination_rate": 0.0
+      },
+      "as_of_date": "2025-12-25"
+    }
+  ]
+}
