@@ -10,7 +10,7 @@ class QueryRequest(BaseModel):
     as_of_date: str = Field(..., description="Reference point date in YYYY-MM-DD format")
     pipeline: str = Field(default="P3_FullSystem", description="Retrieval pipeline identifier")
     use_llm: bool = Field(default=False, description="Whether to invoke LLM generation")
-    model: str = Field(default="qwen2.5:3b", description="LLM model identifier")
+    model: str = Field(default="qwen2.5:7b", description="LLM model identifier")
 
 
 class QueryResponse(BaseModel):
@@ -27,6 +27,8 @@ class QueryResponse(BaseModel):
     irac_sections: dict[str, str] = Field(..., description="Structured IRAC response sections")
     llm_used: bool = Field(default=False, description="Indicates whether LLM was used")
     raw_llm_response: str | None = Field(default=None, description="Raw generation output from LLM")
+    is_out_of_domain: bool = Field(default=False, description="Whether query was outside VAT legal domain")
+    is_greeting: bool = Field(default=False, description="Whether query was a conversational greeting")
 
 
 class DocumentSummary(BaseModel):

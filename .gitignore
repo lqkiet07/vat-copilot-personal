@@ -32,3 +32,4 @@ frontend/.env*
 .ruff_cache/
 .idea/
 .vscode/
+frontend_old_harvey/
