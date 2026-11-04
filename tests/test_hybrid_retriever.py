@@ -1,3 +1,4 @@
+import pytest
 from src.engine.hybrid_retriever import (
     query_hybrid_temporal,
     reciprocal_rank_fusion,
@@ -28,6 +29,7 @@ def test_rrf_scoring_logic():
     assert abs(fused_dict["doc3"] - expected_doc3) < 1e-6
 
 
+@pytest.mark.requires_neo4j
 def test_hybrid_temporal_filtering_and_traversal():
     past_results = query_hybrid_temporal(
         query="thuế giá trị gia tăng", as_of_date="2025-05-01"
@@ -55,3 +57,17 @@ def test_hybrid_temporal_filtering_and_traversal():
     )
     assert isinstance(qr_past, QueryResult)
     assert not any(a.doc_id == "LUAT_48_2024" for a in qr_past.articles)
+
+
+@pytest.mark.requires_neo4j
+def test_enrich_articles_contains_clauses_content():
+    from src.graph.connection import get_neo4j_driver
+    from src.engine.hybrid_retriever import _enrich_articles
+
+    driver = get_neo4j_driver()
+    with driver.session() as session:
+        nodes = _enrich_articles(session, ["LUAT_48_2024_D5"], "2026-03-20")
+        assert len(nodes) == 1
+        d5 = nodes[0]
+        assert "200 triệu" in d5.content or "Khoan 25" in d5.content
+

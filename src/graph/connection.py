@@ -10,14 +10,7 @@ def get_neo4j_driver():
     """Return shared Neo4j driver initialized from environment variables."""
     global _driver
     if _driver is not None:
-        if getattr(_driver, "_closed", False):
-            _driver = None
-        else:
-            try:
-                _driver.verify_connectivity()
-                return _driver
-            except Exception:
-                _driver = None
+        return _driver
     _driver = GraphDatabase.driver(
         os.getenv("NEO4J_URI", "bolt://localhost:7687"),
         auth=(os.getenv("NEO4J_USER", "neo4j"),

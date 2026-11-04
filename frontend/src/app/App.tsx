@@ -1,58 +1,31 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
-  AlertTriangle, ArrowUp, BookOpen, CalendarDays, CheckCircle2, ChevronDown, ChevronRight,
-  Clock, Copy, ExternalLink, FileCode, FileSearch, FileText, Filter, Folder,
-  GitBranch, History, Info, Layers, LayoutGrid, Lightbulb, Loader2, Lock,
-  LogOut, MapPin, MessageSquare, Mic, MoreHorizontal, PanelLeft, PanelLeftClose,
-  Paperclip, Plus, RotateCcw, Search, Send, Settings, Share2, Sliders,
-  Sparkles, SquarePen, ThumbsDown, ThumbsUp, Trash2, User, UserCheck, X,
+  AlertTriangle, ArrowUp, BookOpen, CalendarDays, CheckCircle2, ChevronDown,
+  Copy, ExternalLink, FileSearch, FileText, GitBranch, History, Loader2,
+  MessageSquare, PanelLeft, Search, Settings, SquarePen, Trash2, X,
 } from "lucide-react";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/app/components/ui/dialog";
 import { Popover, PopoverContent, PopoverTrigger } from "@/app/components/ui/popover";
 import emblem from "@/imports/tai-xuong.png";
 import drum from "@/imports/img_6-hinh-nen-powerpoint-trong-dong.jpg";
-import { DOCS, SCENARIOS, resolve, type Result, type LawDoc, type Citation } from "./data";
+import { DOCS, SCENARIOS, type Result, type Citation } from "./data";
 import { queryLegalApi } from "./api";
+import { DATA_FREEZE_DATE, getEffectiveDate } from "./config";
 
 type Pipeline = "P3" | "P2" | "P1";
 type Msg = { id: number; q: string; date: string; pipeline: Pipeline; result: Result | null };
 type Conversation = { id: string; title: string; updated: number; messages: Msg[] };
 
-type UserState = {
-  isLoggedIn: boolean;
-  name: string;
-  role: string;
-  taxCode?: string;
-};
-
 type SystemSettings = {
   pipeline: Pipeline;
-  language: "vi" | "en";
   defaultDate: string;
-  theme: "light" | "dark" | "system";
   useLlm: boolean;
-};
-
-const DEFAULT_USER: UserState = {
-  isLoggedIn: false,
-  name: "Khách truy cập",
-  role: "Chưa đăng nhập",
-  taxCode: "",
-};
-
-const LOGGED_IN_USER_PRESET: UserState = {
-  isLoggedIn: true,
-  name: "Huỳnh Tấn Phúc",
-  role: "Người nộp thuế / Doanh nghiệp",
-  taxCode: "1801234567",
 };
 
 const DEFAULT_SETTINGS: SystemSettings = {
   pipeline: "P3",
-  language: "vi",
-  defaultDate: "2026-03-20",
-  theme: "light",
-  useLlm: false,
+  defaultDate: DATA_FREEZE_DATE,
+  useLlm: true,
 };
 
 const PIPELINES = [
@@ -98,7 +71,6 @@ const store = {
 export function App() {
   // Settings & User state
   const [settings, setSettings] = useState<SystemSettings>(() => store.get("vat_public_settings", DEFAULT_SETTINGS));
-  const [user, setUser] = useState<UserState>(() => store.get("vat_user_state", DEFAULT_USER));
 
   // Current query parameters
   const [date, setDate] = useState<string>(settings.defaultDate);
@@ -116,34 +88,20 @@ export function App() {
 
   const [relatedOpen, setRelatedOpen] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
-  const [loginModalOpen, setLoginModalOpen] = useState(false);
   const [pipelineMenuOpen, setPipelineMenuOpen] = useState(false);
 
   // Conversations & Messages
   const [convs, setConvs] = useState<Conversation[]>(() =>
-    store.get("vat_public_convs", [
-      {
-        id: "c-1",
-        title: "Xuất khẩu phần mềm năm 2026 (Thuế 0%)",
-        updated: Date.now() - 3600000,
-        messages: [],
-      },
-      {
-        id: "c-2",
-        title: "Bẫy niên đại trước 01/07/2025 (Luật 13 vs 48)",
-        updated: Date.now() - 86400000,
-        messages: [],
-      },
-      {
-        id: "c-3",
-        title: "Xử lý hóa đơn điện tử theo NĐ 144/2026",
-        updated: Date.now() - 172800000,
-        messages: [],
-      },
-    ])
+    store.get("vat_public_convs", [])
   );
-  const [activeId, setActiveId] = useState<string>("c-1");
-  const [messages, setMessages] = useState<Msg[]>([]);
+  const [activeId, setActiveId] = useState<string>(() => {
+    const list = store.get<Conversation[]>("vat_public_convs", []);
+    return list.length > 0 ? list[0].id : "c_initial";
+  });
+  const [messages, setMessages] = useState<Msg[]>(() => {
+    const list = store.get<Conversation[]>("vat_public_convs", []);
+    return list.length > 0 ? list[0].messages || [] : [];
+  });
 
   const taRef = useRef<HTMLTextAreaElement>(null);
   const endRef = useRef<HTMLDivElement>(null);
@@ -152,10 +110,6 @@ export function App() {
   useEffect(() => {
     store.set("vat_public_settings", settings);
   }, [settings]);
-
-  useEffect(() => {
-    store.set("vat_user_state", user);
-  }, [user]);
 
   useEffect(() => {
     endRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -236,22 +190,48 @@ export function App() {
       })
     );
 
-    // Multi-step reasoning & real backend API query
-    const apiPromise = queryLegalApi(q, d, pipeline, settings.useLlm);
+    // Multi-step reasoning & real backend API query with conversation history
+    const historyPayload = messages
+      .filter((m) => m.result !== null)
+      .flatMap((m) => [
+        { role: "user", content: m.q },
+        { role: "assistant", content: m.result!.conclusion }
+      ]);
+    const effectiveDate = getEffectiveDate(d);
+    const apiPromise = queryLegalApi(q, effectiveDate, pipeline, settings.useLlm, historyPayload);
     for (let s = 0; s < STEPS.length - 1; s++) {
       setStep(s);
       await new Promise((r) => setTimeout(r, 260));
     }
-    const res = await apiPromise;
-    setStep(STEPS.length - 1);
-    await new Promise((r) => setTimeout(r, 160));
-    const finalMsgs = nextMsgs.map((m) => (m.id === id ? { ...m, result: res } : m));
-    setMessages(finalMsgs);
-    setLoading(false);
+    try {
+      const res = await apiPromise;
+      setStep(STEPS.length - 1);
+      await new Promise((r) => setTimeout(r, 160));
+      const finalMsgs = nextMsgs.map((m) => (m.id === id ? { ...m, result: res } : m));
+      setMessages(finalMsgs);
+      setLoading(false);
 
-    setConvs((prev) =>
-      prev.map((c) => (c.id === activeId ? { ...c, updated: Date.now(), messages: finalMsgs } : c))
-    );
+      setConvs((prev) =>
+        prev.map((c) => (c.id === activeId ? { ...c, updated: Date.now(), messages: finalMsgs } : c))
+      );
+    } catch (err: any) {
+      setLoading(false);
+      const errorMsg = err?.message || "Không thể kết nối máy chủ thẩm định pháp lý (Backend offline).";
+      const errorResult: Result = {
+        score: 100,
+        issue: `Lỗi kết nối máy chủ thẩm định: "${q}"`,
+        rule: "Không thể kết nối với dịch vụ backend FastAPI.",
+        citations: [],
+        application: [errorMsg],
+        conclusion: errorMsg,
+        audit: [{ tone: "bad", text: errorMsg }],
+      };
+      const finalMsgs = nextMsgs.map((m) => (m.id === id ? { ...m, result: errorResult } : m));
+      setMessages(finalMsgs);
+      setConvs((prev) =>
+        prev.map((c) => (c.id === activeId ? { ...c, updated: Date.now(), messages: finalMsgs } : c))
+      );
+    }
   }
 
   // Filter library docs by category and search
@@ -402,53 +382,19 @@ export function App() {
         </div>
 
         {/* =====================================================================
-            SIDEBAR FOOTER: USER STATUS (KHÁCH / ĐÃ ĐĂNG NHẬP) & SETTINGS
+            SIDEBAR FOOTER: SYSTEM SETTINGS
            ===================================================================== */}
         <div className="border-t border-[#E2E8F0] p-2 bg-[#F1F5F9]/50">
-          <div className="flex items-center justify-between gap-2">
-            {/* User Profile / Guest Button */}
-            <button
-              onClick={() => {
-                if (!user.isLoggedIn) {
-                  setLoginModalOpen(true);
-                } else {
-                  setSettingsOpen(true);
-                }
-              }}
-              className={`flex items-center rounded-xl p-1.5 transition hover:bg-[#E2E8F0] ${
-                sidebarOpen ? "gap-2.5 min-w-0 flex-1 text-left" : "justify-center"
-              }`}
-              title={user.isLoggedIn ? "Tài khoản người dùng" : "Bấm để đăng nhập tài khoản"}
-            >
-              <div className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-white font-bold text-[12px] ${
-                user.isLoggedIn ? "bg-[#1E3A8A]" : "bg-[#64748B]"
-              }`}>
-                {user.isLoggedIn ? user.name.slice(0, 2).toUpperCase() : <User className="h-4 w-4" />}
-              </div>
-
-              {sidebarOpen && (
-                <div className="flex-1 min-w-0">
-                  <div className="truncate text-[12.5px] font-semibold text-[#1E293B]">
-                    {user.name}
-                  </div>
-                  <div className="truncate text-[10.5px] text-[#64748B]">
-                    {user.isLoggedIn ? user.role : "Bấm để đăng nhập"}
-                  </div>
-                </div>
-              )}
-            </button>
-
-            {/* Functional Settings Icon */}
-            {sidebarOpen && (
-              <button
-                onClick={() => setSettingsOpen(true)}
-                className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-[#64748B] hover:bg-[#E2E8F0] hover:text-[#1E3A8A]"
-                title="Cài đặt hệ thống (Mô hình, Ngôn ngữ, Mốc thời gian, Giao diện)"
-              >
-                <Settings className="h-4 w-4" />
-              </button>
-            )}
-          </div>
+          <button
+            onClick={() => setSettingsOpen(true)}
+            className={`flex w-full items-center rounded-xl py-2 text-[#475569] transition hover:bg-[#E2E8F0] hover:text-[#1E3A8A] ${
+              sidebarOpen ? "gap-2.5 px-3 text-[13px] font-medium" : "justify-center px-0"
+            }`}
+            title="Cài đặt hệ thống (Mô hình, Mốc thời gian, LLM)"
+          >
+            <Settings className="h-4 w-4 shrink-0 text-[#1E3A8A]" />
+            {sidebarOpen && <span>Cài đặt hệ thống</span>}
+          </button>
         </div>
       </aside>
 
@@ -516,17 +462,15 @@ export function App() {
                 Văn bản liên quan {latestCitations.length > 0 ? `(${latestCitations.length})` : ""}
               </span>
             </button>
-
-            {/* Quick new chat */}
-            <button
-              onClick={newChat}
-              className="flex h-8 w-8 items-center justify-center rounded-full text-[#475569] hover:bg-[#F1F5F9]"
-              title="Làm mới cuộc trò chuyện"
-            >
-              <SquarePen className="h-4 w-4" />
-            </button>
           </div>
         </header>
+
+        {date > DATA_FREEZE_DATE && (
+          <div className="relative z-20 flex items-center justify-center gap-2 border-b border-amber-200 bg-amber-50 px-4 py-2 text-[12px] text-amber-800">
+            <AlertTriangle className="h-4 w-4 shrink-0 text-amber-600" />
+            <span>Mốc thời gian vượt quá ngày đóng băng dữ liệu (30/09/2026). Hệ thống sẽ thẩm định theo quy định có hiệu lực tính đến 30/09/2026.</span>
+          </div>
+        )}
 
         {/* Scrollable Conversation Canvas */}
         <div className="scroll-quiet relative z-10 min-h-0 flex-1 overflow-y-auto">
@@ -545,20 +489,12 @@ export function App() {
                   />
                 </div>
 
-                {/* Greeting according to Login State */}
+                {/* Greeting */}
                 <h1 className="text-[30px] sm:text-[34px] font-medium tracking-tight text-[#0F172A]">
-                  Chúng ta nên bắt đầu từ đâu nhỉ?
+                  Hệ thống Tra cứu &amp; Thẩm định Thuế GTGT
                 </h1>
                 <p className="mt-2.5 max-w-lg text-[14px] text-[#475569] leading-relaxed">
-                  {user.isLoggedIn ? (
-                    <>
-                      Chào <strong className="text-[#1E3A8A]">{user.name}</strong>, hãy nhập tình huống phát sinh để hệ thống đối chiếu qua đồ thị tri thức thời gian và thẩm định hiệu lực luật thuế GTGT.
-                    </>
-                  ) : (
-                    <>
-                      Chào bạn, hãy nhập tình huống phát sinh để hệ thống đối chiếu qua đồ thị tri thức thời gian và thẩm định hiệu lực luật thuế GTGT.
-                    </>
-                  )}
+                  Nhập tình huống phát sinh để hệ thống đối chiếu qua đồ thị tri thức thời gian và thẩm định hiệu lực các quy định thuế GTGT.
                 </p>
 
                 {/* Pill Composer Container */}
@@ -630,14 +566,6 @@ export function App() {
 
                       {/* Send Button */}
                       <div className="flex items-center gap-1.5">
-                        <button
-                          onClick={() => alert("Chức năng ghi âm câu hỏi (Voice Input) đang sẵn sàng.")}
-                          className="flex h-8 w-8 items-center justify-center rounded-full text-[#64748B] hover:bg-[#E2E8F0]"
-                          title="Nhập bằng giọng nói"
-                        >
-                          <Mic className="h-4 w-4" />
-                        </button>
-
                         <button
                           onClick={() => send()}
                           disabled={!query.trim() || loading}
@@ -976,7 +904,7 @@ export function App() {
 
                 return (
                   <div
-                    key={i}
+                    key={c.art || `${c.doc}-${i}`}
                     className="rounded-2xl border border-[#CBD5E1] bg-white p-4 shadow-xs"
                   >
                     <div className="flex items-center justify-between gap-2 border-b border-[#F1F5F9] pb-2">
@@ -1056,22 +984,9 @@ export function App() {
               </p>
             </div>
 
-            {/* 2. Language Selection */}
+            {/* 2. Default Evaluation Date */}
             <div>
-              <label className="font-bold text-[#0F172A] block mb-1">2. Ngôn ngữ giao diện &amp; Báo cáo</label>
-              <select
-                value={settings.language}
-                onChange={(e) => setSettings({ ...settings, language: e.target.value as "vi" | "en" })}
-                className="w-full rounded-xl border border-[#CBD5E1] bg-[#F8FAFC] p-2.5 font-medium text-[13px] outline-none focus:border-[#1E3A8A]"
-              >
-                <option value="vi">Tiếng Việt (Chuẩn pháp điển hóa Việt Nam)</option>
-                <option value="en">English (International Tax Guidance)</option>
-              </select>
-            </div>
-
-            {/* 3. Default Evaluation Date */}
-            <div>
-              <label className="font-bold text-[#0F172A] block mb-1">3. Mốc thời gian mặc định (T_eval)</label>
+              <label className="font-bold text-[#0F172A] block mb-1">2. Mốc thời gian mặc định (T_eval)</label>
               <input
                 type="date"
                 value={settings.defaultDate}
@@ -1086,44 +1001,10 @@ export function App() {
               </p>
             </div>
 
-            {/* 4. Display Theme */}
-            <div>
-              <label className="font-bold text-[#0F172A] block mb-1">4. Giao diện (Theme)</label>
-              <div className="grid grid-cols-3 gap-2 text-center text-[12px]">
-                <button
-                  type="button"
-                  onClick={() => setSettings({ ...settings, theme: "light" })}
-                  className={`rounded-xl p-2 border font-medium ${
-                    settings.theme === "light" ? "border-[#1E3A8A] bg-[#EFF6FF] text-[#1E3A8A]" : "border-[#CBD5E1] text-[#475569]"
-                  }`}
-                >
-                  Sáng
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setSettings({ ...settings, theme: "dark" })}
-                  className={`rounded-xl p-2 border font-medium ${
-                    settings.theme === "dark" ? "border-[#1E3A8A] bg-[#EFF6FF] text-[#1E3A8A]" : "border-[#CBD5E1] text-[#475569]"
-                  }`}
-                >
-                  Tối
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setSettings({ ...settings, theme: "system" })}
-                  className={`rounded-xl p-2 border font-medium ${
-                    settings.theme === "system" ? "border-[#1E3A8A] bg-[#EFF6FF] text-[#1E3A8A]" : "border-[#CBD5E1] text-[#475569]"
-                  }`}
-                >
-                  Tự động
-                </button>
-              </div>
-            </div>
-
-            {/* 5. LLM Mode Toggle */}
+            {/* 3. LLM Mode Toggle */}
             <div className="flex items-center justify-between rounded-xl border border-[#CBD5E1] bg-[#F8FAFC] p-3">
               <div>
-                <div className="font-bold text-[#0F172A] text-[13px]">Bật mô hình ngôn ngữ lớn (LLM)</div>
+                <div className="font-bold text-[#0F172A] text-[13px]">3. Bật mô hình ngôn ngữ lớn (LLM)</div>
                 <div className="text-[11.5px] text-[#64748B]">Tổng hợp lập luận IRAC bằng AI (Ollama Qwen2.5 / Gemini API)</div>
               </div>
               <input
@@ -1132,112 +1013,6 @@ export function App() {
                 onChange={(e) => setSettings({ ...settings, useLlm: e.target.checked })}
                 className="h-4 w-4 rounded accent-[#1E3A8A] cursor-pointer"
               />
-            </div>
-
-            {/* 5. Account Management: Login / Logout */}
-            <div className="border-t border-[#E2E8F0] pt-3">
-              <label className="font-bold text-[#0F172A] block mb-1">5. Trạng thái người dùng</label>
-              {user.isLoggedIn ? (
-                <div className="flex items-center justify-between rounded-xl bg-[#F1F5F9] p-3 text-[12px]">
-                  <div>
-                    <div className="font-bold text-[#1E293B]">{user.name}</div>
-                    <div className="text-[#64748B]">{user.role} (MST: {user.taxCode})</div>
-                  </div>
-                  <button
-                    onClick={() => {
-                      setUser(DEFAULT_USER);
-                      setSettingsOpen(false);
-                    }}
-                    className="flex items-center gap-1 rounded-lg bg-white px-2.5 py-1 text-[11px] font-semibold text-red-600 border border-[#CBD5E1] hover:bg-red-50"
-                  >
-                    <LogOut className="h-3.5 w-3.5" />
-                    <span>Đăng xuất</span>
-                  </button>
-                </div>
-              ) : (
-                <button
-                  onClick={() => {
-                    setSettingsOpen(false);
-                    setLoginModalOpen(true);
-                  }}
-                  className="flex w-full items-center justify-center gap-2 rounded-xl bg-[#1E3A8A] py-2 text-[13px] font-semibold text-white hover:bg-[#1E40AF]"
-                >
-                  <User className="h-4 w-4" />
-                  <span>Đăng nhập tài khoản cá nhân / doanh nghiệp</span>
-                </button>
-              )}
-            </div>
-          </div>
-        </DialogContent>
-      </Dialog>
-
-      {/* =========================================================================
-          MODAL 2: ĐĂNG NHẬP (DÀNH CHO NGƯỜI NỘP THUẾ / DOANH NGHIỆP)
-         ========================================================================= */}
-      <Dialog open={loginModalOpen} onOpenChange={setLoginModalOpen}>
-        <DialogContent className="max-w-md rounded-2xl bg-white p-6 shadow-2xl">
-          <DialogHeader>
-            <DialogTitle className="text-[17px] font-bold text-[#1E3A8A] flex items-center gap-2">
-              <UserCheck className="h-5 w-5" />
-              <span>Đăng nhập Cổng Dịch vụ Pháp lý Thuế GTGT</span>
-            </DialogTitle>
-            <DialogDescription className="text-[12.5px] text-[#64748B]">
-              Dành cho cá nhân, hộ kinh doanh và doanh nghiệp kê khai, nộp thuế
-            </DialogDescription>
-          </DialogHeader>
-
-          <div className="space-y-3.5 pt-2 text-[13px]">
-            <div>
-              <label className="font-semibold text-[#0F172A] block mb-1">Tên Người nộp thuế / Doanh nghiệp</label>
-              <input
-                type="text"
-                defaultValue="Huỳnh Tấn Phúc"
-                id="login-name"
-                className="w-full rounded-xl border border-[#CBD5E1] bg-[#F8FAFC] p-2.5 text-[13px] outline-none focus:border-[#1E3A8A]"
-                placeholder="Nhập họ và tên hoặc tên công ty..."
-              />
-            </div>
-
-            <div>
-              <label className="font-semibold text-[#0F172A] block mb-1">Mã số thuế / Căn cước công dân</label>
-              <input
-                type="text"
-                defaultValue="1801234567"
-                id="login-mst"
-                className="w-full rounded-xl border border-[#CBD5E1] bg-[#F8FAFC] p-2.5 text-[13px] outline-none focus:border-[#1E3A8A]"
-                placeholder="Ví dụ: 1801234567"
-              />
-            </div>
-
-            <div className="rounded-xl bg-[#EFF6FF] p-3 text-[11.5px] text-[#1E3A8A] border border-[#BFDBFE]">
-              Hệ thống công cộng phục vụ tra cứu miễn phí. Sau khi đăng nhập, hệ thống sẽ chào theo tên của bạn và ghi nhớ các mốc sự kiện liên quan.
-            </div>
-
-            <div className="flex gap-2 pt-2">
-              <button
-                type="button"
-                onClick={() => setLoginModalOpen(false)}
-                className="flex-1 rounded-xl border border-[#CBD5E1] py-2 font-medium text-[#475569] hover:bg-[#F1F5F9]"
-              >
-                Hủy
-              </button>
-              <button
-                type="button"
-                onClick={() => {
-                  const inputName = (document.getElementById("login-name") as HTMLInputElement)?.value || "Huỳnh Tấn Phúc";
-                  const inputMst = (document.getElementById("login-mst") as HTMLInputElement)?.value || "1801234567";
-                  setUser({
-                    isLoggedIn: true,
-                    name: inputName.trim(),
-                    role: "Người nộp thuế / Doanh nghiệp",
-                    taxCode: inputMst.trim(),
-                  });
-                  setLoginModalOpen(false);
-                }}
-                className="flex-1 rounded-xl bg-[#1E3A8A] py-2 font-semibold text-white hover:bg-[#1E40AF]"
-              >
-                Đăng nhập
-              </button>
             </div>
           </div>
         </DialogContent>
@@ -1258,7 +1033,6 @@ function Answer({
 }) {
   const r = msg.result!;
   const [copied, setCopied] = useState(false);
-  const [feedback, setFeedback] = useState<"up" | "down" | null>(null);
   const [showTrace, setShowTrace] = useState(false);
 
   function copyText() {
@@ -1296,23 +1070,17 @@ function Answer({
               <span className="text-[#D97706]">Lưu ý phạm vi nghiệp vụ</span>
             </>
           ) : r.is_greeting ? (
-            <>
-              <Sparkles className="h-4 w-4 text-[#2563EB]" />
-              <span className="text-[#2563EB]">Chào mừng &amp; Hướng dẫn tra cứu</span>
-            </>
+            <span className="text-[#1E3A8A]">Chào mừng &amp; Hướng dẫn tra cứu</span>
           ) : (
-            <>
-              <CheckCircle2 className="h-4 w-4 text-[#059669]" />
-              <span className="text-[#1E3A8A]">Kết luận pháp lý</span>
-            </>
+            <span className="text-[#1E3A8A]">Kết luận pháp lý</span>
           )}
         </div>
-        <p className="mt-2 text-[15px] font-semibold leading-relaxed text-[#0F172A]">
+        <p className="mt-2.5 text-[14.5px] font-medium leading-relaxed text-[#0F172A] whitespace-pre-line">
           {r.conclusion}
         </p>
         {!r.is_out_of_domain && !r.is_greeting && r.rule && (
-          <p className="mt-2 text-[13px] leading-relaxed text-[#475569]">
-            <strong>Căn cứ:</strong> {r.rule}
+          <p className="mt-2.5 border-t border-[#E2E8F0]/80 pt-2 text-[13px] leading-relaxed text-[#475569]">
+            <strong>Căn cứ:</strong> {r.rule.replace(/^Căn cứ(?:\s+pháp\s+lý\s+viện\s+dẫn)?:\s*/i, "")}
           </p>
         )}
       </div>
@@ -1333,11 +1101,11 @@ function Answer({
           <div className="text-[11.5px] font-bold uppercase tracking-wider text-[#64748B]">
             Các bước đối chiếu mốc thời gian:
           </div>
-          <ul className="space-y-1 text-[13px] text-[#334155]">
+          <ul className="space-y-1.5 text-[13px] text-[#334155]">
             {r.application.map((app, i) => (
               <li key={i} className="flex items-start gap-2">
-                <span className="mt-1 h-1.5 w-1.5 rounded-full bg-[#1E3A8A] shrink-0" />
-                <span>{app}</span>
+                <span className="mt-1.5 h-1.5 w-1.5 rounded-full bg-[#1E3A8A] shrink-0" />
+                <span className="leading-relaxed">{app.replace(/^[•\-\*]\s*/, "")}</span>
               </li>
             ))}
           </ul>
@@ -1363,9 +1131,9 @@ function Answer({
       {!r.is_out_of_domain && !r.is_greeting && r.citations && r.citations.length > 0 && (
         <div className="mt-4 flex flex-wrap items-center gap-1.5 border-t border-[#F1F5F9] pt-3">
           <span className="text-[11px] font-bold text-[#64748B]">Văn bản trích dẫn:</span>
-          {r.citations.map((c) => (
+          {r.citations.map((c, idx) => (
             <button
-              key={c.label}
+              key={c.art || `${c.label}-${idx}`}
               onClick={onOpenRelated}
               className="flex items-center gap-1 rounded-full border border-[#BFDBFE] bg-[#EFF6FF] px-2.5 py-0.5 text-[11px] font-semibold text-[#1E3A8A] transition hover:bg-[#DBEAFE]"
               title="Bấm để xem chi tiết văn bản liên quan"
@@ -1389,56 +1157,47 @@ function Answer({
           </button>
 
           {showTrace && (
-            <div className="mt-2 rounded-2xl border border-[#E2E8F0] bg-[#F8FAFC] p-3 text-[11.5px] font-mono text-[#334155]">
-              <div className="text-[#059669] font-bold">{"MATCH (e:Entity {name: 'PhanMem'})-[r:has_temporal_tax_rate]->(t:TaxRate)"}</div>
-              <div className="text-[#6B7280]">{"WHERE r.start_date <= date('"}{msg.date}{"') AND date('"}{msg.date}{"') <= r.end_date"}</div>
-              <div className="text-[#1E3A8A] font-bold mt-1">{"-> Result: Rate = 0% | Interval: [2025-07-01, inf) | Law: 48/2024/QH15 Art 9.1.b"}</div>
+            <div className="mt-2 space-y-1.5 rounded-2xl border border-[#CBD5E1] bg-[#0F172A] p-3.5 text-[11.5px] font-mono text-[#E2E8F0] shadow-inner">
+              <div className="text-[#94A3B8] font-bold">// 1. Truy vấn lát cắt thời gian & quan hệ trên Neo4j</div>
+              <div className="text-[#38BDF8]">
+                {`MATCH (d:Document)-[:CONTAINS]->(art:Article)`}
+              </div>
+              <div className="text-[#FBBF24]">
+                {`WHERE art.id IN [${r.citations.map((c) => `'${c.art.toUpperCase().replace(/-/g, "_")}'`).join(", ")}]`}
+              </div>
+              <div className="text-[#FBBF24]">
+                {`  AND art.valid_from <= date('${msg.date}') <= art.valid_to`}
+              </div>
+              <div className="text-[#38BDF8]">
+                {`OPTIONAL MATCH (amender:Article)-[r:AMENDS]->(art)`}
+              </div>
+              <div className="text-[#38BDF8]">
+                {`RETURN art.id, art.title, collect(amender.id) AS amended_by`}
+              </div>
+              <div className="mt-2 pt-2 border-t border-slate-700/60 text-[#4ADE80]">
+                {`✔ Kết quả: ${r.citations.length} điều luật thỏa mãn hiệu lực tại mốc ${fmtDate(msg.date)}.`}
+              </div>
+              <div className="text-[#94A3B8]">
+                {`→ Căn cứ viện dẫn: ${r.citations.map((c) => c.label).join(", ")}`}
+              </div>
             </div>
           )}
         </div>
       )}
 
-      {/* Action Toolbar: Copy, Thumbs Up/Down, Share */}
+      {/* Action Toolbar: Copy */}
       <div className="mt-3 flex items-center justify-between border-t border-[#F1F5F9] pt-2.5 text-[#64748B]">
-        <div className="flex items-center gap-1">
-          <button
-            onClick={copyText}
-            className="flex h-7 w-7 items-center justify-center rounded-full hover:bg-[#F1F5F9] text-[#64748B]"
-            title="Sao chép kết luận"
-          >
-            <Copy className="h-3.5 w-3.5" />
-          </button>
-          <button
-            onClick={() => setFeedback(feedback === "up" ? null : "up")}
-            className={`flex h-7 w-7 items-center justify-center rounded-full hover:bg-[#F1F5F9] ${feedback === "up" ? "text-[#059669] bg-green-50" : "text-[#64748B]"}`}
-            title="Phản hồi chính xác"
-          >
-            <ThumbsUp className="h-3.5 w-3.5" />
-          </button>
-          <button
-            onClick={() => setFeedback(feedback === "down" ? null : "down")}
-            className={`flex h-7 w-7 items-center justify-center rounded-full hover:bg-[#F1F5F9] ${feedback === "down" ? "text-[#DC2626] bg-red-50" : "text-[#64748B]"}`}
-            title="Phản hồi chưa thỏa đáng"
-          >
-            <ThumbsDown className="h-3.5 w-3.5" />
-          </button>
-          <button
-            onClick={() => {
-              if (navigator.share) {
-                navigator.share({ title: "Tư vấn thuế GTGT", text: r.conclusion });
-              } else {
-                copyText();
-              }
-            }}
-            className="flex h-7 w-7 items-center justify-center rounded-full hover:bg-[#F1F5F9] text-[#64748B]"
-            title="Chia sẻ"
-          >
-            <Share2 className="h-3.5 w-3.5" />
-          </button>
-        </div>
+        <button
+          onClick={copyText}
+          className="flex items-center gap-1.5 rounded-lg px-2.5 py-1 text-[12px] font-medium text-[#475569] hover:bg-[#F1F5F9] hover:text-[#1E3A8A] transition"
+          title="Sao chép kết luận và căn cứ pháp lý"
+        >
+          <Copy className="h-3.5 w-3.5" />
+          <span>{copied ? "Đã sao chép vào bộ nhớ tạm!" : "Sao chép kết luận"}</span>
+        </button>
 
-        {copied && (
-          <span className="text-[11px] font-semibold text-[#059669]">Đã sao chép!</span>
+        {r.is_out_of_domain && (
+          <span className="text-[11px] text-[#D97706] italic">Ngoài phạm vi điều chỉnh</span>
         )}
       </div>
     </div>

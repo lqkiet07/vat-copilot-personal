@@ -102,3 +102,41 @@ def render_document_tree_html(doc: dict, active_ids: list[str]) -> str:
 
     parts.append("</div>")
     return "\n".join(parts)
+
+
+def load_corpus_index() -> dict[str, dict]:
+    """Map every article id to its metadata and full clause text."""
+    index: dict[str, dict] = {}
+    for document in load_corpus_tree():
+        doc_code = document.get("code", "")
+        doc_id = document.get("id", "")
+        doc_valid_from = document.get("valid_from", "")
+        doc_valid_to = document.get("valid_to", "")
+        for article in document.get("articles", []):
+            article_id = article.get("id")
+            if not article_id:
+                continue
+            lines = []
+            for clause in article.get("clauses", []):
+                content = clause.get("content") or ""
+                code = clause.get("code") or ""
+                clause_header = f"{code}: {content}".strip(": ").strip() if code else content
+                if clause_header:
+                    lines.append(clause_header)
+                for pt in clause.get("points", []):
+                    pt_content = pt.get("content") or ""
+                    pt_code = pt.get("code") or ""
+                    if pt_content:
+                        suffix = f" (theo {code})" if code else ""
+                        lines.append(f"  {pt_code} {pt_content}{suffix}".strip())
+            index[article_id] = {
+                "code": article.get("code", ""),
+                "title": article.get("title", ""),
+                "doc_id": doc_id,
+                "doc_code": doc_code,
+                "doc_title": document.get("title", ""),
+                "valid_from": article.get("valid_from") or doc_valid_from,
+                "valid_to": article.get("valid_to") or doc_valid_to,
+                "text": "\n".join(lines)[:30000],
+            }
+    return index

@@ -65,14 +65,18 @@ def get_scenarios() -> list[dict]:
 @router.post("/query", response_model=QueryResponse)
 def post_query(req: QueryRequest) -> QueryResponse:
     """Execute legal query retrieval, temporal verification, and risk analysis."""
-    result = execute_demo_query(
-        query=req.query,
-        as_of_date=req.as_of_date,
-        pipeline=req.pipeline,
-        use_llm=req.use_llm,
-        model=req.model,
-    )
-    return QueryResponse(**result)
+    try:
+        result = execute_demo_query(
+            query=req.query,
+            as_of_date=req.as_of_date,
+            pipeline=req.pipeline,
+            use_llm=req.use_llm,
+            model=req.model,
+            history=req.history,
+        )
+        return QueryResponse(**result)
+    except Exception as exc:
+        raise HTTPException(status_code=503, detail=f"Service unavailable: {exc}")
 
 
 def _sse_frame(name: str, payload: dict) -> str:

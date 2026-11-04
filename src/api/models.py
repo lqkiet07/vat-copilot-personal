@@ -1,16 +1,44 @@
 """API request and response data models."""
+import re
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
+
+ALLOWED_PIPELINES = (
+    "P3_FullSystem",
+    "P2_TemporalGraphRAG",
+    "P1_FlatRAG",
+    "P3",
+    "P2",
+    "P1",
+)
 
 
 class QueryRequest(BaseModel):
     """Request payload for legal query retrieval and analysis."""
 
-    query: str = Field(..., min_length=1, description="Legal query text")
+    query: str = Field(..., min_length=1, max_length=4000, description="Legal query text")
     as_of_date: str = Field(..., description="Reference point date in YYYY-MM-DD format")
     pipeline: str = Field(default="P3_FullSystem", description="Retrieval pipeline identifier")
     use_llm: bool = Field(default=False, description="Whether to invoke LLM generation")
     model: str = Field(default="qwen2.5:7b", description="LLM model identifier")
+    history: list[dict] = Field(default_factory=list, description="Conversation history turns")
+
+    @field_validator("as_of_date")
+    @classmethod
+    def validate_as_of_date(cls, v: str) -> str:
+        if not isinstance(v, str) or not re.match(r"^\d{4}-\d{2}-\d{2}$", v):
+            raise ValueError("as_of_date must be in YYYY-MM-DD format")
+        year = int(v[:4])
+        if year < 2000 or year > 2100:
+            raise ValueError("as_of_date year must be between 2000 and 2100")
+        return v
+
+    @field_validator("pipeline")
+    @classmethod
+    def validate_pipeline(cls, v: str) -> str:
+        if v not in ALLOWED_PIPELINES:
+            raise ValueError(f"pipeline must be one of {ALLOWED_PIPELINES}")
+        return v
 
 
 class QueryResponse(BaseModel):
@@ -29,6 +57,7 @@ class QueryResponse(BaseModel):
     raw_llm_response: str | None = Field(default=None, description="Raw generation output from LLM")
     is_out_of_domain: bool = Field(default=False, description="Whether query was outside VAT legal domain")
     is_greeting: bool = Field(default=False, description="Whether query was a conversational greeting")
+    answer_status: str = Field(default="ANSWERED", description="Response status (ANSWERED, OUT_OF_SCOPE, INSUFFICIENT_BASIS)")
 
 
 class DocumentSummary(BaseModel):

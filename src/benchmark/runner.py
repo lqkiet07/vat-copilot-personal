@@ -39,18 +39,21 @@ def load_benchmark_dataset(
 
 def _compute_mean_metrics(runs: list[PipelineRunResult]) -> BenchmarkMetrics:
     """Calculate mean metric values across a collection of pipeline runs."""
-    if not runs:
+    valid_runs = [r for r in runs if r.metrics]
+    if not valid_runs:
         return BenchmarkMetrics()
-    n = len(runs)
-    p = sum(r.metrics.precision for r in runs if r.metrics) / n
-    r = sum(r.metrics.recall for r in runs if r.metrics) / n
-    acc = sum(r.metrics.temporal_accuracy for r in runs if r.metrics) / n
-    h = sum(r.metrics.hallucination_rate for r in runs if r.metrics) / n
+    n = len(valid_runs)
+    p = sum(r.metrics.precision for r in valid_runs) / n
+    r = sum(r.metrics.recall for r in valid_runs) / n
+    acc = sum(r.metrics.temporal_accuracy for r in valid_runs) / n
+    h = sum(r.metrics.hallucination_rate for r in valid_runs) / n
+    ans = sum(r.metrics.answered_rate for r in valid_runs) / n
     return BenchmarkMetrics(
         precision=round(p, 4),
         recall=round(r, 4),
         temporal_accuracy=round(acc, 4),
         hallucination_rate=round(h, 4),
+        answered_rate=round(ans, 4),
     )
 
 

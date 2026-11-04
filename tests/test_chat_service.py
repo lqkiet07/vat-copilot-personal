@@ -171,6 +171,35 @@ def test_prompt_contains_clause_text_from_corpus(monkeypatch: pytest.MonkeyPatch
     assert "Dịch vụ xuất khẩu theo hợp đồng." in captured["prompt"]
 
 
+def test_prompt_preserves_long_article_clauses_without_truncation(monkeypatch: pytest.MonkeyPatch, stub_verification):
+    clauses = [{"code": f"Khoan {i}", "content": f"Quy định chi tiết điều khoản thứ {i} về đối tượng miễn giảm thuế GTGT..." * 5} for i in range(1, 26)]
+    clauses[-1]["content"] = "Hàng hóa dịch vụ của hộ kinh doanh mức doanh thu từ 200 triệu đồng trở xuống."
+    corpus = [
+        {
+            "id": "LUAT_48_2024",
+            "articles": [
+                {
+                    "id": "LUAT_48_2024_D5",
+                    "code": "Dieu 5",
+                    "title": "Doi tuong khong chiu thue",
+                    "clauses": clauses,
+                }
+            ],
+        }
+    ]
+    monkeypatch.setattr(chat_service, "load_corpus_tree", lambda *a, **k: corpus)
+    monkeypatch.setattr(chat_service, "query_temporal_rag", lambda q, d: SimpleNamespace(articles=[ArticleNode(
+        id="LUAT_48_2024_D5", doc_id="LUAT_48_2024", code="D5", title="Doi tuong khong chiu thue", content="Khoan 25: hộ kinh doanh 200 triệu", valid_from="2026-01-01", valid_to="9999-12-31"
+    )]))
+    captured: dict[str, str] = {}
+    def _capture(prompt: str, model: str = "qwen2.5:7b"):
+        captured["prompt"] = prompt
+        return iter(["[LUAT_48_2024_D5]"])
+    monkeypatch.setattr(chat_service, "generate_llm_response_stream", _capture)
+    chat_service.build_response([{"role": "user", "content": "tiệm net 200 triệu đóng thuế không?"}])
+    assert "200 triệu" in captured["prompt"]
+
+
 def test_prompt_falls_back_to_article_content_without_corpus_clause(
     monkeypatch: pytest.MonkeyPatch, stub_retrieval, stub_verification
 ):

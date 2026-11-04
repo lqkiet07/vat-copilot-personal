@@ -6,6 +6,8 @@ from src.verifier.citation_verifier import (
     verify_citations,
 )
 
+pytestmark = pytest.mark.requires_neo4j
+
 
 @pytest.fixture(scope="module", autouse=True)
 def setup_test_point():
@@ -21,8 +23,18 @@ def setup_test_point():
             MERGE (p:Point {id: 'LUAT_48_2024_D1_K2_a'})
               ON CREATE SET p.valid_from = date('2025-07-01'), p.valid_to = date('9999-12-31'), p.code = 'Diem a'
             MERGE (c)-[:CONTAINS]->(p)
+            MERGE (base:Article {id: 'LUAT_999_2024_D1'})
+              ON CREATE SET base.valid_from = date('2025-01-01'), base.valid_to = date('9999-12-31'), base.code = 'D1'
+            MERGE (amender:Article {id: 'ND_999_2025_D1'})
+              ON CREATE SET amender.valid_from = date('2025-01-01'), amender.valid_to = date('2025-12-31'), amender.code = 'D1'
+            MERGE (amender)-[:AMENDS]->(base)
             """
         )
+    yield
+    with driver.session() as session:
+        session.run("MATCH (a:Article) WHERE a.id IN ['LUAT_999_2024_D1', 'ND_999_2025_D1'] DETACH DELETE a")
+        session.run("MATCH (p:Point {id: 'LUAT_48_2024_D1_K2_a'}) DETACH DELETE p")
+        session.run("MATCH (c:Clause {id: 'LUAT_48_2024_D1_K2'}) DETACH DELETE c")
 
 
 def test_extract_citations():
@@ -32,6 +44,12 @@ def test_extract_citations():
     )
     citations = extract_citations(text)
     assert citations == ["LUAT_48_2024_D9", "ND_181_2025_D9_K1", "LUAT_48_2024_D5"]
+
+
+def test_extract_citations_deduplicates_preserving_order():
+    raw_text = "Căn cứ [LUAT_48_2024_D4] và Điều 4 [LUAT_48_2024_D4], đối chiếu [LUAT_48_2024_D5] rồi lại [LUAT_48_2024_D4]."
+    cites = extract_citations(raw_text)
+    assert cites == ["LUAT_48_2024_D4", "LUAT_48_2024_D5"]
 
 
 def test_verify_valid_citation():
@@ -140,4 +158,47 @@ def test_prune_invalid_citations():
     pruned = prune_invalid_citations(text, report)
     assert "[LUAT_48_2024_D999]" not in pruned
     assert "[LUAT_48_2024_D9]" in pruned
+
+
+def test_extract_and_verify_citations_lowercase_canonicalized():
+    text = "Theo quy định tại [luat_48_2024_d9] áp dụng vào ngày 2026-04-01."
+    extracted = extract_citations(text)
+    assert extracted == ["LUAT_48_2024_D9"]
+
+    report = verify_citations(text, as_of_date="2026-04-01")
+    assert report.total_citations == 1
+    assert report.valid_citations == 1
+    assert report.citations[0].id == "LUAT_48_2024_D9"
+    assert report.citations[0].status == "VALID"
+
+
+def test_verify_citations_outside_context_ids_marked_irrelevant():
+    text = "Căn cứ theo [LUAT_48_2024_D9] và [LUAT_48_2024_D1_K2_a]."
+    report = verify_citations(
+        text=text,
+        as_of_date="2026-04-01",
+        context_ids={"LUAT_48_2024_D1"},
+    )
+    statuses = {c.id: c for c in report.citations}
+    d9 = statuses["LUAT_48_2024_D9"]
+    assert d9.status == "IRRELEVANT"
+    assert d9.in_context is False
+    assert d9.message == "Điều khoản LUAT_48_2024_D9 không nằm trong tài liệu căn cứ được cung cấp cho câu hỏi."
+
+    d1 = statuses["LUAT_48_2024_D1_K2_a"]
+    assert d1.status == "VALID"
+    assert d1.in_context is True
+
+
+def test_verify_citations_expired_amender_not_returned():
+    # Active on 2025-06-01: amender valid_to (2025-12-31) >= 2025-06-01
+    report_active = verify_citations("Theo [LUAT_999_2024_D1]", as_of_date="2025-06-01")
+    assert report_active.citations[0].status == "AMENDED"
+    assert "ND_999_2025_D1" in report_active.citations[0].amended_by
+
+    # Expired on 2026-04-01: amender valid_to (2025-12-31) < 2026-04-01
+    report_expired = verify_citations("Theo [LUAT_999_2024_D1]", as_of_date="2026-04-01")
+    assert report_expired.citations[0].status == "VALID"
+    assert report_expired.citations[0].amended_by == []
+
 

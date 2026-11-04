@@ -18,7 +18,7 @@ The web app has **two views**:
 - Backend: Python 3.11+, FastAPI, Neo4j 5.26 (Docker), Streamlit
 - LLM: Ollama local (`qwen2.5:7b`), with a deterministic fallback when it is offline
 - Frontend: React 18, Vite, TailwindCSS, react-markdown
-- Tests: pytest (147 tests)
+- Tests: pytest (299 tests)
 
 ## Quick start
 
@@ -71,7 +71,7 @@ streamlit run app_demo.py
 ```bash
 pytest tests/ -q
 ```
-Requires Neo4j to be running. Expected: `147 passed`.
+Khi chạy với Neo4j: `299 passed`. Khi chạy offline (không có Neo4j): `213 passed, 76 skipped, 0 failed` (nhờ marker `requires_neo4j`).
 
 ## VAT Copilot (chatbot)
 
@@ -98,6 +98,7 @@ Chat endpoints (used by the frontend):
 | `NEO4J_URI` | `bolt://localhost:7687` | Neo4j Bolt endpoint |
 | `NEO4J_USER` | `neo4j` | Neo4j username |
 | `NEO4J_PASSWORD` | `vat-temporal-2026` | Local demo password; change before deployment |
+| `EMBEDDING_PROVIDER` | `deterministic` | Embedding provider: `deterministic` (testing/offline), `ollama` (production `bge-m3`), `auto` |
 
 ## Project structure
 ```

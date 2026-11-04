@@ -71,3 +71,52 @@ def test_rewrite_query_returns_last_user_turn_when_long_enough():
 
 def test_rewrite_query_returns_empty_when_no_user_turn():
     assert rewrite_query([("assistant", "Tôi có thể giúp gì?")]) == ""
+
+
+def test_normalize_query_telex_and_abbreviations():
+    from src.api.chat_domain import normalize_query
+
+    assert normalize_query("đóng thuế kh?") == "đóng thuế không?"
+    assert normalize_query("ko chịu thuế") == "không chịu thuế"
+    assert normalize_query("k phải nộp") == "không phải nộp"
+    assert normalize_query("dc khấu trừ") == "được khấu trừ"
+    assert normalize_query("tiệm net ntn") == "tiệm net như thế nào"
+
+
+def test_normalize_query_does_not_replace_inside_words():
+    from src.api.chat_domain import normalize_query
+
+    # Must not mangle words starting with kh, dc, etc.
+    assert normalize_query("khoản 1 điều 9") == "khoản 1 điều 9"
+    assert normalize_query("khấu trừ thuế") == "khấu trừ thuế"
+    assert normalize_query("khách hàng mua") == "khách hàng mua"
+
+
+def test_extract_entities_business_and_revenue():
+    from src.api.chat_domain import extract_entities
+
+    entities = extract_entities("tôi mở tiệm net dưới quê doanh thu 150 triệu 1 năm")
+    assert "dịch vụ internet" in entities.industry_synonyms
+    assert entities.revenue_vnd == 150_000_000
+    assert entities.business_type == "HỘ_KINH_DOANH"
+
+
+def test_understand_query_integration():
+    from src.api.chat_domain import understand_query
+
+    info = understand_query("tôi mở tiệm net dưới quê có phải đóng thuế kh")
+    assert "thuế không" in info.normalized
+    assert "dịch vụ internet" in info.industry_synonyms
+
+
+def test_telex_and_industry_expansion_tiem_net():
+    from src.api.chat_domain import normalize_query, extract_entities
+
+    raw = "mở quán net ở quê thuế bnh tiền"
+    norm = normalize_query(raw)
+    assert "bao nhiêu" in norm
+    entities = extract_entities(raw)
+    assert entities.business_type == "HỘ_KINH_DOANH"
+    assert "dịch vụ" in entities.industry_synonyms
+
+

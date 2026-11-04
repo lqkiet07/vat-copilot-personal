@@ -1,4 +1,7 @@
+import pytest
 from src.graph.connection import get_neo4j_driver
+
+pytestmark = pytest.mark.requires_neo4j
 
 
 def test_neo4j_import_and_constraints():

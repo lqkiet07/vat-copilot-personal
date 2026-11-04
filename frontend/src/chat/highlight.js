@@ -1,6 +1,6 @@
 import React from 'react'
 
-const CITATION_SOURCE = '\\[([A-Z][A-Z0-9_]*_D\\d+)\\]'
+const CITATION_SOURCE = '\\[([A-Z][A-Z0-9_]*_D\\d+(?:_K\\d+)?(?:_[a-z0-9]+)?)\\]'
 const FULL_DATE_SOURCE = '\\d{1,2}\\/\\d{1,2}\\/\\d{4}'
 const SHORT_DATE_SOURCE = '\\d{1,2}\\/\\d{4}'
 const PERCENT_SOURCE = '\\d+(?:[.,]\\d+)?\\s?%'

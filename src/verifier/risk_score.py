@@ -5,6 +5,7 @@ _WEIGHTS: dict[str, int] = {
     "AMENDED": 25,
     "NOT_YET_EFFECTIVE": 40,
     "EXPIRED": 60,
+    "IRRELEVANT": 70,
     "NOT_FOUND": 80,
 }
 
@@ -35,6 +36,8 @@ def _format_warning(citation: CitationStatus) -> str:
         return f"Điều khoản {citation.id} đã hết hiệu lực."
     if citation.status == "NOT_FOUND":
         return f"Không tìm thấy điều khoản {citation.id} trong cơ sở dữ liệu tri thức."
+    if citation.status == "IRRELEVANT":
+        return f"Điều khoản {citation.id} không liên quan trực tiếp đến nội dung câu hỏi."
     return f"Điều khoản {citation.id} không hợp lệ ({citation.status})."
 
 
@@ -48,15 +51,30 @@ def calculate_risk_score(report: VerificationReport) -> tuple[int, RiskLevel, li
         return 0, "LOW", []
 
     raw_score = sum(_WEIGHTS.get(c.status, 0) for c in non_valid)
+    if any(c.status in {"IRRELEVANT", "NOT_FOUND"} for c in report.citations):
+        raw_score = max(raw_score, 70)
+    if not any(c.status in {"VALID", "AMENDED"} for c in report.citations):
+        raw_score = max(raw_score, 50)
+
     score = min(100, raw_score)
     level = _get_risk_level(score)
     warnings = [_format_warning(c) for c in non_valid]
     return score, level, warnings
 
 
-def verify_and_score(text: str, as_of_date: str) -> VerificationResult:
+def verify_and_score(
+    text: str,
+    as_of_date: str,
+    relevance_map: dict[str, bool] | None = None,
+    context_ids: set[str] | None = None,
+) -> VerificationResult:
     """End-to-end verification and risk scoring for response text."""
-    report = verify_citations(text, as_of_date)
+    report = verify_citations(
+        text,
+        as_of_date,
+        relevance_map=relevance_map,
+        context_ids=context_ids,
+    )
     score, level, warnings = calculate_risk_score(report)
     return VerificationResult(
         as_of_date=as_of_date,

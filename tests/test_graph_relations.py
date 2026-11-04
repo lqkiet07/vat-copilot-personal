@@ -1,4 +1,7 @@
+import pytest
 from src.graph.connection import get_neo4j_driver
+
+pytestmark = pytest.mark.requires_neo4j
 from src.graph.importer import import_amends_relations, import_corpus_to_neo4j
 from src.graph.schema import init_schema
 

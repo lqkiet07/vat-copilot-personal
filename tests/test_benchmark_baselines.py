@@ -7,6 +7,8 @@ from src.benchmark.baselines import (
     run_p3_full_system,
 )
 
+pytestmark = pytest.mark.requires_neo4j
+
 
 def test_temporal_trap_pre_effective_date():
     """Luật 48 is effective from 2025-07-01; at 2024-05-01 P1 leaks it, P2 excludes it."""

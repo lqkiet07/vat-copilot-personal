@@ -1,13 +1,27 @@
-from src.verifier.guardrails import check_query_domain
-"""Business logic and sample scenarios for the interactive VAT demo UI."""
 from html import escape
+import re
+from src.api.answer_service import (
+    AnswerResult,
+    _build_candidate_relevance_map,
+    _build_irac_sections,
+    _check_temporal_trap,
+    _extract_best_clause,
+    _extract_citation_evidence,
+    _needs_irac_fallback,
+    _parse_irac_sections,
+    answer_query,
+)
 from src.benchmark.baselines import run_p1_baseline_rag
+from src.engine.diagnostics import EmptyReason, QueryTrace, classify_empty, emit_trace
 from src.engine.llm_client import generate_llm_response
 from src.engine.models import ArticleNode
 from src.engine.prompt import build_irac_prompt
+from src.engine.retrieval_service import retrieve_and_gate
 from src.engine.temporal_retriever import query_temporal_rag
-from src.ui.corpus_viewer import load_corpus_tree
-from src.verifier.citation_verifier import extract_citations
+from src.ui.corpus_viewer import load_corpus_index, load_corpus_tree
+from src.verifier.citation_verifier import extract_citations, verify_citations
+from src.verifier.guardrails import check_query_domain
+from src.verifier.relevance import build_relevance_map, score_article_relevance
 from src.verifier.risk_score import verify_and_score
 
 DEMO_SCENARIOS: list[dict] = [
@@ -32,118 +46,17 @@ DEMO_SCENARIOS: list[dict] = [
 ]
 
 
-def _build_irac_sections(
-    query: str, as_of_date: str, citations: list[str], warnings: list[str]
-) -> dict[str, str]:
-    """Build structured IRAC sections based on query, citations, and risk warnings."""
-    # ponytail: synthesized deterministic IRAC text; replace with LLM generation if backend attached
-    rule_str = ", ".join(f"[{c}]" for c in citations) if citations else "Không có căn cứ hiệu lực"
-    issue = f"Xác định quy định pháp luật áp dụng cho yêu cầu: '{query}' tại mốc thời gian {as_of_date}."
-    rule = f"Căn cứ pháp lý viện dẫn: {rule_str}."
-    q_lower = query.lower()
-    is_software_export = (
-        ("phần mềm" in q_lower or "machine learning" in q_lower or "công nghệ thông tin" in q_lower)
-        and ("xuất khẩu" in q_lower or "nước ngoài" in q_lower or "nhật bản" in q_lower)
-        and ("thuế suất" in q_lower or "%" in q_lower)
-    )
-    if is_software_export:
-        conc = f"Áp dụng mức thuế suất thuế GTGT là 0% đối với dịch vụ xuất khẩu / phần mềm cho đối tác nước ngoài theo quy định hiện hành ({rule_str}) khi đáp ứng điều kiện hợp đồng và thanh toán qua ngân hàng."
-        if warnings:
-            warn_text = " Cảnh báo rủi ro hiệu lực: " + "; ".join(warnings)
-            app = f"Tại mốc {as_of_date}, các quy định viện dẫn có cảnh báo sau:{warn_text}. Về thuế suất, dịch vụ phần mềm/machine learning xuất khẩu thuộc diện áp dụng thuế suất 0%."
-        else:
-            app = f"Tại thời điểm tra cứu {as_of_date}, các quy định trên đang có hiệu lực thi hành đầy đủ. Dịch vụ phần mềm/machine learning cung ứng cho tổ chức nước ngoài tiêu dùng ngoài Việt Nam áp dụng thuế suất 0%."
-    elif warnings:
-        warn_text = " Cảnh báo rủi ro hiệu lực: " + "; ".join(warnings)
-        app = f"Tại mốc {as_of_date}, các quy định viện dẫn có cảnh báo sau:{warn_text}"
-        conc = f"Cần thận trọng: Phát hiện rủi ro thời gian hoặc hiệu lực pháp lý đối với câu hỏi tại ngày {as_of_date}."
-    else:
-        app = f"Tại thời điểm tra cứu {as_of_date}, các quy định trên đang có hiệu lực thi hành đầy đủ."
-        conc = f"Các căn cứ pháp lý {rule_str} có hiệu lực và áp dụng trực tiếp cho tình huống."
-    return {
-        "issue": issue,
-        "rule": rule,
-        "application": app,
-        "conclusion": conc,
-    }
-
-
-def _check_temporal_trap(query: str, as_of_date: str) -> list[str]:
-    """Check if query references a legal document not yet effective at as_of_date."""
-    docs = load_corpus_tree()
-    q_norm = query.lower()
-    warnings = []
-    for doc in docs:
-        doc_code = doc.get("code", "").lower()
-        title = doc.get("title", "")
-        valid_from = doc.get("valid_from", "")
-        num_code = doc_code.split("/")[0] if "/" in doc_code else doc_code
-        match = (
-            doc_code in q_norm
-            or (num_code and f"luật {num_code}" in q_norm)
-            or (num_code and f"luat {num_code}" in q_norm)
-            or (num_code and f"nghị định {num_code}" in q_norm)
-            or (num_code and f"thông tư {num_code}" in q_norm)
-            or (num_code and f"{num_code}/20" in q_norm)
-        )
-        if match and valid_from and as_of_date < valid_from:
-            warnings.append(
-                f"Văn bản {title} ({doc.get('code')}) chưa có hiệu lực tại ngày {as_of_date} (có hiệu lực từ ngày {valid_from})."
-            )
-    return warnings
-
-
-def _parse_irac_sections(raw_text: str) -> dict[str, str]:
-    """Parse raw LLM response into IRAC sections."""
-    sections: dict[str, str] = {
-        "issue": "",
-        "rule": "",
-        "application": "",
-        "conclusion": "",
-        "raw_text": raw_text,
-    }
-    current_key: str | None = None
-    for line in raw_text.splitlines():
-        stripped = line.strip().lstrip("#* -0123456789.:").strip()
-        lower_header = stripped.lower()
-        if lower_header.startswith("issue"):
-            current_key = "issue"
-            val = line.split(":", 1)[-1].strip() if ":" in line else ""
-            if val and val.lower() != "issue":
-                sections[current_key] = val
-        elif lower_header.startswith("rule"):
-            current_key = "rule"
-            val = line.split(":", 1)[-1].strip() if ":" in line else ""
-            if val and val.lower() != "rule":
-                sections[current_key] = val
-        elif lower_header.startswith("application"):
-            current_key = "application"
-            val = line.split(":", 1)[-1].strip() if ":" in line else ""
-            if val and val.lower() != "application":
-                sections[current_key] = val
-        elif lower_header.startswith("conclusion"):
-            current_key = "conclusion"
-            val = line.split(":", 1)[-1].strip() if ":" in line else ""
-            if val and val.lower() != "conclusion":
-                sections[current_key] = val
-        elif current_key and line.strip():
-            sections[current_key] = (sections[current_key] + " " + line.strip()).strip()
-    if not any([sections["issue"], sections["rule"], sections["application"], sections["conclusion"]]):
-        sections["application"] = raw_text
-    return sections
-
-
 def _fetch_pipeline_articles(
-    pipeline: str, query: str, as_of_date: str
+    pipeline: str, query: str, as_of_date: str, trace: dict | None = None
 ) -> tuple[list[str], list[str], list[ArticleNode]]:
     """Retrieve citations, active IDs, and articles for the selected pipeline."""
-    if pipeline == "P1_FlatRAG":
-        citations = run_p1_baseline_rag(query, as_of_date, top_k=5)
-        return citations, citations, []
-    res = query_temporal_rag(query, as_of_date)
-    raw_ids = [art.id for art in res.articles]
-    active_ids = raw_ids[:5]
-    return active_ids, active_ids, res.articles
+    res = retrieve_and_gate(query, as_of_date, top_k=5, pipeline=pipeline, retriever_fn=query_temporal_rag)
+    if trace is not None:
+        trace["raw_article_count"] = res.raw_article_count
+        trace["gated_article_count"] = res.gated_article_count
+        if pipeline == "P1_FlatRAG":
+            trace["pipeline_note"] = "flat_rag_no_article_objects"
+    return res.active_ids, res.active_ids, res.articles
 
 
 def execute_demo_query(
@@ -152,122 +65,22 @@ def execute_demo_query(
     pipeline: str = "P3_FullSystem",
     use_llm: bool = False,
     model: str = "qwen2.5:7b",
+    history: list[dict] | None = None,
+    trace: dict | None = None,
 ) -> dict:
     """Execute a query against specified pipeline and return IRAC analysis with risk score."""
-    # 1. Domain guardrail check
-    guard = check_query_domain(query)
-    if not guard.is_allowed:
-        return {
-            "query": query,
-            "as_of_date": as_of_date,
-            "pipeline": pipeline,
-            "citations": [],
-            "active_article_ids": [],
-            "risk_score": 0,
-            "risk_level": "LOW",
-            "warnings": [],
-            "irac_sections": {
-                "issue": f"Phạm vi áp dụng pháp lý: '{query}'",
-                "rule": "Phạm vi điều chỉnh: Các văn bản pháp luật về Thuế Giá trị gia tăng (Luật 48/2024, NĐ 181/2025, TT 69/2025, NĐ 359/2025, NĐ 144/2026).",
-                "application": guard.refusal_message,
-                "conclusion": guard.refusal_message,
-            },
-            "llm_used": False,
-            "raw_llm_response": None,
-            "is_out_of_domain": not guard.is_greeting,
-            "is_greeting": guard.is_greeting,
-        }
-
-    citations, active_ids, articles = _fetch_pipeline_articles(pipeline, query, as_of_date)
-
-    if not citations and not articles:
-        trap_warnings = _check_temporal_trap(query, as_of_date)
-        if trap_warnings:
-            return {
-                "query": query,
-                "as_of_date": as_of_date,
-                "pipeline": pipeline,
-                "citations": [],
-                "active_article_ids": [],
-                "risk_score": 100,
-                "risk_level": "CRITICAL",
-                "warnings": trap_warnings,
-                "irac_sections": {
-                    "issue": f"Xác định hiệu lực và khả năng áp dụng: '{query}' tại mốc {as_of_date}.",
-                    "rule": "Quy định về thời điểm có hiệu lực thi hành của văn bản quy phạm pháp luật.",
-                    "application": "; ".join(trap_warnings),
-                    "conclusion": f"Cảnh báo bẫy thời gian: Văn bản được hỏi chưa có hiệu lực thi hành tại mốc {as_of_date}. Doanh nghiệp không được áp dụng các điều kiện hay quy định của văn bản này vào thời điểm trên.",
-                },
-                "llm_used": False,
-                "raw_llm_response": None,
-                "is_out_of_domain": False,
-                "is_greeting": False,
-            }
-        return {
-            "query": query,
-            "as_of_date": as_of_date,
-            "pipeline": pipeline,
-            "citations": [],
-            "active_article_ids": [],
-            "risk_score": 0,
-            "risk_level": "LOW",
-            "warnings": ["Không tìm thấy điều khoản pháp luật thuế GTGT nào điều chỉnh nội dung này tại mốc thời gian tra cứu."],
-            "irac_sections": {
-                "issue": f"Xác định quy định pháp luật cho: '{query}' tại mốc {as_of_date}.",
-                "rule": "Không tìm thấy điều khoản pháp luật thuế GTGT phù hợp.",
-                "application": f"Tại mốc {as_of_date}, hệ thống đã đối chiếu qua cơ sở dữ liệu pháp luật thuế GTGT nhưng không tìm thấy điều khoản nào quy định nội dung này.",
-                "conclusion": "Câu hỏi không có căn cứ pháp luật thuế GTGT điều chỉnh tại mốc thời gian đã chọn.",
-            },
-            "llm_used": False,
-            "raw_llm_response": None,
-            "is_out_of_domain": False,
-            "is_greeting": False,
-        }
-
-    if use_llm:
-        prompt_articles = articles if pipeline != "P1_FlatRAG" else []
-        prompt = build_irac_prompt(query, as_of_date, prompt_articles)
-        raw_response = generate_llm_response(
-            prompt,
-            model=model,
-            options={"num_ctx": 4096, "num_predict": 1024},
-        )
-        if raw_response is not None:
-            extracted = extract_citations(raw_response)
-            llm_citations = extracted if extracted else active_ids
-            v_res = verify_and_score(raw_response, as_of_date)
-            irac = _parse_irac_sections(raw_response)
-            return {
-                "query": query,
-                "as_of_date": as_of_date,
-                "pipeline": pipeline,
-                "citations": llm_citations,
-                "active_article_ids": active_ids,
-                "risk_score": v_res.risk_score,
-                "risk_level": v_res.risk_level,
-                "warnings": v_res.warnings,
-                "irac_sections": irac,
-                "llm_used": True,
-                "raw_llm_response": raw_response,
-            }
-
-    cite_text = " ".join(f"[{cid}]" for cid in citations)
-    v_res = verify_and_score(cite_text, as_of_date)
-    irac = _build_irac_sections(query, as_of_date, citations, v_res.warnings)
-
-    return {
-        "query": query,
-        "as_of_date": as_of_date,
-        "pipeline": pipeline,
-        "citations": citations,
-        "active_article_ids": active_ids,
-        "risk_score": v_res.risk_score,
-        "risk_level": v_res.risk_level,
-        "warnings": v_res.warnings,
-        "irac_sections": irac,
-        "llm_used": False,
-        "raw_llm_response": None,
-    }
+    res = answer_query(
+        question=query,
+        as_of_date=as_of_date,
+        pipeline=pipeline,
+        use_llm=use_llm,
+        model=model,
+        history=history,
+        trace=trace,
+        fetch_fn=_fetch_pipeline_articles,
+        llm_fn=generate_llm_response,
+    )
+    return res.to_dict()
 
 
 def generate_printable_html(query: str, as_of_date: str, result: dict) -> str:

@@ -14,6 +14,7 @@ class ArticleNode(BaseModel):
     valid_to: str
     status: str = "ACTIVE"
     related_ids: list[str] = []
+    embedding: list[float] | None = None
 
 
 class QueryResult(BaseModel):

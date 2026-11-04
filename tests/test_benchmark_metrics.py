@@ -1,3 +1,4 @@
+from unittest.mock import patch
 import pytest
 from src.benchmark.models import BenchmarkMetrics
 from src.benchmark.metrics import (
@@ -54,46 +55,58 @@ def test_citation_precision_and_recall_empty_gold():
 
 
 def test_temporal_accuracy_and_hallucination_empty_predicted():
-    assert compute_temporal_accuracy([], as_of_date="2026-01-01") == 1.0
+    assert compute_temporal_accuracy([], as_of_date="2026-01-01") == 0.0
     assert compute_hallucination_rate([], as_of_date="2026-01-01") == 0.0
 
 
+def test_hallucination_rate_includes_irrelevant_status():
+    with patch("src.benchmark.metrics._get_citation_statuses", return_value=["IRRELEVANT"]):
+        assert compute_hallucination_rate(["LUAT_48_2024_D9"], as_of_date="2026-01-01") == 1.0
+
+
+@pytest.mark.requires_neo4j
 def test_temporal_accuracy_valid_citation():
     pred = ["LUAT_48_2024_D9"]
     assert compute_temporal_accuracy(pred, as_of_date="2026-01-01") == 1.0
     assert compute_hallucination_rate(pred, as_of_date="2026-01-01") == 0.0
 
 
+@pytest.mark.requires_neo4j
 def test_temporal_accuracy_not_yet_effective():
     pred = ["LUAT_48_2024_D9"]
     assert compute_temporal_accuracy(pred, as_of_date="2025-01-01") == 0.0
     assert compute_hallucination_rate(pred, as_of_date="2025-01-01") == 0.0
 
 
+@pytest.mark.requires_neo4j
 def test_temporal_accuracy_amended_citation():
     pred = ["ND_181_2025_D9"]
     assert compute_temporal_accuracy(pred, as_of_date="2026-04-01") == 1.0
     assert compute_hallucination_rate(pred, as_of_date="2026-04-01") == 0.0
 
 
+@pytest.mark.requires_neo4j
 def test_hallucination_rate_fake_citation():
     pred = ["FAKE_DOC_D99"]
     assert compute_temporal_accuracy(pred, as_of_date="2026-01-01") == 0.0
     assert compute_hallucination_rate(pred, as_of_date="2026-01-01") == 1.0
 
 
+@pytest.mark.requires_neo4j
 def test_temporal_accuracy_and_hallucination_mixed():
     pred = ["LUAT_48_2024_D9", "FAKE_DOC_D99"]
     assert compute_temporal_accuracy(pred, as_of_date="2026-01-01") == 0.5
     assert compute_hallucination_rate(pred, as_of_date="2026-01-01") == 0.5
 
 
+@pytest.mark.requires_neo4j
 def test_temporal_metrics_deduplication():
     pred = ["LUAT_48_2024_D9", "LUAT_48_2024_D9"]
     assert compute_temporal_accuracy(pred, as_of_date="2026-01-01") == 1.0
     assert compute_hallucination_rate(pred, as_of_date="2026-01-01") == 0.0
 
 
+@pytest.mark.requires_neo4j
 def test_calculate_benchmark_metrics_full():
     metrics = calculate_benchmark_metrics(
         predicted=["LUAT_48_2024_D9"],
@@ -105,6 +118,7 @@ def test_calculate_benchmark_metrics_full():
     assert metrics.recall == 1.0
     assert metrics.temporal_accuracy == 1.0
     assert metrics.hallucination_rate == 0.0
+    assert metrics.answered_rate == 1.0
 
 
 def test_calculate_benchmark_metrics_empty_inputs():
@@ -116,8 +130,20 @@ def test_calculate_benchmark_metrics_empty_inputs():
     assert isinstance(metrics, BenchmarkMetrics)
     assert metrics.precision == 1.0
     assert metrics.recall == 1.0
-    assert metrics.temporal_accuracy == 1.0
+    assert metrics.temporal_accuracy == 0.0
     assert metrics.hallucination_rate == 0.0
+    assert metrics.answered_rate == 0.0
+
+
+def test_calculate_benchmark_metrics_empty_predicted():
+    metrics = calculate_benchmark_metrics(
+        predicted=[],
+        gold=["LUAT_48_2024_D9"],
+        as_of_date="2026-01-01",
+    )
+    assert metrics.temporal_accuracy == 0.0
+    assert metrics.hallucination_rate == 0.0
+    assert metrics.answered_rate == 0.0
 
 
 def test_evaluate_prediction_alias():

@@ -1,34 +1,36 @@
-import { resolve, type Result, type Citation, type AuditItem } from "./data";
+import { type Result, type Citation, type AuditItem } from "./data";
 
 export function parseCitationId(cid: string): Citation {
   let doc = "l48";
   let label = cid;
   let art = cid.toLowerCase().replace(/_/g, "-");
 
-  const match = cid.match(/^(LUAT_48_2024|ND_181_2025|TT_69_2025|ND_359_2025|ND_144_2026)_D(\d+)/i);
+  const match = cid.match(/^(LUAT_48_2024|ND_181_2025|TT_69_2025|ND_359_2025|ND_144_2026)_D(\d+)(?:_K(\d+))?(?:_([a-z0-9]+))?/i);
   if (match) {
     const docKey = match[1].toUpperCase();
     const articleNum = match[2];
-    if (docKey === "LUAT_48_2024") {
-      doc = "l48";
-      label = `Điều ${articleNum} Luật 48/2024`;
-      art = `l48-d${articleNum}`;
-    } else if (docKey === "ND_181_2025") {
-      doc = "nd181";
-      label = `Điều ${articleNum} NĐ 181/2025`;
-      art = `nd181-d${articleNum}`;
-    } else if (docKey === "TT_69_2025") {
-      doc = "tt69";
-      label = `Điều ${articleNum} TT 69/2025`;
-      art = `tt69-d${articleNum}`;
-    } else if (docKey === "ND_359_2025") {
-      doc = "nd359";
-      label = `Điều ${articleNum} NĐ 359/2025`;
-      art = `nd359-d${articleNum}`;
-    } else if (docKey === "ND_144_2026") {
-      doc = "nd144";
-      label = `Điều ${articleNum} NĐ 144/2026`;
-      art = `nd144-d${articleNum}`;
+    const clauseNum = match[3];
+    const pointLetter = match[4];
+
+    const prefix = pointLetter
+      ? `Điểm ${pointLetter} Khoản ${clauseNum} `
+      : clauseNum
+      ? `Khoản ${clauseNum} `
+      : "";
+
+    const docLabels: Record<string, [string, string]> = {
+      LUAT_48_2024: ["l48", "Luật 48/2024"],
+      ND_181_2025: ["nd181", "NĐ 181/2025"],
+      TT_69_2025: ["tt69", "TT 69/2025"],
+      ND_359_2025: ["nd359", "NĐ 359/2025"],
+      ND_144_2026: ["nd144", "NĐ 144/2026"],
+    };
+
+    if (docLabels[docKey]) {
+      const [docId, docName] = docLabels[docKey];
+      doc = docId;
+      label = `${prefix}Điều ${articleNum} ${docName}`;
+      art = `${docId}-d${articleNum}`;
     }
   }
 
@@ -39,11 +41,12 @@ export async function queryLegalApi(
   query: string,
   asOfDate: string,
   pipeline: "P3" | "P2" | "P1",
-  useLlm: boolean = false
+  useLlm: boolean = false,
+  history: Array<{ role: string; content: string }> = []
 ): Promise<Result> {
   const pipelineMap: Record<string, string> = {
     P3: "P3_FullSystem",
-    P2: "P2_TemporalGraph",
+    P2: "P2_TemporalGraphRAG",
     P1: "P1_FlatRAG",
   };
 
@@ -57,11 +60,12 @@ export async function queryLegalApi(
         pipeline: pipelineMap[pipeline] || "P3_FullSystem",
         use_llm: useLlm,
         model: "qwen2.5:7b",
+        history,
       }),
     });
 
     if (!res.ok) {
-      throw new Error(`API error ${res.status}: ${res.statusText}`);
+      throw new Error("Không thể kết nối máy chủ thẩm định pháp lý (Backend offline).");
     }
 
     const data = await res.json();
@@ -119,7 +123,14 @@ export async function queryLegalApi(
 
     // 3. Normal in-domain tax query
     const rawCitations: string[] = data.citations || [];
-    const citations = rawCitations.map(parseCitationId);
+    const seenLabels = new Set<string>();
+    const citations = rawCitations
+      .map(parseCitationId)
+      .filter((c) => {
+        if (!c.label || seenLabels.has(c.label)) return false;
+        seenLabels.add(c.label);
+        return true;
+      });
 
     const appText = data.irac_sections?.application || "";
     const application = appText
@@ -151,22 +162,16 @@ export async function queryLegalApi(
     return {
       score: data.risk_score ?? 0,
       issue: data.irac_sections?.issue || `Xác định quy định pháp lý cho: "${query}"`,
-      rule: data.irac_sections?.rule || "Không có quy phạm viện dẫn cụ thể.",
+      rule: data.irac_sections?.rule || "Chưa xác định được điều khoản viện dẫn cụ thể.",
       citations,
-      application: application.length > 0 ? application : [appText || "Đã hoàn thành kiểm tra trên đồ thị."],
-      conclusion: data.irac_sections?.conclusion || "Hoàn thành thẩm định pháp lý.",
+      application: application.length > 0 ? application : [appText || "Không có nội dung phân tích chi tiết từ mô hình."],
+      conclusion:
+        data.irac_sections?.conclusion ||
+        "Hệ thống đã thẩm định nhưng chưa tổng hợp được kết luận theo cấu trúc IRAC. Vui lòng thử lại hoặc tắt chế độ LLM.",
       audit,
       trap,
     };
   } catch (err) {
-    console.warn("Backend API unreachable, falling back to local resolver:", err);
-    const fallback = resolve(query, asOfDate, pipeline);
-    return {
-      ...fallback,
-      audit: [
-        ...fallback.audit,
-        { tone: "warn", text: "Lưu ý: Đang hiển thị kết quả giả lập do mất kết nối Backend FastAPI." },
-      ],
-    };
+    throw new Error("Không thể kết nối máy chủ thẩm định pháp lý (Backend offline).");
   }
 }

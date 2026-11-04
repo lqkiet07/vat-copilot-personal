@@ -1,7 +1,8 @@
 """Request and response models for the VAT Copilot chat endpoints."""
+import re
 from typing import Literal
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
 
 ChatRole = Literal["user", "assistant"]
 
@@ -19,6 +20,17 @@ class ChatRequest(BaseModel):
     messages: list[ChatMessage] = Field(..., min_length=1)
     as_of_date: str | None = None
     model: str = "qwen2.5:7b"
+
+    @field_validator("as_of_date")
+    @classmethod
+    def validate_as_of_date(cls, v: str | None) -> str | None:
+        if v is not None:
+            if not isinstance(v, str) or not re.match(r"^\d{4}-\d{2}-\d{2}$", v):
+                raise ValueError("as_of_date must be in YYYY-MM-DD format")
+            year = int(v[:4])
+            if year < 2000 or year > 2100:
+                raise ValueError("as_of_date year must be between 2000 and 2100")
+        return v
 
 
 class ChatSource(BaseModel):
@@ -43,4 +55,5 @@ class ChatResponse(BaseModel):
     warnings: list[str] = Field(default_factory=list)
     llm_used: bool = False
     in_scope: bool = True
+    answer_status: str = "ANSWERED"
     as_of_date: str

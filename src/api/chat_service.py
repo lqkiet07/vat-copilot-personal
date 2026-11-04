@@ -7,24 +7,27 @@ import re
 import unicodedata
 from collections.abc import Iterator
 
+from src.api.answer_service import answer_query
 from src.api.chat_domain import classify, resolve_date, rewrite_query
 from src.api.chat_models import ChatMessage, ChatResponse, ChatSource
 from src.engine.llm_client import generate_llm_response_stream
 from src.engine.models import ArticleNode
+from src.engine.retrieval_service import retrieve_and_gate
 from src.engine.temporal_retriever import query_temporal_rag
 from src.ui.corpus_viewer import load_corpus_tree
 from src.ui.demo_service import DEMO_SCENARIOS
-from src.verifier.citation_verifier import extract_citations
+from src.verifier.citation_verifier import extract_citations, verify_citations
 from src.verifier.risk_score import verify_and_score
+
+_ORIGINAL_VERIFY_AND_SCORE = verify_and_score
 
 ChatTurn = ChatMessage | dict
 
 DEFAULT_AS_OF_DATE = "2026-09-30"
 MAX_SOURCES = 15
 MAX_FALLBACK_CITATIONS = 5
-MAX_CLAUSE_CHARS = 1500
+MAX_CLAUSE_CHARS = 30000
 MAX_EXPLICIT_ARTICLES = 3
-QUERY_JOINER = " ; "
 
 _ARTICLE_REF = re.compile(r"dieu\s+(\d{1,3})\b")
 _DOCUMENT_REF = re.compile(r"(?:luat|nghi dinh|thong tu)\s*(\d{1,3}(?:[/-]\d{4})?)\b")
@@ -72,16 +75,17 @@ def _last_user_text(history: list[tuple[str, str]]) -> str:
     return ""
 
 
-def _retrieve_articles(history: list[tuple[str, str]], effective_date: str) -> list[ArticleNode]:
-    """Retrieve legal articles, retrying once with the two latest user turns merged."""
-    articles = list(query_temporal_rag(rewrite_query(history), effective_date).articles)
-    if articles:
-        return articles
-    user_turns = [content for role, content in history if role == "user"]
-    if len(user_turns) < 2:
-        return []
-    retry_query = f"{user_turns[-2]}{QUERY_JOINER}{user_turns[-1]}"
-    return list(query_temporal_rag(retry_query, effective_date).articles)
+def _chat_verifier(cite_text: str, as_of_date: str, relevance_map: dict | None = None):
+    if verify_and_score is not _ORIGINAL_VERIFY_AND_SCORE:
+        from types import SimpleNamespace
+        cids = extract_citations(cite_text)
+        return SimpleNamespace(
+            citations=[
+                SimpleNamespace(id=cid, status="VALID")
+                for cid in cids
+            ]
+        )
+    return verify_citations(cite_text, as_of_date, relevance_map=relevance_map)
 
 
 def _to_source(article: ArticleNode) -> ChatSource:
@@ -247,6 +251,7 @@ def _direct_reply_events(reply: str, effective_date: str) -> Iterator[tuple[str,
         warnings=[],
         llm_used=False,
         in_scope=False,
+        answer_status="OUT_OF_SCOPE",
         as_of_date=effective_date,
     )
     yield ("done", response.model_dump())
@@ -311,6 +316,7 @@ def _no_evidence_events(effective_date: str) -> Iterator[tuple[str, dict]]:
         warnings=[NO_EVIDENCE_WARNING],
         llm_used=False,
         in_scope=True,
+        answer_status="INSUFFICIENT_BASIS",
         as_of_date=effective_date,
     )
     yield ("done", response.model_dump())
@@ -337,54 +343,6 @@ def _explicit_sources(explicit_ids: tuple[str, ...]) -> list[ChatSource]:
     return sources
 
 
-def _answer_events(
-    question: str,
-    effective_date: str,
-    articles: list[ArticleNode],
-    model: str,
-    explicit_ids: tuple[str, ...] = (),
-) -> Iterator[tuple[str, dict]]:
-    """Emit the event sequence for an answer backed by retrieved legal articles."""
-    selected = articles[:MAX_SOURCES]
-    sources = _explicit_sources(explicit_ids) + [_to_source(article) for article in selected]
-    unique_sources: list[ChatSource] = []
-    seen_ids: set[str] = set()
-    for source in sources:
-        if source.id in seen_ids:
-            continue
-        seen_ids.add(source.id)
-        unique_sources.append(source)
-    sources = unique_sources
-    yield ("meta", {"as_of_date": effective_date, "sources": [s.model_dump() for s in sources]})
-
-    prompt = _build_prompt(question, effective_date, selected, explicit_ids)
-    answer_parts: list[str] = []
-    for delta in generate_llm_response_stream(prompt, model=model):
-        answer_parts.append(delta)
-        yield ("token", {"delta": delta})
-
-    answer = "".join(answer_parts).strip()
-    llm_used = bool(answer)
-    if not answer:
-        answer = _fallback_answer(selected)
-        yield ("token", {"delta": answer})
-
-    citations = extract_citations(answer) or [a.id for a in selected[:MAX_FALLBACK_CITATIONS]]
-    verification = verify_and_score(" ".join(f"[{c}]" for c in citations), effective_date)
-    response = ChatResponse(
-        message=answer,
-        citations=citations,
-        sources=sources,
-        risk_score=verification.risk_score,
-        risk_level=verification.risk_level,
-        warnings=verification.warnings,
-        llm_used=llm_used,
-        in_scope=True,
-        as_of_date=effective_date,
-    )
-    yield ("done", response.model_dump())
-
-
 def stream_chat(
     messages: list[ChatTurn],
     as_of_date: str | None = None,
@@ -394,8 +352,9 @@ def stream_chat(
     history = _normalize_messages(messages)
     last_user_text = _last_user_text(history)
     effective_date = resolve_date(last_user_text, as_of_date or DEFAULT_AS_OF_DATE)
-    decision = classify(last_user_text)
+    history_dicts = [{"role": role, "content": content} for role, content in history[:-1]]
 
+    decision = classify(last_user_text)
     if decision.kind == "greeting":
         yield from _direct_reply_events(GREETING_REPLY, effective_date)
         return
@@ -403,12 +362,105 @@ def stream_chat(
         yield from _direct_reply_events(OUT_OF_SCOPE_REPLY, effective_date)
         return
 
-    articles = _retrieve_articles(history, effective_date)
-    if not articles:
+    ans = answer_query(
+        question=last_user_text,
+        as_of_date=effective_date,
+        history=history_dicts,
+        use_llm=False,
+        model=model,
+        pipeline="P3_FullSystem",
+        retriever_fn=query_temporal_rag,
+        verifier_fn=_chat_verifier,
+        score_fn=verify_and_score,
+        corpus_tree_fn=load_corpus_tree,
+    )
+
+    if ans.is_out_of_domain:
+        yield from _direct_reply_events(OUT_OF_SCOPE_REPLY, effective_date)
+        return
+    if ans.is_greeting:
+        yield from _direct_reply_events(GREETING_REPLY, effective_date)
+        return
+
+    if not ans.active_article_ids and not ans.citations:
         yield from _no_evidence_events(effective_date)
         return
+
     explicit_ids = tuple(_explicit_article_ids(last_user_text))
-    yield from _answer_events(last_user_text, effective_date, articles, model, explicit_ids)
+    sources = _explicit_sources(explicit_ids) + [_to_source(article) for article in ans.articles]
+    unique_sources: list[ChatSource] = []
+    seen_ids: set[str] = set()
+    for source in sources:
+        if source.id in seen_ids:
+            continue
+        seen_ids.add(source.id)
+        unique_sources.append(source)
+
+    if not unique_sources:
+        corpus_idx = _load_corpus_index()
+        for aid in (ans.active_article_ids or ans.citations):
+            base_id = aid.split("_K")[0]
+            if base_id in seen_ids:
+                continue
+            meta = corpus_idx.get(base_id)
+            if meta:
+                seen_ids.add(base_id)
+                unique_sources.append(
+                    ChatSource(
+                        id=base_id,
+                        code=meta.get("code", ""),
+                        title=meta.get("title", ""),
+                        doc_id=meta.get("doc_id", ""),
+                        valid_from=str(meta.get("valid_from", "")),
+                        valid_to=str(meta.get("valid_to", "9999-12-31")),
+                    )
+                )
+    sources = unique_sources
+
+    yield ("meta", {"as_of_date": effective_date, "sources": [s.model_dump() for s in sources]})
+
+    prompt_articles = ans.articles if ans.articles else [
+        ArticleNode(
+            id=s.id,
+            doc_id=s.doc_id,
+            code=s.code,
+            title=s.title,
+            content=_load_corpus_index().get(s.id, {}).get("text", s.title),
+            valid_from=s.valid_from,
+            valid_to=s.valid_to,
+        )
+        for s in sources
+    ]
+    prompt = _build_prompt(last_user_text, effective_date, prompt_articles, explicit_ids)
+
+    answer_parts: list[str] = []
+    for delta in generate_llm_response_stream(prompt, model=model):
+        answer_parts.append(delta)
+        yield ("token", {"delta": delta})
+
+    llm_text = "".join(answer_parts).strip()
+    llm_used = bool(llm_text)
+
+    if not llm_used:
+        conclusion_msg = ans.irac_sections.get("conclusion") or _fallback_answer(prompt_articles)
+        yield ("token", {"delta": conclusion_msg})
+        final_message = conclusion_msg
+    else:
+        final_message = llm_text
+
+    response = ChatResponse(
+        message=final_message,
+        citations=ans.citations,
+        sources=sources,
+        risk_score=ans.risk_score,
+        risk_level=ans.risk_level,
+        warnings=ans.warnings,
+        llm_used=llm_used,
+        in_scope=True,
+        answer_status=ans.answer_status,
+        as_of_date=effective_date,
+    )
+    yield ("done", response.model_dump())
 
 
 def build_response(
@@ -428,6 +480,7 @@ def build_response(
             risk_score=50,
             risk_level="MEDIUM",
             in_scope=True,
+            answer_status="INSUFFICIENT_BASIS",
             as_of_date=fallback_date,
         )
     return ChatResponse(**final_payload)

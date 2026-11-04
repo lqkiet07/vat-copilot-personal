@@ -2,6 +2,7 @@
 
 Prioritizes semantic CSS classes with regex fallbacks. Preserves tables as Markdown.
 """
+import re
 from bs4 import BeautifulSoup, Tag
 from src.parser.regex_patterns import (
     RE_ARTICLE,
@@ -11,6 +12,17 @@ from src.parser.regex_patterns import (
     RE_SECTION,
 )
 from src.parser.utils import fold_ascii, normalize_text
+
+
+def _is_appendix(tag, text: str) -> bool:
+    """Identify if element or text marks a document appendix/phu luc boundary."""
+    classes = tag.get("class", []) if isinstance(tag, Tag) else []
+    for c in classes:
+        c_low = c.lower()
+        if "appendix" in c_low or "phu-luc" in c_low or "phuluc" in c_low:
+            return True
+    ascii_text = fold_ascii(text).strip(" \t\r\n:.-[]()")
+    return bool(re.match(r"(?i)^phu\s+luc\b", ascii_text))
 
 
 def _table_to_markdown(table: Tag) -> str:
@@ -34,6 +46,8 @@ def _table_to_markdown(table: Tag) -> str:
 
 def _classify(tag, text: str) -> str:
     """Classify element tag or text into document structural units."""
+    if _is_appendix(tag, text):
+        return "appendix"
     classes = tag.get("class", []) if isinstance(tag, Tag) else []
     for c in classes:
         if c == "prov-chapter":
@@ -141,8 +155,17 @@ def _handle_clause(text: str, doc: dict, article: dict, clause: dict | None) -> 
             article["lead"] = (article["lead"] + " " + text).strip() if article["lead"] else text
         return clause
     num, body = _split_clause(text)
+    base_id = f"{article['id']}_K{num}"
+    existing_ids = {c["id"] for c in article["clauses"]}
+    if base_id not in existing_ids:
+        cid = base_id
+    else:
+        idx = 1
+        while f"{base_id}_{idx}" in existing_ids:
+            idx += 1
+        cid = f"{base_id}_{idx}"
     new_clause = {
-        "id": f"{article['id']}_K{num}",
+        "id": cid,
         "code": f"Khoan {num}",
         "content": body,
         "points": [],
@@ -161,17 +184,31 @@ def _handle_point(text: str, doc: dict, article: dict, clause: dict | None) -> d
         return clause
     letter, body = _split_point(text)
     if clause is None:
-        clause = {
-            "id": f"{article['id']}_K0",
-            "code": "Khoan 0",
-            "content": "",
-            "points": [],
-            "valid_from": doc["valid_from"],
-            "valid_to": doc["valid_to"],
-        }
-        article["clauses"].append(clause)
+        k0_id = f"{article['id']}_K0"
+        clause = next((c for c in article["clauses"] if c["id"] == k0_id), None)
+        if clause is None:
+            clause = {
+                "id": k0_id,
+                "code": "Khoan 0",
+                "content": "",
+                "points": [],
+                "valid_from": doc["valid_from"],
+                "valid_to": doc["valid_to"],
+            }
+            article["clauses"].append(clause)
+
+    base_id = f"{clause['id']}_{letter}"
+    existing_ids = {p["id"] for p in clause["points"]}
+    if base_id not in existing_ids:
+        pid = base_id
+    else:
+        idx = 1
+        while f"{base_id}_{idx}" in existing_ids:
+            idx += 1
+        pid = f"{base_id}_{idx}"
+
     point = {
-        "id": f"{clause['id']}_{letter}",
+        "id": pid,
         "code": f"Diem {letter}",
         "content": body,
         "valid_from": doc["valid_from"],
@@ -209,13 +246,19 @@ def parse_vbpl_document(html_content: str, metadata: dict) -> dict:
 
     for el in root.find_all(["p", "table"], recursive=True):
         if el.name == "table":
+            if doc["articles"] and _is_appendix(el, normalize_text(el.get_text(" "))):
+                article, clause = None, None
+                break
             _handle_table(el, article)
             continue
         text = normalize_text(el.get_text(" "))
         if not text:
             continue
         kind = _classify(el, text)
-        if kind == "chapter":
+        if kind == "appendix":
+            article, clause = None, None
+            break
+        elif kind == "chapter":
             chapter = _handle_chapter(text, doc)
             article, clause = None, None
         elif kind == "section":

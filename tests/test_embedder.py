@@ -105,3 +105,70 @@ def test_base_embedder_protocol_and_factory(tmp_path: Path):
 
     f2 = get_embedder(cache_path=str(cache_file))
     assert isinstance(f2, PrecomputedEmbedder)
+
+
+def test_ollama_embedder_mocked(monkeypatch):
+    from src.engine.embedder import OllamaEmbedder
+    raw_vec = [1.0] * 1024
+
+    class MockResponse:
+        def __enter__(self):
+            return self
+        def __exit__(self, *args):
+            pass
+        def read(self):
+            return json.dumps({"embeddings": [raw_vec]}).encode("utf-8")
+
+    monkeypatch.setattr("urllib.request.urlopen", lambda req, timeout=None: MockResponse())
+
+    embedder = OllamaEmbedder(model="bge-m3", dimension=1024)
+    vec = embedder.embed_text("Luật thuế GTGT")
+    assert len(vec) == 1024
+    norm = math.sqrt(sum(x * x for x in vec))
+    assert math.isclose(norm, 1.0, rel_tol=1e-5)
+
+
+def test_ollama_embedder_batch_mocked(monkeypatch):
+    from src.engine.embedder import OllamaEmbedder
+    raw_vecs = [[1.0] * 1024, [2.0] * 1024]
+
+    class MockResponse:
+        def __enter__(self):
+            return self
+        def __exit__(self, *args):
+            pass
+        def read(self):
+            return json.dumps({"embeddings": raw_vecs}).encode("utf-8")
+
+    monkeypatch.setattr("urllib.request.urlopen", lambda req, timeout=None: MockResponse())
+
+    embedder = OllamaEmbedder(model="bge-m3", dimension=1024)
+    vecs = embedder.embed_texts(["Đoạn 1", "Đoạn 2"])
+    assert len(vecs) == 2
+    assert len(vecs[0]) == 1024
+    assert len(vecs[1]) == 1024
+
+
+def test_metadata_guard_skips_vector_when_offline(tmp_path: Path, monkeypatch):
+    from src.engine.embedding_meta import load_embedding_meta, resolve_embedder_for_index, save_embedding_meta
+
+    meta_file = tmp_path / "embedding_meta.json"
+    save_embedding_meta(
+        {"provider": "ollama", "model": "bge-m3", "dimension": 1024, "count": 76},
+        path=meta_file,
+    )
+    loaded = load_embedding_meta(meta_file)
+    assert loaded["provider"] == "ollama"
+
+    # When Ollama is offline, resolve_embedder_for_index must return None to prevent hash vector mismatch
+    monkeypatch.setattr("src.engine.embedder.check_ollama_embed_available", lambda *a, **k: False)
+    embedder = resolve_embedder_for_index(meta_path=meta_file)
+    assert embedder is None
+
+
+def test_metadata_guard_returns_deterministic_when_meta_missing(tmp_path: Path):
+    from src.engine.embedding_meta import resolve_embedder_for_index
+    nonexistent = tmp_path / "missing_meta.json"
+    embedder = resolve_embedder_for_index(meta_path=nonexistent)
+    assert isinstance(embedder, DeterministicEmbedder)
+

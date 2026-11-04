@@ -46,19 +46,19 @@ def compute_temporal_accuracy(predicted: list[str], as_of_date: str) -> float:
     """Compute ratio of valid or amended citations over total unique predicted."""
     unique_pred = _deduplicate(predicted)
     if not unique_pred:
-        return 1.0
+        return 0.0
     statuses = _get_citation_statuses(unique_pred, as_of_date)
     valid_count = sum(1 for s in statuses if s in ("VALID", "AMENDED"))
     return valid_count / len(unique_pred)
 
 
 def compute_hallucination_rate(predicted: list[str], as_of_date: str) -> float:
-    """Compute ratio of not-found or expired citations over total unique predicted."""
+    """Compute ratio of not-found, expired, or irrelevant citations over total unique predicted."""
     unique_pred = _deduplicate(predicted)
     if not unique_pred:
         return 0.0
     statuses = _get_citation_statuses(unique_pred, as_of_date)
-    hallucinated_count = sum(1 for s in statuses if s in ("NOT_FOUND", "EXPIRED"))
+    hallucinated_count = sum(1 for s in statuses if s in ("NOT_FOUND", "EXPIRED", "IRRELEVANT"))
     return hallucinated_count / len(unique_pred)
 
 
@@ -74,13 +74,14 @@ def calculate_benchmark_metrics(
         return BenchmarkMetrics(
             precision=precision,
             recall=recall,
-            temporal_accuracy=1.0,
+            temporal_accuracy=0.0,
             hallucination_rate=0.0,
+            answered_rate=0.0,
         )
 
     statuses = _get_citation_statuses(unique_pred, as_of_date)
     valid_count = sum(1 for s in statuses if s in ("VALID", "AMENDED"))
-    hallucinated_count = sum(1 for s in statuses if s in ("NOT_FOUND", "EXPIRED"))
+    hallucinated_count = sum(1 for s in statuses if s in ("NOT_FOUND", "EXPIRED", "IRRELEVANT"))
     total = len(unique_pred)
 
     return BenchmarkMetrics(
@@ -88,6 +89,7 @@ def calculate_benchmark_metrics(
         recall=recall,
         temporal_accuracy=valid_count / total,
         hallucination_rate=hallucinated_count / total,
+        answered_rate=1.0,
     )
 
 

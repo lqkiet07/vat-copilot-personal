@@ -63,3 +63,57 @@ def test_parse_table_preserved_as_markdown():
     tables = doc["articles"][0]["tables"]
     assert len(tables) == 1
     assert "Mat hang" in tables[0] and "0%" in tables[0]
+
+
+def test_parse_appendix_boundary_stops_attachment():
+    html = (
+        "<div>"
+        "<p><b>Dieu 40. Hieu luc thi hanh</b></p>"
+        "<p>1. Co hieu luc tu ngay 01/07/2025.</p>"
+        "<p>PHU LUC I</p>"
+        "<p>1. Bang danh muc mat hang.</p>"
+        "<table><tr><td>Bang 1</td></tr></table>"
+        "</div>"
+    )
+    doc = parse_vbpl_document(html, META)
+    assert len(doc["articles"]) == 1
+    art = doc["articles"][0]
+    assert len(art["clauses"]) == 1
+    assert art["clauses"][0]["id"] == "LUAT_48_2024_D40_K1"
+    assert len(art["tables"]) == 0
+
+
+def test_clause_id_deduplication():
+    html = (
+        "<div>"
+        "<p><b>Dieu 1. Pham vi</b></p>"
+        "<p>1. Khoan mot.</p>"
+        "<p>1. Khoan mot bi lap.</p>"
+        "</div>"
+    )
+    doc = parse_vbpl_document(html, META)
+    art = doc["articles"][0]
+    assert len(art["clauses"]) == 2
+    ids = [c["id"] for c in art["clauses"]]
+    assert len(ids) == len(set(ids))
+    assert ids[0] == "LUAT_48_2024_D1_K1"
+    assert ids[1] != ids[0]
+
+
+def test_point_id_deduplication():
+    html = (
+        "<div>"
+        "<p><b>Dieu 1. Pham vi</b></p>"
+        "<p>1. Khoan mot.</p>"
+        "<p>a) Diem a.</p>"
+        "<p>a) Diem a bi lap.</p>"
+        "</div>"
+    )
+    doc = parse_vbpl_document(html, META)
+    clause = doc["articles"][0]["clauses"][0]
+    assert len(clause["points"]) == 2
+    pids = [p["id"] for p in clause["points"]]
+    assert len(pids) == len(set(pids))
+    assert pids[0] == "LUAT_48_2024_D1_K1_a"
+    assert pids[1] != pids[0]
+

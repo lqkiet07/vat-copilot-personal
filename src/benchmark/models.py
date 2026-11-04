@@ -16,6 +16,7 @@ class BenchmarkMetrics(BaseModel):
     recall: float = Field(default=0.0, ge=0.0, le=1.0)
     temporal_accuracy: float = Field(default=0.0, ge=0.0, le=1.0)
     hallucination_rate: float = Field(default=0.0, ge=0.0, le=1.0)
+    answered_rate: float = Field(default=1.0, ge=0.0, le=1.0)
 
 
 class PipelineRunResult(BaseModel):

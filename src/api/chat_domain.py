@@ -5,10 +5,124 @@ imports from the API layer, so its behaviour is fully deterministic and unit tes
 """
 import calendar
 import re
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import Literal
 
 ScopeKind = Literal["vat", "greeting", "out_of_scope"]
+
+_TELEX_MAP: dict[str, str] = {
+    "kh": "không",
+    "ko": "không",
+    "k": "không",
+    "hok": "không",
+    "hem": "không",
+    "dc": "được",
+    "đc": "được",
+    "j": "gì",
+    "bnh": "bao nhiêu",
+    "bn": "bao nhiêu",
+    "nhiu": "nhiêu",
+    "mik": "mình",
+    "mk": "mình",
+    "ntn": "như thế nào",
+    "sđt": "số điện thoại",
+    "cccd": "căn cước công dân",
+    "mst": "mã số thuế",
+}
+
+_TELEX_PATTERN = re.compile(
+    r"\b(" + "|".join(re.escape(k) for k in sorted(_TELEX_MAP.keys(), key=len, reverse=True)) + r")\b",
+    re.IGNORECASE,
+)
+
+_INDUSTRY_MAP: dict[tuple[str, ...], tuple[str, ...]] = {
+    ("tiệm net", "quán net", "cyber", "internet", "game net"): (
+        "dịch vụ internet",
+        "kinh doanh trò chơi điện tử",
+        "dịch vụ",
+    ),
+    ("quán cafe", "quán cà phê", "cà phê", "cafe"): ("dịch vụ ăn uống",),
+    ("tiệm tạp hóa", "quán tạp hóa", "tạp hóa"): ("bán lẻ hàng hóa",),
+    ("rửa xe", "tiệm rửa xe"): ("dịch vụ rửa xe",),
+}
+
+_REVENUE_PATTERN = re.compile(r"(\d+(?:[.,]\d+)?)\s*(triệu|tr|tỷ|tỉ)\b", re.IGNORECASE)
+
+
+@dataclass(frozen=True)
+class QueryEntities:
+    raw: str
+    normalized: str
+    business_type: str | None
+    industry_synonyms: tuple[str, ...] = field(default_factory=tuple)
+    revenue_vnd: int | None = None
+
+
+def normalize_query(text: str) -> str:
+    """Normalize colloquial Vietnamese telex and abbreviations using word boundaries."""
+    if not text:
+        return ""
+
+    def _replace(match: re.Match) -> str:
+        word = match.group(1)
+        lower = word.lower()
+        repl = _TELEX_MAP.get(lower, word)
+        if word.isupper():
+            return repl.upper()
+        if word[0].isupper():
+            return repl.capitalize()
+        return repl
+
+    replaced = _TELEX_PATTERN.sub(_replace, text)
+    return " ".join(replaced.split())
+
+
+def extract_entities(text: str) -> QueryEntities:
+    """Extract business type, industry synonyms, and revenue figures from query."""
+    norm = normalize_query(text)
+    norm_lower = norm.lower()
+
+    # 1. Industry extraction
+    industry_synonyms: list[str] = []
+    for triggers, synonyms in _INDUSTRY_MAP.items():
+        if any(trigger in norm_lower for trigger in triggers):
+            industry_synonyms.extend(synonyms)
+
+    # 2. Business type classification
+    business_type = None
+    if any(k in norm_lower for k in ("hộ kinh doanh", "hộ cá thể", "tiệm", "quán", "dưới quê")):
+        business_type = "HỘ_KINH_DOANH"
+    elif any(k in norm_lower for k in ("công ty", "doanh nghiệp", "tổng công ty", "tập đoàn")):
+        business_type = "DOANH_NGHIEP"
+
+    # 3. Revenue extraction
+    revenue_vnd = None
+    rev_match = _REVENUE_PATTERN.search(norm_lower)
+    if rev_match:
+        val_str = rev_match.group(1).replace(",", ".")
+        unit = rev_match.group(2).lower()
+        try:
+            val = float(val_str)
+            if unit in ("triệu", "tr"):
+                revenue_vnd = int(val * 1_000_000)
+            elif unit in ("tỷ", "tỉ"):
+                revenue_vnd = int(val * 1_000_000_000)
+        except ValueError:
+            pass
+
+    return QueryEntities(
+        raw=text,
+        normalized=norm,
+        business_type=business_type,
+        industry_synonyms=tuple(dict.fromkeys(industry_synonyms)),
+        revenue_vnd=revenue_vnd,
+    )
+
+
+def understand_query(text: str) -> QueryEntities:
+    """Convenience entry point for full query normalization and entity understanding."""
+    return extract_entities(text)
+
 
 VAT_KEYWORDS: tuple[str, ...] = (
     "thuế",

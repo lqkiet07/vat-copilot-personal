@@ -93,6 +93,7 @@ def test_apptest_ollama_toggle_offline(monkeypatch):
     assert any("Ollama chưa bật (fallback về Tất định an toàn)" in w for w in warnings)
 
 
+@pytest.mark.requires_neo4j
 def test_apptest_run_pipeline_execution():
     at = AppTest.from_file(APP_DEMO_PATH, default_timeout=15).run(timeout=15)
     assert len(at.exception) == 0
@@ -104,6 +105,7 @@ def test_apptest_run_pipeline_execution():
     assert any("Chế độ Tất định An toàn (Deterministic Safe Mode • 0 VNĐ)" in c for c in captions)
 
 
+@pytest.mark.requires_neo4j
 def test_apptest_run_pipeline_with_llm(monkeypatch):
     monkeypatch.setattr("src.engine.llm_client.check_ollama_available", lambda: True)
     monkeypatch.setattr(

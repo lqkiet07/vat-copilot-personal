@@ -6,8 +6,8 @@ import sys
 from pathlib import Path
 import pytest
 
-from src.benchmark.models import AblationReport
-from src.benchmark.runner import run_ablation_benchmark
+from src.benchmark.models import AblationReport, BenchmarkMetrics, PipelineRunResult
+from src.benchmark.runner import _compute_mean_metrics, run_ablation_benchmark
 
 EXPECTED_CSV_HEADER = [
     "question_id",
@@ -23,6 +23,7 @@ EXPECTED_CSV_HEADER = [
 ]
 
 
+@pytest.mark.requires_neo4j
 def test_run_ablation_benchmark_smoke(tmp_path: Path):
     """Smoke test running 3 benchmark items and exporting CSV + JSON."""
     report = run_ablation_benchmark(limit=3, top_k=5, output_dir=tmp_path)
@@ -56,6 +57,7 @@ def test_run_ablation_benchmark_smoke(tmp_path: Path):
         assert "P1_FlatRAG" in data["metrics_summary"]
 
 
+@pytest.mark.requires_neo4j
 def test_run_ablation_benchmark_no_output_dir():
     """Verify in-memory execution when output_dir is None."""
     report = run_ablation_benchmark(limit=1, top_k=3, output_dir=None)
@@ -65,6 +67,7 @@ def test_run_ablation_benchmark_no_output_dir():
     assert len(report.runs) == 3
 
 
+@pytest.mark.requires_neo4j
 def test_run_benchmark_script_cli(tmp_path: Path):
     """Verify scripts/run_benchmark.py CLI execution and printed ASCII table."""
     cmd = [
@@ -88,3 +91,47 @@ def test_run_benchmark_script_cli(tmp_path: Path):
     with open(csv_path, mode="r", encoding="utf-8") as f:
         rows = list(csv.reader(f))
         assert len(rows) == 7  # 1 header + 6 data rows
+
+
+def test_compute_mean_metrics_calculates_answered_rate_and_handles_none():
+    runs = [
+        PipelineRunResult(
+            question_id="q1",
+            pipeline="P1",
+            metrics=BenchmarkMetrics(
+                precision=1.0,
+                recall=1.0,
+                temporal_accuracy=1.0,
+                hallucination_rate=0.0,
+                answered_rate=1.0,
+            ),
+        ),
+        PipelineRunResult(
+            question_id="q2",
+            pipeline="P1",
+            metrics=None,
+        ),
+        PipelineRunResult(
+            question_id="q3",
+            pipeline="P1",
+            metrics=BenchmarkMetrics(
+                precision=0.5,
+                recall=0.5,
+                temporal_accuracy=0.0,
+                hallucination_rate=0.5,
+                answered_rate=0.0,
+            ),
+        ),
+    ]
+    mean = _compute_mean_metrics(runs)
+    assert mean.answered_rate == 0.5
+    assert mean.precision == 0.75
+    assert mean.recall == 0.75
+    assert mean.temporal_accuracy == 0.5
+    assert mean.hallucination_rate == 0.25
+
+
+def test_compute_mean_metrics_empty_runs():
+    assert _compute_mean_metrics([]).answered_rate == 1.0
+    runs = [PipelineRunResult(question_id="q1", pipeline="P1", metrics=None)]
+    assert _compute_mean_metrics(runs).answered_rate == 1.0
