@@ -53,13 +53,17 @@ def _matches_household(art_text: str, q_norm: str) -> bool:
         "hộ, cá nhân sản xuất, kinh doanh",
         "hộ, cá nhân kinh doanh",
         "hộ kinh doanh",
+        "cá nhân kinh doanh",
         "200 triệu",
-        "doanh thu hằng năm",
-        "doanh thu hàng năm",
         "phương pháp tính trực tiếp",
-        "người nộp thuế",
     )
+    # If the article only mentions household to exclude them (e.g. "trừ hộ, cá nhân"), it does not govern them
+    if "trừ hộ, cá nhân" in art_text and not any(k in art_text for k in ("200 triệu", "phương pháp tính trực tiếp")):
+        return False
+
     if any(k in art_text for k in household_markers):
+        return True
+    if any(k in art_text for k in ("doanh thu hằng năm", "doanh thu hàng năm")) and "trừ hộ" not in art_text:
         return True
     return ("thuế suất 10%" in art_text or "thuế suất" in art_text) and any(
         w in q_norm for w in ("thuế", "thuế suất", "bao nhiêu", "đóng")
@@ -76,6 +80,10 @@ def score_article_relevance(
     art_text = f"{article.title} {article.content}".lower()
     entities = understand_query(query)
 
+    gambling_activities = ("ca-si-nô", "casino", "trò chơi điện tử có thưởng", "đặt cược")
+    if any(activity in (article.title or "").lower() for activity in gambling_activities):
+        return any(activity in q_norm for activity in gambling_activities)
+
     is_household = entities.business_type == "HỘ_KINH_DOANH"
     has_export_marker = any(
         bool(re.search(r"(?<!\d)0%", q_norm)) if m == "0%" else m in q_norm
@@ -88,6 +96,15 @@ def score_article_relevance(
 
     # 1b. Reject D9 (corporate tax rates / 0% export) specifically for domestic household queries
     if article.id == "LUAT_48_2024_D9" and is_household and not has_export_marker:
+        return False
+
+    # 1c. Reject corporate deduction-method articles for domestic household queries unless specifically asked
+    has_deduction_query = any(k in q_norm for k in ("khấu trừ", "khau tru"))
+    is_deduction_article = (
+        article.id == "ND_181_2025_D21"
+        or ("phương pháp khấu trừ" in (article.title or "").lower() and "trừ hộ" in art_text)
+    )
+    if is_deduction_article and is_household and not has_deduction_query:
         return False
 
     # 2. Cosine vector gating if embeddings are present

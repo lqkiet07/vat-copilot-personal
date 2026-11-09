@@ -137,10 +137,11 @@ def test_answer_query_hallucinated_citation_outside_context_marked_irrelevant():
         fetch_fn=lambda *args, **kwargs: (["LUAT_48_2024_D5"], ["LUAT_48_2024_D5"], [mock_article]),
     )
 
-    assert res.risk_score >= 70
-    assert res.risk_level in {"HIGH", "CRITICAL"}
+    assert res.risk_score == 0
+    assert res.risk_level == "LOW"
     assert "LUAT_48_2024_D9" not in res.citations
-    assert any("không nằm trong tài liệu căn cứ" in w for w in res.warnings)
+    assert "LUAT_48_2024_D9" not in "\n".join(res.irac_sections.values())
+    assert any("Bản nháp LLM đã bị thay" in w for w in res.warnings)
 
 
 def test_household_conclusion_has_no_unsupported_five_percent():
@@ -200,4 +201,190 @@ def test_deterministic_multi_turn_uses_rewritten_query():
     assert captured["issue_query"] == captured["retrieval_query"]
 
 
+def _offline_score(text, as_of_date, context_ids=None, relevance_map=None):
+    from src.verifier.citation_verifier import extract_citations
+    from src.verifier.models import CitationStatus, VerificationReport, VerificationResult
+    from src.verifier.risk_score import calculate_risk_score
 
+    ids = extract_citations(text)
+    statuses = []
+    for cid in ids:
+        valid = cid in (context_ids or set()) and (relevance_map or {}).get(cid, True)
+        statuses.append(CitationStatus(
+            id=cid, status="VALID" if valid else "IRRELEVANT", exists=True,
+            is_active=True, message="" if valid else f"Không có căn cứ cho {cid}.",
+        ))
+    report = VerificationReport(
+        as_of_date=as_of_date, total_citations=len(ids),
+        valid_citations=sum(c.status == "VALID" for c in statuses),
+        citations=statuses, is_clean=all(c.status == "VALID" for c in statuses),
+    )
+    score, level, warnings = calculate_risk_score(report)
+    return VerificationResult(
+        as_of_date=as_of_date, risk_score=score, risk_level=level,
+        warnings=warnings, report=report,
+    )
+
+
+def test_llm_without_extracted_citations_does_not_leak_active_ids_into_citations():
+    """When LLM response does not cite any bracketed citations, citations must not be filled with active_ids."""
+    from src.engine.models import ArticleNode
+
+    mock_article = ArticleNode(
+        id="LUAT_48_2024_D5",
+        doc_id="LUAT_48_2024",
+        code="D5",
+        title="Đối tượng không chịu thuế",
+        content="Hàng hóa, dịch vụ của hộ, cá nhân kinh doanh có mức doanh thu hằng năm từ 200 triệu đồng trở xuống.",
+        valid_from="2026-01-01",
+        valid_to="9999-12-31",
+    )
+
+    def mock_llm_no_citations(*args, **kwargs):
+        return (
+            "Issue: Thuế GTGT quán net dưới quê.\n"
+            "Rule: Quy định chung về thuế GTGT.\n"
+            "Application: Quán net dưới quê không cần nộp thuế.\n"
+            "Conclusion: Được miễn thuế hoàn toàn."
+        )
+
+    res = answer_query(
+        question="quán net dưới quê tôi có dc miễn thuế kh",
+        as_of_date="2026-03-20",
+        use_llm=True,
+        llm_fn=mock_llm_no_citations,
+        score_fn=_offline_score,
+        fetch_fn=lambda *args, **kwargs: (["LUAT_48_2024_D5"], ["LUAT_48_2024_D5"], [mock_article]),
+    )
+
+    # Citations of the answer must NOT claim to be [LUAT_48_2024_D5] when LLM didn't cite it!
+    # And an unsupported unconditional exemption conclusion must trigger fallback or rejection!
+    assert res.citations == [] or "200 triệu" in res.irac_sections["conclusion"]
+    assert "miễn thuế hoàn toàn" not in res.irac_sections["conclusion"].lower()
+    assert not any("không viện dẫn bất kỳ" in w for w in res.warnings)
+    from src.verifier.citation_verifier import extract_citations
+    final_text = "\n".join(res.irac_sections.values())
+    assert set(extract_citations(final_text)) == set(res.citations)
+    assert "phương pháp khoán" not in final_text
+    assert "không viện dẫn bất kỳ" not in final_text
+
+
+def test_company_fallback_does_not_infer_household_from_legal_text():
+    from src.api.answer_service import _build_irac_sections
+    from src.engine.models import ArticleNode
+
+    article = ArticleNode(
+        id="LUAT_48_2024_D4", doc_id="LUAT_48_2024", code="D4",
+        title="Người nộp thuế",
+        content="Tổ chức, hộ, cá nhân sản xuất kinh doanh hàng hóa, dịch vụ chịu thuế GTGT.",
+        valid_from="2025-07-01", valid_to="9999-12-31",
+    )
+    irac = _build_irac_sections(
+        "tôi đăng ký công ty TNHH, doanh thu 1 tỷ một năm thì sao?",
+        "2026-03-20", [article.id], [], articles=[article],
+    )
+    assert "đối với hộ, cá nhân" not in irac["conclusion"]
+    assert "chưa đủ" in irac["conclusion"].lower()
+
+
+def test_fallback_uses_retrieved_evidence_instead_of_local_corpus():
+    from src.api.answer_service import _build_irac_sections
+    from src.engine.models import ArticleNode
+
+    article = ArticleNode(
+        id="LUAT_48_2024_D5", doc_id="LUAT_48_2024", code="D5",
+        title="Đối tượng không chịu thuế",
+        content="Hộ, cá nhân kinh doanh có doanh thu hằng năm từ 500 triệu đồng trở xuống không chịu thuế GTGT.",
+        valid_from="2026-01-01", valid_to="9999-12-31",
+    )
+    irac = _build_irac_sections(
+        "hộ kinh doanh nộp thuế thế nào", "2026-03-20", [article.id], [], articles=[article],
+    )
+    assert "500 triệu" in irac["conclusion"]
+    assert "200 triệu" not in "\n".join(irac.values())
+
+
+def test_llm_hallucinated_invalid_citation_triggers_fallback_or_safe_conclusion():
+    """When LLM response cites an invalid or out-of-context citation, the hallucinated claim must not be preserved."""
+    from src.engine.models import ArticleNode
+
+    mock_article = ArticleNode(
+        id="LUAT_48_2024_D5",
+        doc_id="LUAT_48_2024",
+        code="D5",
+        title="Đối tượng không chịu thuế",
+        content="Khoản 25: Hộ, cá nhân kinh doanh doanh thu từ 200 triệu đồng trở xuống.",
+        valid_from="2026-01-01",
+        valid_to="9999-12-31",
+    )
+
+    def mock_llm_hallucinated_d9(*args, **kwargs):
+        return (
+            "Issue: Xác định thuế quán net.\n"
+            "Rule: Điều 4 của [LUAT_48_2024_D9] quy định chi tiết về đối tượng không chịu thuế.\n"
+            "Application: Áp dụng quy định trên cho quán net.\n"
+            "Conclusion: Các tổ chức, cá nhân không cần phải chịu thuế theo quy định của [LUAT_48_2024_D9]."
+        )
+
+    res = answer_query(
+        question="quán net dưới quê tôi có dc miễn thuế kh",
+        as_of_date="2026-03-20",
+        use_llm=True,
+        llm_fn=mock_llm_hallucinated_d9,
+        score_fn=_offline_score,
+        fetch_fn=lambda *args, **kwargs: (["LUAT_48_2024_D5"], ["LUAT_48_2024_D5"], [mock_article]),
+    )
+
+    # D9 is out of context and invalid here. It must not be in citations.
+    assert "LUAT_48_2024_D9" not in res.citations
+    # The conclusion must NOT preserve the hallucinated assertion attributing non-taxable status to D9!
+    assert "LUAT_48_2024_D9" not in res.irac_sections["conclusion"]
+    assert "Điều 4 của LUAT_48_2024_D9" not in res.irac_sections["rule"]
+
+
+def test_household_query_without_revenue_must_branch_not_assert_unconditional_deduction():
+    """When question is a household query without revenue, conclusion must branch by revenue threshold."""
+    from src.engine.models import ArticleNode
+
+    mock_d5 = ArticleNode(
+        id="LUAT_48_2024_D5",
+        doc_id="LUAT_48_2024",
+        code="D5",
+        title="Đối tượng không chịu thuế",
+        content="Hàng hóa, dịch vụ của hộ, cá nhân kinh doanh có mức doanh thu hằng năm từ 200 triệu đồng trở xuống.",
+        valid_from="2026-01-01",
+        valid_to="9999-12-31",
+    )
+    mock_d21 = ArticleNode(
+        id="ND_181_2025_D21",
+        doc_id="ND_181_2025",
+        code="D21",
+        title="Phương pháp khấu trừ",
+        content="Đối tượng áp dụng phương pháp khấu trừ thuế là cơ sở kinh doanh, trừ hộ, cá nhân sản xuất, kinh doanh.",
+        valid_from="2026-01-01",
+        valid_to="9999-12-31",
+    )
+
+    def mock_llm_asserts_deduction(*args, **kwargs):
+        return (
+            "Issue: Nghĩa vụ thuế quán net mới mở dưới quê.\n"
+            "Rule: Căn cứ [ND_181_2025_D21] và [LUAT_48_2024_D5].\n"
+            "Application: Quán net áp dụng phương pháp khấu trừ theo [ND_181_2025_D21].\n"
+            "Conclusion: Quán net mới mở dưới quê thuộc đối tượng chịu thuế GTGT và áp dụng phương pháp khấu trừ theo [ND_181_2025_D21]."
+        )
+
+    res = answer_query(
+        question="quán net tôi mới mở dưới quê có phải đóng thuế kh và đóng bnh",
+        as_of_date="2026-03-20",
+        use_llm=True,
+        llm_fn=mock_llm_asserts_deduction,
+        score_fn=_offline_score,
+        fetch_fn=lambda *args, **kwargs: (["LUAT_48_2024_D5", "ND_181_2025_D21"], ["LUAT_48_2024_D5", "ND_181_2025_D21"], [mock_d5, mock_d21]),
+    )
+
+    # Deduction method ND_181_2025_D21 explicitly excludes household business!
+    # Conclusion must not assert that household business applies deduction method [ND_181_2025_D21]!
+    conc_lower = res.irac_sections["conclusion"].lower()
+    assert "khấu trừ" not in conc_lower or "trừ hộ" in conc_lower
+    # Must branch by revenue threshold
+    assert "200 triệu" in res.irac_sections["conclusion"]

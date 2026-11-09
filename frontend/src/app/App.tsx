@@ -1158,7 +1158,7 @@ function Answer({
 
           {showTrace && (
             <div className="mt-2 space-y-1.5 rounded-2xl border border-[#CBD5E1] bg-[#0F172A] p-3.5 text-[11.5px] font-mono text-[#E2E8F0] shadow-inner">
-              <div className="text-[#94A3B8] font-bold">// 1. Truy vấn lát cắt thời gian & quan hệ trên Neo4j</div>
+              <div className="text-[#94A3B8] font-bold">// 1. Truy vấn lát cắt thời gian & quan hệ trên Neo4j (Mô phỏng Cypher)</div>
               <div className="text-[#38BDF8]">
                 {`MATCH (d:Document)-[:CONTAINS]->(art:Article)`}
               </div>

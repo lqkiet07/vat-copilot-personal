@@ -138,6 +138,10 @@ export async function queryLegalApi(
       : [];
 
     const audit: AuditItem[] = [];
+    const hasNoCitationWarning = Array.isArray(data.warnings) && data.warnings.some((w: string) =>
+      w.toLowerCase().includes("không viện dẫn bất kỳ căn cứ")
+    );
+
     if (Array.isArray(data.warnings) && data.warnings.length > 0) {
       for (const w of data.warnings) {
         audit.push({
@@ -147,10 +151,15 @@ export async function queryLegalApi(
       }
     }
 
-    if (citations.length > 0) {
+    if (citations.length > 0 && !hasNoCitationWarning) {
       audit.push({
         tone: "ok",
         text: `Đã đối chiếu ${citations.length} điều khoản viện dẫn qua Đồ thị Tri thức Neo4j tại mốc ${asOfDate}.`,
+      });
+    } else if (citations.length === 0) {
+      audit.push({
+        tone: "warn",
+        text: `Chưa xác định được điều khoản pháp luật thuế GTGT điều chỉnh trực tiếp tại mốc ${asOfDate}.`,
       });
     }
 

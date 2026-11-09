@@ -2,7 +2,10 @@ import re
 from src.graph.connection import get_neo4j_driver
 from src.verifier.models import CitationStatus, VerificationReport
 
-_CITATION_REGEX = re.compile(r"\[([A-Z0-9_]+_D\d+(?:_K\d+)?(?:_[A-Za-z0-9_]+)?)\]", re.IGNORECASE)
+_CITATION_REGEX = re.compile(
+    r"\[([A-Z0-9_]+_D\d+(?:_K\d+)?(?:_[A-Za-z0-9_]+)?)\]|\b((?:LUAT|ND|TT|QD)_[A-Za-z0-9_]+_D\d+(?:_K\d+)?(?:_[A-Za-z0-9_]+)?)\b",
+    re.IGNORECASE,
+)
 
 _VERIFY_CYPHER = """
 UNWIND $ids AS cid
@@ -31,8 +34,9 @@ def _canonicalize_citation(cid: str) -> str:
 
 
 def extract_citations(text: str) -> list[str]:
-    """Extract citation IDs enclosed in brackets matching the canonical pattern."""
-    return list(dict.fromkeys(_canonicalize_citation(cid) for cid in _CITATION_REGEX.findall(text)))
+    """Extract citation IDs enclosed in brackets or canonical legal prefixes matching the pattern."""
+    matches = [m[0] or m[1] for m in _CITATION_REGEX.findall(text)]
+    return list(dict.fromkeys(_canonicalize_citation(cid) for cid in matches if cid))
 
 
 def _evaluate_status(

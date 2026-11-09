@@ -1,3 +1,5 @@
+import pytest
+
 from src.engine.models import ArticleNode
 from src.verifier.relevance import build_relevance_map, cosine_similarity, score_article_relevance
 
@@ -110,3 +112,32 @@ def test_export_title_gate_does_not_reject_general_taxpayer_article():
     query = "tôi mở tiệm net dưới quê thì có phải đóng thuế không"
     assert score_article_relevance(query, art) is True
 
+
+def test_corporate_deduction_article_excluded_for_domestic_household_query():
+    art_d21 = ArticleNode(
+        id="ND_181_2025_D21",
+        doc_id="ND_181_2025",
+        code="Dieu 21",
+        title="Đối tượng áp dụng phương pháp khấu trừ thuế",
+        content="Cơ sở kinh doanh hoạt động có doanh thu hàng năm từ 1 tỷ đồng trở lên, trừ hộ, cá nhân sản xuất, kinh doanh.",
+        valid_from="2025-07-01",
+        valid_to="9999-12-31",
+    )
+    query = "quán net tôi mới mở dưới quê có phải đóng thuế kh và đóng bnh"
+    assert score_article_relevance(query, art_d21) is False
+
+
+@pytest.mark.parametrize("query,expected", [
+    ("quán net tôi mới mở dưới quê có phải đóng thuế kh và đóng bnh", False),
+    ("cửa hàng internet nộp thuế GTGT thế nào", False),
+    ("dịch vụ casino có giá tính thuế GTGT thế nào", True),
+    ("kinh doanh trò chơi điện tử có thưởng tính thuế thế nào", True),
+])
+def test_specialized_gambling_rule_requires_matching_activity(query, expected):
+    article = ArticleNode(
+        id="ND_181_2025_D10", doc_id="ND_181_2025", code="D10",
+        title="Giá tính thuế đối với dịch vụ kinh doanh ca-si-nô, trò chơi điện tử có thưởng và đặt cược",
+        content="Giá tính thuế là số tiền thu từ đổi đồng tiền quy ước cho người chơi trừ số tiền trả thưởng.",
+        valid_from="2025-07-01", valid_to="9999-12-31",
+    )
+    assert score_article_relevance(query, article) is expected
