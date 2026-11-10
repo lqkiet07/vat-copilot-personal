@@ -12,6 +12,11 @@ from src.engine.embedder import (
 )
 
 
+@pytest.fixture(autouse=True)
+def isolated_embedder_files(tmp_path, monkeypatch):
+    monkeypatch.chdir(tmp_path)
+
+
 def test_deterministic_embedder_dimension():
     embedder = DeterministicEmbedder(dimension=1024)
     vec = embedder.embed_text("Luật thuế giá trị gia tăng")
@@ -171,4 +176,36 @@ def test_metadata_guard_returns_deterministic_when_meta_missing(tmp_path: Path):
     nonexistent = tmp_path / "missing_meta.json"
     embedder = resolve_embedder_for_index(meta_path=nonexistent)
     assert isinstance(embedder, DeterministicEmbedder)
+
+
+@pytest.mark.parametrize("dimension", [768, 1025])
+def test_ollama_rejects_native_dimension_without_legacy_retry(monkeypatch, dimension):
+    from unittest.mock import Mock
+    from src.engine.embedder import OllamaEmbedder
+
+    response = Mock()
+    response.__enter__ = Mock(return_value=response)
+    response.__exit__ = Mock(return_value=False)
+    response.read.return_value = json.dumps({"embeddings": [[1.0] * dimension]}).encode()
+    request = Mock(return_value=response)
+    monkeypatch.setattr("urllib.request.urlopen", request)
+    with pytest.raises(RuntimeError, match="dimension"):
+        OllamaEmbedder().embed_texts(["text"])
+    assert request.call_count == 1
+
+
+@pytest.mark.parametrize("vectors", [[], [[1.0] * 1024] * 2, [[float("nan")] * 1024], [[0.0] * 1024]])
+def test_ollama_rejects_invalid_raw_batch_without_retry(monkeypatch, vectors):
+    from unittest.mock import Mock
+    from src.engine.embedder import OllamaEmbedder
+
+    response = Mock()
+    response.__enter__ = Mock(return_value=response)
+    response.__exit__ = Mock(return_value=False)
+    response.read.return_value = json.dumps({"embeddings": vectors}).encode()
+    request = Mock(return_value=response)
+    monkeypatch.setattr("urllib.request.urlopen", request)
+    with pytest.raises(RuntimeError):
+        OllamaEmbedder().embed_texts(["text"])
+    assert request.call_count == 1
 

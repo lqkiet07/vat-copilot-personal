@@ -1,5 +1,8 @@
 """Metadata tracking for vector embeddings to ensure query/index space consistency."""
+import hashlib
 import json
+import os
+import tempfile
 import math
 from pathlib import Path
 from typing import Any
@@ -14,13 +17,19 @@ DEFAULT_CACHE_PATH = Path("data/processed/article_embeddings.json")
 def validate_embeddings(embeddings: dict[str, list[float]], dimension: int = 1024) -> list[str]:
     """Validate dimensionality, unit norm, non-fallback, and non-trivial distribution."""
     errors = []
-    if not embeddings:
-        return ["Embeddings dictionary is empty"]
+    if not isinstance(embeddings, dict) or not embeddings:
+        return ["Embeddings dictionary is empty or invalid"]
 
     items = list(embeddings.items())
     for art_id, vec in items:
-        if len(vec) != dimension:
-            errors.append(f"Vector for '{art_id}' has dimension {len(vec)}, expected {dimension}")
+        if not isinstance(art_id, str) or not art_id.strip():
+            errors.append("Invalid article ID")
+            break
+        if not isinstance(vec, list) or len(vec) != dimension:
+            errors.append(f"Vector for '{art_id}' has invalid dimension, expected {dimension}")
+            break
+        if any(type(x) not in (int, float) or not math.isfinite(x) for x in vec):
+            errors.append(f"Vector for '{art_id}' must contain finite numeric values")
             break
         norm = math.sqrt(sum(x * x for x in vec))
         if not (0.95 <= norm <= 1.05):
@@ -46,10 +55,11 @@ def validate_embedding_meta(meta_dict: dict[str, Any], embeddings: dict[str, lis
     if count is not None and count != len(embeddings):
         errors.append(f"Metadata count ({count}) does not match embeddings length ({len(embeddings)})")
     dim = meta_dict.get("dimension")
-    if dim is not None and embeddings:
-        sample_len = len(next(iter(embeddings.values())))
-        if dim != sample_len:
-            errors.append(f"Metadata dimension ({dim}) != vector dimension ({sample_len})")
+    if dim is not None:
+        for vector in embeddings.values():
+            if not isinstance(vector, list) or len(vector) != dim:
+                errors.append(f"Metadata dimension ({dim}) != vector dimension")
+                break
     return errors
 
 
@@ -65,11 +75,25 @@ def load_embedding_meta(path: str | Path = DEFAULT_META_PATH) -> dict[str, Any] 
         return None
 
 
-def save_embedding_meta(meta_dict: dict[str, Any], path: str | Path = DEFAULT_META_PATH) -> None:
-    """Save metadata describing the active Neo4j vector index."""
+def atomic_write_bytes(path: str | Path, data: bytes) -> None:
     p = Path(path)
     p.parent.mkdir(parents=True, exist_ok=True)
-    p.write_text(json.dumps(meta_dict, ensure_ascii=False, indent=2), encoding="utf-8")
+    temporary = None
+    try:
+        with tempfile.NamedTemporaryFile(dir=p.parent, delete=False) as handle:
+            temporary = Path(handle.name)
+            handle.write(data)
+            handle.flush()
+            os.fsync(handle.fileno())
+        os.replace(temporary, p)
+    finally:
+        if temporary is not None:
+            temporary.unlink(missing_ok=True)
+
+
+def save_embedding_meta(meta_dict: dict[str, Any], path: str | Path = DEFAULT_META_PATH) -> None:
+    """Save metadata describing the active Neo4j vector index."""
+    atomic_write_bytes(path, json.dumps(meta_dict, ensure_ascii=False, indent=2, allow_nan=False).encode("utf-8"))
 
 
 def _is_cache_fallback(cache_path: str | Path) -> bool:
@@ -88,9 +112,39 @@ def _is_cache_fallback(cache_path: str | Path) -> bool:
     return False
 
 
+def _valid_artifact_pair(meta, cache_path, corpus_path, strict):
+    try:
+        cache_bytes = Path(cache_path).read_bytes()
+        cache = json.loads(cache_bytes)
+        if not isinstance(cache, dict):
+            return False
+        if validate_embedding_meta(meta, cache) or validate_embeddings(cache):
+            return False
+        if strict and (meta.get("provider"), meta.get("model"), meta.get("dimension")) != ("ollama", "bge-m3", 1024):
+            return False
+        if (strict or "cache_sha256" in meta) and meta.get("cache_sha256") != hashlib.sha256(cache_bytes).hexdigest():
+            return False
+        if strict and (type(meta.get("count")) is not int or not isinstance(meta.get("corpus_sha256"), str)
+                       or len(meta["corpus_sha256"]) != 64):
+            return False
+        if corpus_path is not None:
+            corpus_bytes = Path(corpus_path).read_bytes()
+            if meta.get("corpus_sha256") != hashlib.sha256(corpus_bytes).hexdigest():
+                return False
+            ids = [article["id"] for doc in json.loads(corpus_bytes) for article in doc["articles"]]
+            if len(ids) != len(set(ids)) or set(ids) != set(cache):
+                return False
+        return True
+    except (OSError, ValueError, TypeError, KeyError):
+        return False
+
+
 def resolve_embedder_for_index(
     meta_path: str | Path = DEFAULT_META_PATH,
     cache_path: str | Path = DEFAULT_CACHE_PATH,
+    *,
+    strict: bool = False,
+    corpus_path: str | Path | None = None,
 ) -> BaseEmbedder | None:
     """Resolve embedder matching the stored index vector space.
 
@@ -102,6 +156,9 @@ def resolve_embedder_for_index(
         return None
 
     meta = load_embedding_meta(meta_path)
+    if strict or (meta and "cache_sha256" in meta):
+        if meta is None or not _valid_artifact_pair(meta, cache_path, corpus_path, strict):
+            return None
     if meta is None or meta.get("provider") == "deterministic":
         return get_embedder(provider="deterministic")
 

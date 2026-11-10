@@ -72,13 +72,13 @@ class PrecomputedEmbedder:
 
 def _normalize_vec(vec: list[float], target_dim: int) -> list[float]:
     """Ensure vector has target_dim and L2 norm is 1.0."""
-    if len(vec) < target_dim:
-        vec = vec + [0.0] * (target_dim - len(vec))
-    elif len(vec) > target_dim:
-        vec = vec[:target_dim]
+    if not isinstance(vec, list) or len(vec) != target_dim:
+        raise RuntimeError(f"Ollama native vector dimension must be {target_dim}")
+    if any(type(x) not in (int, float) or not math.isfinite(x) for x in vec):
+        raise RuntimeError("Ollama vector must contain finite numeric values")
     norm = math.sqrt(sum(x * x for x in vec))
-    if norm == 0.0:
-        return [1.0] + [0.0] * (target_dim - 1)
+    if not math.isfinite(norm) or norm == 0.0:
+        raise RuntimeError("Ollama vector has invalid norm")
     return [x / norm for x in vec]
 
 
@@ -121,11 +121,10 @@ class OllamaEmbedder:
             with urllib.request.urlopen(req, timeout=self.timeout) as resp:
                 data = json.loads(resp.read().decode("utf-8"))
                 embeddings = data.get("embeddings", [])
-                if not embeddings:
-                    raise RuntimeError(f"Ollama returned empty embeddings for model {self.model}")
+                if not isinstance(embeddings, list) or len(embeddings) != len(texts):
+                    raise RuntimeError(f"Ollama vector count does not match input count for model {self.model}")
                 return [_normalize_vec(v, self.dimension) for v in embeddings]
-        except Exception as e:
-            # Fallback to legacy /api/embeddings single-prompt endpoint
+        except (URLError, OSError, TimeoutError) as e:
             try:
                 results: list[list[float]] = []
                 for t in texts:
