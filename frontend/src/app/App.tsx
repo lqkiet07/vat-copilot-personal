@@ -111,6 +111,7 @@ export function App() {
     return list.length > 0 ? list[0].messages || [] : [];
   });
 
+  const activeIdRef = useRef(activeId);
   const taRef = useRef<HTMLTextAreaElement>(null);
   const endRef = useRef<HTMLDivElement>(null);
 
@@ -118,6 +119,10 @@ export function App() {
   useEffect(() => {
     store.set("vat_public_settings", settings);
   }, [settings]);
+
+  useEffect(() => {
+    store.set("vat_public_convs", convs);
+  }, [convs]);
 
   useEffect(() => {
     endRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -139,6 +144,7 @@ export function App() {
     const id = `c_${Date.now()}`;
     const newConv: Conversation = { id, title: "Cuộc trò chuyện mới", updated: Date.now(), messages: [] };
     setConvs((prev) => [newConv, ...prev]);
+    activeIdRef.current = id;
     setActiveId(id);
     setMessages([]);
     setQuery("");
@@ -146,6 +152,7 @@ export function App() {
   }
 
   function selectConv(id: string) {
+    activeIdRef.current = id;
     setActiveId(id);
     const found = convs.find((c) => c.id === id);
     if (found) {
@@ -157,9 +164,9 @@ export function App() {
     e.stopPropagation();
     const rest = convs.filter((c) => c.id !== id);
     setConvs(rest);
-    store.set("vat_public_convs", rest);
     if (activeId === id) {
       if (rest.length > 0) {
+        activeIdRef.current = rest[0].id;
         setActiveId(rest[0].id);
         setMessages(rest[0].messages || []);
       } else {
@@ -173,6 +180,7 @@ export function App() {
     const d = customDate ?? date;
     if (!q || loading) return;
 
+    const originId = activeId;
     const id = Date.now();
     const userMsg: Msg = {
       id,
@@ -188,15 +196,15 @@ export function App() {
     setStep(0);
 
     // Update conversation title if first message
-    setConvs((prev) =>
-      prev.map((c) => {
-        if (c.id === activeId) {
-          const title = c.title === "Cuộc trò chuyện mới" ? q.slice(0, 36) + (q.length > 36 ? "..." : "") : c.title;
-          return { ...c, title, updated: Date.now(), messages: nextMsgs };
-        }
-        return c;
-      })
-    );
+    setConvs((prev) => {
+      const title = q.slice(0, 36) + (q.length > 36 ? "..." : "");
+      if (!prev.some((c) => c.id === originId)) {
+        return [{ id: originId, title, updated: Date.now(), messages: nextMsgs }, ...prev];
+      }
+      return prev.map((c) => c.id === originId
+        ? { ...c, title: c.messages.length === 0 ? title : c.title, updated: Date.now(), messages: nextMsgs }
+        : c);
+    });
 
     // Multi-step reasoning & real backend API query with conversation history
     const historyPayload = messages
@@ -206,21 +214,24 @@ export function App() {
         { role: "assistant", content: m.result!.conclusion }
       ]);
     const effectiveDate = getEffectiveDate(d);
-    const apiPromise = queryLegalApi(q, effectiveDate, pipeline, settings.useLlm, historyPayload);
+    const apiPromise = queryLegalApi(q, effectiveDate, pipeline, settings.useLlm, historyPayload)
+      .then((res) => ({ res, error: null }), (error: unknown) => ({ res: null, error }));
     for (let s = 0; s < STEPS.length - 1; s++) {
       setStep(s);
       await new Promise((r) => setTimeout(r, 260));
     }
     try {
-      const res = await apiPromise;
+      const outcome = await apiPromise;
+      if (outcome.error) throw outcome.error;
+      const res = outcome.res!;
       setStep(STEPS.length - 1);
       await new Promise((r) => setTimeout(r, 160));
       const finalMsgs = nextMsgs.map((m) => (m.id === id ? { ...m, result: res } : m));
-      setMessages(finalMsgs);
+      if (activeIdRef.current === originId) setMessages(finalMsgs);
       setLoading(false);
 
       setConvs((prev) =>
-        prev.map((c) => (c.id === activeId ? { ...c, updated: Date.now(), messages: finalMsgs } : c))
+        prev.map((c) => (c.id === originId ? { ...c, updated: Date.now(), messages: finalMsgs } : c))
       );
     } catch (err: any) {
       setLoading(false);
@@ -235,9 +246,9 @@ export function App() {
         audit: [{ tone: "bad", text: errorMsg }],
       };
       const finalMsgs = nextMsgs.map((m) => (m.id === id ? { ...m, result: errorResult } : m));
-      setMessages(finalMsgs);
+      if (activeIdRef.current === originId) setMessages(finalMsgs);
       setConvs((prev) =>
-        prev.map((c) => (c.id === activeId ? { ...c, updated: Date.now(), messages: finalMsgs } : c))
+        prev.map((c) => (c.id === originId ? { ...c, updated: Date.now(), messages: finalMsgs } : c))
       );
     }
   }
