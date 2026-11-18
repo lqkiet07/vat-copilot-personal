@@ -158,12 +158,26 @@ def controlled_importer_provider(events, trace):
     assert len(providers) == 1, "BLOCKED: strict Gemini provider evidence missing or ambiguous"
     provider = providers[0]
     diagnostics = [event for event in events if event.get("event") == "gemini_response"]
-    assert len(diagnostics) == 1, "BLOCKED: Gemini response diagnostic missing or ambiguous"
-    diagnostic = diagnostics[0]
-    assert diagnostic["provider"] == provider["provider"] == "gemini", "BLOCKED: provider mismatch"
-    assert diagnostic["model"] == provider["model"] == "gemini-2.5-flash", "BLOCKED: model mismatch"
-    assert diagnostic["prompt_sha256"] == provider["prompt_sha256"] == trace["prompt_sha256"], "BLOCKED: prompt hash mismatch"
+    assert 1 <= len(diagnostics) <= 3, "BLOCKED: Gemini response attempts missing or unbounded"
+    diagnostic = diagnostics[-1]
+    config_hash = diagnostic.get("request_config_sha256")
+    assert isinstance(config_hash, str) and re.fullmatch(r"[0-9a-f]{64}", config_hash), "BLOCKED: config hash missing"
+    for index, attempt in enumerate(diagnostics, 1):
+        assert events.index(attempt) < events.index(provider), "BLOCKED: attempt after logical generation"
+        assert attempt.get("attempt") == index and type(attempt.get("attempt")) is int, "BLOCKED: attempt index mismatch"
+        assert attempt.get("max_attempts") == 3, "BLOCKED: attempt limit mismatch"
+        assert attempt.get("provider") == provider["provider"] == "gemini", "BLOCKED: provider mismatch"
+        assert attempt.get("model") == provider["model"] == "gemini-2.5-flash", "BLOCKED: model mismatch"
+        assert attempt.get("prompt_sha256") == provider["prompt_sha256"] == trace["prompt_sha256"], "BLOCKED: prompt hash mismatch"
+        assert attempt.get("request_config_sha256") == config_hash, "BLOCKED: config hash mismatch"
+        retry = index < len(diagnostics)
+        assert attempt.get("will_retry") is retry, "BLOCKED: retry disposition mismatch"
+        assert attempt.get("retry_delay") == (index if retry else 0), "BLOCKED: retry delay mismatch"
+        if retry:
+            assert attempt.get("http_status") in {502, 503, 504}, "BLOCKED: non-retryable HTTP status"
+            assert attempt.get("status") == "http_server_error", "BLOCKED: non-retryable response status"
     assert provider["output_sha256"] == trace["output_sha256"], "BLOCKED: output hash mismatch"
+    assert diagnostic.get("http_status") == 200, "BLOCKED: final attempt did not succeed"
     assert diagnostic["status"] in {"success", "max_tokens"}, "BLOCKED: unexpected Gemini response status"
     return provider
 
@@ -172,7 +186,9 @@ def controlled_importer_provider(events, trace):
 def test_offline_controlled_importer_event_correlation(status):
     body, trace, provider = contract_example()
     diagnostic = {"event": "gemini_response", "provider": provider["provider"],
-                  "model": provider["model"], "prompt_sha256": provider["prompt_sha256"], "status": status}
+                  "model": provider["model"], "prompt_sha256": provider["prompt_sha256"], "status": status,
+                  "attempt": 1, "max_attempts": 3, "will_retry": False, "retry_delay": 0,
+                  "request_config_sha256": "a" * 64, "http_status": 200}
     events = [diagnostic, {"event": "future_diagnostic"}, provider]
     actual = controlled_importer_provider(events, trace)
     assert actual is provider
@@ -186,7 +202,9 @@ def test_offline_controlled_importer_event_correlation(status):
 def test_offline_controlled_importer_event_correlation_rejects_invalid_evidence(mutation):
     _, trace, provider = contract_example()
     diagnostic = {"event": "gemini_response", "provider": provider["provider"],
-                  "model": provider["model"], "prompt_sha256": provider["prompt_sha256"], "status": "success"}
+                  "model": provider["model"], "prompt_sha256": provider["prompt_sha256"], "status": "success",
+                  "attempt": 1, "max_attempts": 3, "will_retry": False, "retry_delay": 0,
+                  "request_config_sha256": "a" * 64, "http_status": 200}
     events = [diagnostic, provider]
     if mutation.startswith("missing_"):
         events.remove(provider if mutation == "missing_generation" else diagnostic)
@@ -197,6 +215,57 @@ def test_offline_controlled_importer_event_correlation_rejects_invalid_evidence(
     else:
         field = "prompt_sha256" if mutation == "prompt" else mutation
         diagnostic[field] = "invalid"
+    with pytest.raises(AssertionError, match="BLOCKED"):
+        controlled_importer_provider(events, trace)
+
+
+@pytest.mark.parametrize("codes", [(503,), (502, 504)])
+def test_offline_controlled_importer_accepts_bounded_retry_evidence(codes):
+    _, trace, provider = contract_example()
+    diagnostics = [{"event": "gemini_response", "provider": "gemini", "model": provider["model"],
+                    "prompt_sha256": provider["prompt_sha256"], "request_config_sha256": "a" * 64,
+                    "attempt": index, "max_attempts": 3, "will_retry": True, "retry_delay": index,
+                    "status": "http_server_error", "http_status": code}
+                   for index, code in enumerate(codes, 1)]
+    diagnostics.append(dict(diagnostics[0], attempt=len(codes) + 1, will_retry=False,
+                            retry_delay=0, status="success", http_status=200))
+    assert controlled_importer_provider(diagnostics + [provider], trace) is provider
+
+
+@pytest.mark.parametrize("mutation", ["code", "index", "config", "prompt", "model", "provider",
+    "retry", "delay", "max_attempts", "final_retry", "final_http", "final_delay",
+    "extra_attempt", "late_attempt", "extra_provider", "status", "order", "missing_config"])
+def test_offline_controlled_importer_rejects_fake_retry_evidence(mutation):
+    _, trace, provider = contract_example()
+    first = {"event": "gemini_response", "provider": "gemini", "model": provider["model"],
+             "prompt_sha256": provider["prompt_sha256"], "request_config_sha256": "a" * 64,
+             "attempt": 1, "max_attempts": 3, "will_retry": True, "retry_delay": 1,
+             "status": "http_server_error", "http_status": 503}
+    final = dict(first, attempt=2, will_retry=False, retry_delay=0, status="success", http_status=200)
+    events = [first, final, provider]
+    fields = {"code": ("http_status", 429), "index": ("attempt", 2),
+              "config": ("request_config_sha256", "b" * 64), "prompt": ("prompt_sha256", "b" * 64),
+              "model": ("model", "other"), "provider": ("provider", "openai"),
+              "retry": ("will_retry", False), "delay": ("retry_delay", 2),
+              "max_attempts": ("max_attempts", 4), "status": ("status", "success")}
+    if mutation in fields:
+        key, value = fields[mutation]
+        first[key] = value
+    elif mutation.startswith("final_"):
+        key, value = {"final_retry": ("will_retry", True), "final_http": ("http_status", 503),
+                      "final_delay": ("retry_delay", 1)}[mutation]
+        final[key] = value
+    elif mutation == "extra_attempt":
+        events = [first, dict(first, attempt=2, retry_delay=2), dict(first, attempt=3, retry_delay=3),
+                  dict(final, attempt=4), provider]
+    elif mutation == "late_attempt":
+        events = [first, provider, final]
+    elif mutation == "extra_provider":
+        events.append(dict(provider, provider="openai"))
+    elif mutation == "order":
+        events = [final, first, provider]
+    else:
+        del first["request_config_sha256"]
     with pytest.raises(AssertionError, match="BLOCKED"):
         controlled_importer_provider(events, trace)
 
@@ -371,7 +440,8 @@ def test_offline_r7_prompt_exposes_only_grounded_clause_ids():
     assert f"[{CLAUSE}]" not in build_irac_prompt(IMPORTER, "2024-01-01", [article], corpus_path=str(CORPUS))
 
 
-def test_offline_r5_real_prompt_provider_and_verifier_contract(monkeypatch):
+@pytest.mark.parametrize("retries", [0, 1, 2])
+def test_offline_r5_real_prompt_provider_and_verifier_contract(monkeypatch, retries):
     from types import SimpleNamespace
     from unittest.mock import MagicMock
     from src.api.answer_service import answer_query
@@ -390,16 +460,22 @@ def test_offline_r5_real_prompt_provider_and_verifier_contract(monkeypatch):
     monkeypatch.setattr("src.verifier.citation_verifier.get_neo4j_driver", lambda: driver)
     example, _, _ = contract_example()
     draft = "\n".join(key.title() + ": " + value for key, value in example["irac_sections"].items() if key != "raw_text")
-    response = MagicMock()
+    response = MagicMock(status=200)
     response.__enter__.return_value = response
     response.read.return_value = json.dumps({"candidates": [{"content": {"parts": [{"text": draft}]}}]}).encode()
     prompts = []
+    clock = SimpleNamespace(now=100.0)
+    def sleep(delay):
+        clock.now += delay
+    monkeypatch.setattr("src.engine.llm_client.time", SimpleNamespace(monotonic=lambda: clock.now, sleep=sleep))
     def transport(req, timeout):
         prompt = json.loads(req.data)["contents"][0]["parts"][0]["text"]
         assert oracle["wording"] in prompt
         assert f"[{CLAUSE}]" in prompt
         assert f"[{CLAUSE}] {WORDING}" in prompt
         prompts.append(prompt)
+        if len(prompts) <= retries:
+            raise HTTPError("https://offline.invalid", 503, "offline", {}, None)
         return response
     monkeypatch.setattr("urllib.request.urlopen", transport)
     monkeypatch.setenv("LLM_PROVIDER", "gemini")
@@ -411,9 +487,9 @@ def test_offline_r5_real_prompt_provider_and_verifier_contract(monkeypatch):
     result = answer_query(IMPORTER, "2026-03-20", use_llm=True, model="gemini-2.5-flash", trace=trace,
                           corpus_path=str(CORPUS), reviewed_amendment_path=str(REVIEW),
                           retriever_fn=lambda *a: SimpleNamespace(articles=[article]))
-    assert len(prompts) == 1
-    provider, = [event for event in events if event["event"] == "provider_generation"]
-    diagnostic, = [event for event in events if event["event"] == "gemini_response"]
+    assert len(prompts) == retries + 1 and len(set(prompts)) == 1
+    provider = controlled_importer_provider(events, trace)
+    diagnostic = [event for event in events if event["event"] == "gemini_response"][-1]
     assert diagnostic["provider"] == "gemini" and diagnostic["model"] == "gemini-2.5-flash"
     assert diagnostic["status"] == "success"
     assert diagnostic["prompt_sha256"] == trace["prompt_sha256"] == text_sha256(prompts[0])

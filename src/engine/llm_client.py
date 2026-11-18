@@ -2,6 +2,7 @@
 from collections.abc import Iterator
 import json
 import os
+import time
 from json import JSONDecodeError
 from urllib.error import HTTPError, URLError
 import urllib.request
@@ -105,8 +106,9 @@ def _gemini_output(data, event):
 
 def _call_gemini_api(prompt: str, api_key: str, model: str = "gemini-2.5-flash", timeout: float = 30.0) -> str | None:
     """Call Google Gemini REST API."""
+    deadline = time.monotonic() + timeout
     config = {"temperature": 0.2, "maxOutputTokens": 2048}
-    event = {
+    template = {
         "event": "gemini_response", "provider": "gemini", "model": model,
         "prompt_sha256": text_sha256(prompt),
         "request_config_sha256": text_sha256(json.dumps(config, sort_keys=True, separators=(",", ":"))),
@@ -120,6 +122,28 @@ def _call_gemini_api(prompt: str, api_key: str, model: str = "gemini-2.5-flash",
         f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent",
         data=payload, headers={"Content-Type": "application/json", "x-goog-api-key": api_key}, method="POST",
     )
+    for attempt in range(1, 4):
+        event = dict(template, usage=template["usage"].copy(), attempt=attempt,
+                     max_attempts=3, will_retry=False, retry_delay=0)
+        remaining = deadline - time.monotonic()
+        if remaining <= 0:
+            return None
+        try:
+            output = _gemini_attempt(req, remaining, event)
+            delay = attempt
+            if event["error_type"] == "HTTPError" and event["http_status"] in {502, 503, 504} and attempt < 3:
+                if deadline - time.monotonic() > delay:
+                    time.sleep(delay)
+                    event["will_retry"] = time.monotonic() < deadline
+                    event["retry_delay"] = delay if event["will_retry"] else 0
+        finally:
+            emit_trace(event)
+        if not event["will_retry"]:
+            return output
+    return None
+
+
+def _gemini_attempt(req, timeout, event):
     try:
         with urllib.request.urlopen(req, timeout=timeout) as resp:
             code = resp.status
@@ -132,6 +156,7 @@ def _call_gemini_api(prompt: str, api_key: str, model: str = "gemini-2.5-flash",
         event["error_type"] = "HTTPError"
         event["status"] = {401: "http_unauthorized", 403: "http_forbidden", 429: "http_rate_limited"}.get(
             event["http_status"], "http_server_error" if event["http_status"] is not None and code >= 500 else "http_error")
+        error.close()
     except (URLError, OSError) as error:
         timed_out = isinstance(error, TimeoutError) or isinstance(getattr(error, "reason", None), TimeoutError)
         event["status"] = "transport_timeout" if timed_out else "transport_error"
@@ -139,8 +164,6 @@ def _call_gemini_api(prompt: str, api_key: str, model: str = "gemini-2.5-flash",
     except (JSONDecodeError, UnicodeDecodeError) as error:
         event["status"] = "invalid_json"
         event["error_type"] = "JSONDecodeError" if isinstance(error, JSONDecodeError) else "UnicodeDecodeError"
-    finally:
-        emit_trace(event)
     return None
 
 

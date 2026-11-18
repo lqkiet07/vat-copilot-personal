@@ -2,16 +2,29 @@ import json
 from unittest.mock import MagicMock, patch
 from urllib.error import HTTPError, URLError
 from io import BytesIO
+from types import SimpleNamespace
+import pytest
 
 from src.engine.llm_client import _call_gemini_api
 from src.engine.diagnostics import text_sha256
-import pytest
 
 from src.engine.llm_client import (
     check_ollama_available,
     generate_llm_response,
     generate_llm_response_stream,
 )
+
+
+@pytest.fixture(autouse=True)
+def gemini_clock(monkeypatch):
+    clock = SimpleNamespace(now=100.0, sleeps=[])
+    def sleep(delay):
+        clock.sleeps.append(delay)
+        clock.now += delay
+    clock.sleep = sleep
+    monkeypatch.setattr("src.engine.llm_client.time", SimpleNamespace(
+        monotonic=lambda: clock.now, sleep=sleep))
+    return clock
 
 
 @pytest.fixture(autouse=True)
@@ -208,6 +221,7 @@ def _gemini_diagnostic(body=None, error=None):
         "event", "provider", "model", "prompt_sha256", "request_config_sha256",
         "generation_config", "status", "http_status", "error_type", "candidate_count",
         "text_part_count", "thought_part_count", "finish_reasons", "prompt_block_reason", "usage",
+        "attempt", "max_attempts", "will_retry", "retry_delay",
     }
     serialized = json.dumps(event)
     assert all(secret not in serialized for secret in (
@@ -218,13 +232,16 @@ def _gemini_diagnostic(body=None, error=None):
 
 
 @pytest.mark.parametrize("code,status", [(400, "http_error"), (401, "http_unauthorized"),
-    (403, "http_forbidden"), (429, "http_rate_limited"), (500, "http_server_error"), (503, "http_server_error")])
+    (403, "http_forbidden"), (429, "http_rate_limited"), (500, "http_server_error"), (501, "http_server_error")])
 def test_gemini_diagnostic_http_errors_are_safe_and_not_retried(code, status):
-    error = HTTPError("https://private-error-secret", code, "private-error-secret", {}, BytesIO(b"private-error-secret"))
+    stream = BytesIO(b"private-error-secret")
+    stream.read = MagicMock(side_effect=AssertionError("Error body must not be read"))
+    error = HTTPError("https://private-error-secret", code, "private-error-secret", {}, stream)
     result, event = _gemini_diagnostic(error=error)
     assert result is None
     assert (event["status"], event["http_status"], event["error_type"]) == (status, code, "HTTPError")
-    assert error.fp.tell() == 0
+    stream.read.assert_not_called()
+    assert stream.closed
 
 
 @pytest.mark.parametrize("error,status,error_type", [
@@ -291,6 +308,89 @@ def test_gemini_diagnostic_does_not_swallow_programmer_errors():
     with patch("urllib.request.urlopen", side_effect=RuntimeError("programmer failure")):
         with pytest.raises(RuntimeError, match="programmer failure"):
             _call_gemini_api("prompt", "key")
+
+
+@pytest.mark.parametrize("streaming", [False, True])
+@pytest.mark.parametrize("codes", [(503,), (502, 504), (503, 503, 503)])
+def test_gemini_transient_retries_preserve_request_and_logical_event(monkeypatch, gemini_clock, capsys, streaming, codes):
+    monkeypatch.setenv("LLM_PROVIDER", "gemini")
+    monkeypatch.setenv("GEMINI_API_KEY", "private-key-secret")
+    monkeypatch.setenv("OPENAI_API_KEY", "unused-secret")
+    streams = [BytesIO(b"private-error-secret") for code in codes]
+    for stream in streams:
+        stream.read = MagicMock(side_effect=AssertionError("Error body must not be read"))
+    errors = [HTTPError("https://private-error-secret", code, "private-error-secret",
+                        {"secret": "private-key-secret"}, stream) for code, stream in zip(codes, streams)]
+    def sleep(delay):
+        assert all(stream.closed for stream in streams[:len(gemini_clock.sleeps) + 1])
+        gemini_clock.sleep(delay)
+    response = MagicMock(status=200)
+    response.__enter__.return_value = response
+    response.read.return_value = b'{"candidates":[{"content":{"parts":[{"text":"private-output-secret"}]}}]}'
+    effects = errors + ([response] if len(codes) < 3 else [])
+    events = []
+    with patch("src.engine.llm_client.time.sleep", side_effect=sleep):
+        with patch("urllib.request.urlopen", side_effect=effects) as request:
+            with patch("src.engine.llm_client.emit_trace", side_effect=events.append):
+                result = _generate("private-prompt-secret", streaming)
+    expected = "private-output-secret" if len(codes) < 3 else None
+    assert result == ([expected] if expected else []) if streaming else result == expected
+    count = len(effects)
+    assert request.call_count == count
+    assert gemini_clock.sleeps == [1, 2][:count - 1]
+    assert [call.kwargs["timeout"] for call in request.call_args_list] == [7, 6, 4][:count]
+    assert all(call.args[0] is request.call_args_list[0].args[0] for call in request.call_args_list)
+    diagnostics = events[:-1]
+    assert [event["event"] for event in events] == ["gemini_response"] * count + ["provider_generation"]
+    assert [event["attempt"] for event in diagnostics] == list(range(1, count + 1))
+    assert [event["will_retry"] for event in diagnostics] == [True] * (count - 1) + [False]
+    assert [event["retry_delay"] for event in diagnostics] == [1, 2][:count - 1] + [0]
+    assert [event["http_status"] for event in diagnostics] == list(codes) + ([200] if expected else [])
+    for field in ("model", "prompt_sha256", "request_config_sha256"):
+        assert len({event[field] for event in diagnostics}) == 1
+    assert all(event["max_attempts"] == 3 for event in diagnostics)
+    assert events[-1]["has_output"] is bool(expected)
+    for stream in streams:
+        stream.read.assert_not_called()
+        assert stream.closed
+    assert all(secret not in json.dumps(events) for secret in (
+        "private-key-secret", "private-error-secret", "private-prompt-secret", "private-output-secret", "https://"))
+    assert capsys.readouterr() == ("", "")
+
+
+@pytest.mark.parametrize("timeout,elapsed,oversleep,count,sleeps", [
+    (1, 0, 0, 1, []), (7, 7, 0, 1, []), (3, 1, 0, 2, [1]),
+    (7, 0, 7, 1, [1]), (0, 0, 0, 0, []),
+])
+def test_gemini_retry_deadline_includes_requests_and_sleep(gemini_clock, timeout, elapsed, oversleep, count, sleeps):
+    events, remaining = [], []
+    def transport(req, timeout):
+        remaining.append(timeout)
+        gemini_clock.now += elapsed
+        raise HTTPError("https://secret", 503, "secret", {}, BytesIO(b"secret"))
+    def sleep(delay):
+        gemini_clock.sleep(delay)
+        gemini_clock.now += oversleep
+    with patch("src.engine.llm_client.time.sleep", side_effect=sleep):
+        with patch("urllib.request.urlopen", side_effect=transport) as request:
+            with patch("src.engine.llm_client.emit_trace", side_effect=events.append):
+                assert _call_gemini_api("prompt", "key", timeout=timeout) is None
+    assert request.call_count == count
+    assert gemini_clock.sleeps == sleeps
+    assert remaining == ([3, 1] if count == 2 else [timeout] if count else [])
+    if count:
+        assert not events[-1]["will_retry"]
+        assert events[-1]["retry_delay"] == 0
+    else:
+        assert events == []
+
+
+def test_gemini_semantically_wrong_visible_output_is_not_retried(gemini_clock):
+    result, event = _gemini_diagnostic({"candidates": [{"content": {"parts": [{"text": "wrong legal answer"}]}}]})
+    assert result == "wrong legal answer"
+    assert event["attempt"] == 1 and event["max_attempts"] == 3
+    assert event["will_retry"] is False and event["retry_delay"] == 0
+    assert gemini_clock.sleeps == []
 
 
 def test_check_ollama_available_success():
