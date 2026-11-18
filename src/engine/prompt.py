@@ -36,6 +36,12 @@ def build_irac_prompt(
             content = turn.get("content", "")
             if content:
                 history_lines.append(f"{role_label}: {content}")
+    scope_instruction = (
+        "Chỉ giải quyết vấn đề người dùng yêu cầu. "
+        "Không mở rộng sang thuế suất, miễn thuế hoặc ngưỡng doanh thu nếu không cần thiết để trả lời; "
+        "không liệt kê các ngoại lệ ngoài phạm vi, kể cả trong lời giải thích rằng chúng không được hỏi. "
+        "Giữ nguyên thuật ngữ pháp lý của nguồn: không đồng nhất 'không chịu thuế' với 'miễn thuế'.\n"
+    )
     history_block = (
         "=== LỊCH SỬ HỘI THOẠI TRƯỚC ĐÓ ===\n" + "\n".join(history_lines) + "\n\n"
         if history_lines
@@ -49,6 +55,7 @@ def build_irac_prompt(
             f"=== BỐI CẢNH & VẤN ĐỀ ===\n- Câu hỏi: {query}\n- Mốc thời gian thẩm định hiệu lực (as_of_date): {as_of_date}\n\n"
             "=== QUY PHẠM PHÁP LUẬT HIỆU LỰC (RULE) ===\nKhông tìm thấy điều khoản pháp luật thuế GTGT nào điều chỉnh nội dung này tại thời điểm tra cứu.\n\n"
             "=== HƯỚNG DẪN TRẢ LỜI ===\n"
+            f"{scope_instruction}"
             "Do không có điều khoản điều chỉnh, thông báo rõ rằng chưa đủ căn cứ pháp luật thuế GTGT hiện hành để kết luận. "
             "Tuyệt đối không tự suy diễn hoặc bịa đặt mức thuế hay điều kiện áp dụng.\n\n"
             "=== ĐỊNH DẠNG ĐẦU RA BẮT BUỘC ===\n"
@@ -65,6 +72,7 @@ def build_irac_prompt(
     return (
         "Bạn là Chuyên gia Trợ lý Pháp lý Thuế Giá trị gia tăng (GTGT) Việt Nam chuyên nghiệp.\n"
         "Hãy phân tích và trả lời câu hỏi dựa trên các quy định pháp luật được cung cấp.\n"
+        f"{scope_instruction}"
         "Bắt buộc tuân thủ phương pháp lập luận IRAC (Issue, Rule, Application, Conclusion):\n"
         "1. Issue: Nêu rõ vấn đề pháp lý cần giải quyết.\n"
         f"2. Rule: Liệt kê chính xác quy phạm pháp luật áp dụng, bắt buộc dùng mã trích dẫn dạng [DOC_ID_D...] (ví dụ: {example_tag}). Nếu không có quy phạm phù hợp, ghi rõ 'Không có quy phạm điều chỉnh'.\n"

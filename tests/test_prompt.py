@@ -51,6 +51,19 @@ def test_build_irac_prompt_contains_sections():
     assert "[DOC_ID_D" in prompt
 
 
+@pytest.mark.parametrize("has_articles", [False, True])
+def test_prompt_limits_claims_to_requested_issue_without_rewriting_evidence(has_articles):
+    text = "Tổ chức nhập khẩu hàng hóa chịu thuế là người nộp thuế."
+    articles = [ArticleNode(id="TEST_D4", doc_id="TEST", code="Dieu 4", title="Người nộp thuế", content=text,
+                            valid_from="2025-07-01", valid_to="9999-12-31")] if has_articles else []
+    prompt = build_irac_prompt("Chỉ xác định người nộp thuế", "2026-03-20", articles)
+    assert "Chỉ giải quyết vấn đề người dùng yêu cầu" in prompt
+    assert "Không mở rộng sang thuế suất, miễn thuế hoặc ngưỡng doanh thu" in prompt
+    assert "không chịu thuế" in prompt and "miễn thuế" in prompt
+    if has_articles:
+        assert text in prompt
+
+
 def test_build_irac_prompt_empty_articles():
     query = "Quy định về thuế GTGT áp dụng từ năm 1990"
     as_of_date = "1990-01-01"
