@@ -1,4 +1,5 @@
 from html import escape
+from src.config import selected_corpus_kwargs
 import re
 from src.api.answer_service import (
     AnswerResult,
@@ -47,13 +48,17 @@ DEMO_SCENARIOS: list[dict] = [
 
 
 def _fetch_pipeline_articles(
-    pipeline: str, query: str, as_of_date: str, trace: dict | None = None
+    pipeline: str, query: str, as_of_date: str, trace: dict | None = None,
+    *, corpus_path: str = "data/processed/vat_corpus.json", verifier_fn=None,
 ) -> tuple[list[str], list[str], list[ArticleNode]]:
     """Retrieve citations, active IDs, and articles for the selected pipeline."""
-    res = retrieve_and_gate(query, as_of_date, top_k=5, pipeline=pipeline, retriever_fn=query_temporal_rag)
+    res = retrieve_and_gate(query, as_of_date, top_k=5, pipeline=pipeline, retriever_fn=query_temporal_rag,
+                            verifier_fn=verifier_fn, corpus_path=corpus_path)
     if trace is not None:
         trace["raw_article_count"] = res.raw_article_count
         trace["gated_article_count"] = res.gated_article_count
+        trace["unresolved_citations"] = getattr(res, "unresolved_citations", [])
+        trace["unresolved_warnings"] = getattr(res, "unresolved_warnings", [])
         if pipeline == "P1_FlatRAG":
             trace["pipeline_note"] = "flat_rag_no_article_objects"
     return res.active_ids, res.active_ids, res.articles
@@ -79,6 +84,7 @@ def execute_demo_query(
         trace=trace,
         fetch_fn=_fetch_pipeline_articles,
         llm_fn=generate_llm_response,
+        **(selected_corpus_kwargs() if pipeline in {"P3", "P3_FullSystem"} else {}),
     )
     return res.to_dict()
 

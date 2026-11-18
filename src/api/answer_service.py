@@ -4,11 +4,11 @@ import re
 from typing import Any
 
 from src.api.chat_domain import normalize_query, rewrite_query, understand_query
-from src.engine.diagnostics import EmptyReason, QueryTrace, classify_empty, emit_trace
+from src.engine.diagnostics import EmptyReason, QueryTrace, classify_empty, emit_trace, text_sha256
 from src.engine.llm_client import generate_llm_response
 from src.engine.models import ArticleNode
 from src.engine.prompt import build_irac_prompt
-from src.engine.retrieval_service import retrieve_and_gate
+from src.engine.retrieval_service import _DEFAULT_CORPUS_PATH, _invoke_callback, retrieve_and_gate
 from src.engine.temporal_retriever import query_temporal_rag
 from src.ui.corpus_viewer import load_corpus_index, load_corpus_tree
 from src.verifier.citation_verifier import extract_citations
@@ -63,9 +63,10 @@ class AnswerResult:
 
 def _extract_citation_evidence(
     query: str, citations: list[str], articles: list[ArticleNode] | None = None,
+    *, corpus_path: str = _DEFAULT_CORPUS_PATH,
 ) -> list[tuple[str, str, str]]:
     """Extract matching legal provisions from cited articles based on query terms and entities."""
-    corpus = load_corpus_index() if articles is None else {
+    corpus = load_corpus_index(corpus_path) if not articles else {
         art.id: {"text": art.content, "code": art.code, "title": art.title}
         for art in articles
     }
@@ -135,13 +136,14 @@ def _build_irac_sections(
     citations: list[str],
     warnings: list[str],
     articles: list[ArticleNode] | None = None,
+    *, corpus_path: str = _DEFAULT_CORPUS_PATH,
 ) -> dict[str, str]:
     """Build structured IRAC sections dynamically from verified citation evidence."""
     rule_str = ", ".join(f"[{c}]" for c in citations) if citations else "Không có căn cứ hiệu lực"
     issue = f"Xác định quy định pháp luật thuế GTGT áp dụng cho: '{query}' tại mốc {as_of_date}."
     rule = rule_str
 
-    evidence_items = _extract_citation_evidence(query, citations, articles=articles)
+    evidence_items = _extract_citation_evidence(query, citations, articles=articles, corpus_path=corpus_path)
     entities = understand_query(query)
     q_check = (normalize_query(query) + " " + query).lower()
     is_domestic_hh = (
@@ -209,9 +211,12 @@ def _build_irac_sections(
     }
 
 
-def _check_temporal_trap(query: str, as_of_date: str, corpus_tree_fn: Any = None) -> list[str]:
+def _check_temporal_trap(
+    query: str, as_of_date: str, corpus_tree_fn: Any = None,
+    *, corpus_path: str = _DEFAULT_CORPUS_PATH,
+) -> list[str]:
     """Check if query references a legal document not yet effective at as_of_date."""
-    docs = corpus_tree_fn() if corpus_tree_fn else load_corpus_tree()
+    docs = _invoke_callback(corpus_tree_fn or load_corpus_tree, corpus_path=corpus_path)
     q_norm = query.lower()
     warnings = []
     for doc in docs:
@@ -334,6 +339,7 @@ def _fetch_pipeline_articles(
     trace: dict | None = None,
     retriever_fn: Any = None,
     verifier_fn: Any = None,
+    *, corpus_path: str = _DEFAULT_CORPUS_PATH,
 ) -> tuple[list[str], list[str], list[ArticleNode]]:
     """Retrieve citations, active IDs, and articles for the selected pipeline."""
     res = retrieve_and_gate(
@@ -343,17 +349,22 @@ def _fetch_pipeline_articles(
         pipeline=pipeline,
         retriever_fn=retriever_fn or query_temporal_rag,
         verifier_fn=verifier_fn,
+        corpus_path=corpus_path,
     )
     if trace is not None:
         trace["raw_article_count"] = res.raw_article_count
         trace["gated_article_count"] = res.gated_article_count
+        if getattr(res, "unresolved_citations", None):
+            trace["unresolved_citations"] = res.unresolved_citations
+            trace["unresolved_warnings"] = getattr(res, "unresolved_warnings", [])
         if pipeline == "P1_FlatRAG":
             trace["pipeline_note"] = "flat_rag_no_article_objects"
     return res.active_ids, res.active_ids, res.articles
 
 
 def _build_candidate_relevance_map(
-    query: str, raw_response: str, candidate_citations: list[str], articles: list[ArticleNode]
+    query: str, raw_response: str, candidate_citations: list[str], articles: list[ArticleNode],
+    *, corpus_path: str = _DEFAULT_CORPUS_PATH,
 ) -> dict[str, bool]:
     """Build and enrich relevance map for citations extracted from LLM response."""
     rel_map = build_relevance_map(query, articles) if articles else {}
@@ -372,7 +383,7 @@ def _build_candidate_relevance_map(
                 is_rel = has_export_query
             rel_map[cid] = rel_map[base_id] = is_rel
             continue
-        corpus_meta = load_corpus_index().get(base_id)
+        corpus_meta = load_corpus_index(corpus_path).get(base_id)
         if not corpus_meta:
             rel_map[cid] = rel_map[base_id] = False
             continue
@@ -404,9 +415,24 @@ def answer_query(
     verifier_fn: Any = None,
     score_fn: Any = None,
     corpus_tree_fn: Any = None,
+    *,
+    corpus_path: str = "data/processed/vat_corpus.json",
+    reviewed_amendment_path: str | None = None,
 ) -> AnswerResult:
     """Canonical orchestration for VAT QA with retrieval gating, IRAC synthesis and verification."""
+    if reviewed_amendment_path is None:
+        from src.config import selected_review_path
+        reviewed_amendment_path = selected_review_path(corpus_path)
+    if reviewed_amendment_path is not None:
+        from functools import partial
+        from src.verifier.citation_verifier import verify_citations
+        verifier_fn = partial(verifier_fn or verify_citations, reviewed_amendment_path=reviewed_amendment_path)
+        score_fn = partial(score_fn or verify_and_score, reviewed_amendment_path=reviewed_amendment_path)
     trace_data: dict = {
+        "generation_disposition": "safety_bypass" if use_llm else "deterministic_off",
+        "generation_reason": "no_evidence" if use_llm else "llm_disabled",
+        "generation_attempted": False,
+        "generated_delivered": False,
         "query": question,
         "as_of_date": as_of_date,
         "pipeline": pipeline,
@@ -420,7 +446,40 @@ def answer_query(
         "answer_status": "ANSWERED",
     }
 
+    def _record_uncertainty(verification):
+        report = getattr(verification, "report", verification)
+        uncertain = [c for c in getattr(report, "citations", []) if c.status == "UNRESOLVED"]
+        if uncertain:
+            trace_data["unresolved_citations"] = list(dict.fromkeys(
+                trace_data.get("unresolved_citations", []) + [c.id for c in uncertain]
+            ))
+            trace_data["unresolved_warnings"] = list(dict.fromkeys(
+                trace_data.get("unresolved_warnings", []) + [c.message for c in uncertain if c.message]
+            ))
+
     def _finalize(res: AnswerResult, reason_override: EmptyReason | None = None) -> AnswerResult:
+        unresolved = trace_data.get("unresolved_citations", [])
+        if unresolved:
+            if use_llm:
+                trace_data["generation_reason"] = "unresolved_evidence"
+            if trace_data["generated_delivered"]:
+                trace_data["generation_disposition"] = "draft_replaced"
+                trace_data["generated_delivered"] = False
+            res.citations = list(dict.fromkeys(res.citations + unresolved))
+            uncertain_bases = {cid.split("_K")[0] for cid in unresolved}
+            res.active_article_ids = [cid for cid in res.active_article_ids if cid.split("_K")[0] not in uncertain_bases]
+            res.articles = [a for a in res.articles if a.id not in uncertain_bases]
+            res.risk_score = max(res.risk_score, 50)
+            if res.risk_level == "LOW":
+                res.risk_level = "MEDIUM"
+            res.warnings = list(dict.fromkeys(res.warnings + trace_data.get("unresolved_warnings", [])))
+            res.answer_status = "INSUFFICIENT_BASIS"
+            res.irac_sections = {
+                "issue": f"Xác định quy định pháp luật cho: '{question}' tại mốc {as_of_date}.",
+                "rule": "Căn cứ chưa xác minh chắc chắn: " + ", ".join(f"[{cid}]" for cid in unresolved),
+                "application": "; ".join(res.warnings),
+                "conclusion": "Chưa đủ căn cứ pháp lý để đưa ra kết luận chắc chắn. Cần xác minh hiệu lực từng điều khoản trước khi áp dụng.",
+            }
         trace_data["answer_status"] = res.answer_status
         trace_data["llm_used"] = res.llm_used
         irac = res.irac_sections
@@ -429,6 +488,7 @@ def answer_query(
         if res.llm_used:
             trace_data["llm_citation_count"] = len(res.citations)
 
+        trace_data["delivered_sha256"] = text_sha256("\n".join(irac.values()))
         temp_trace = QueryTrace(**{k: v for k, v in trace_data.items() if k in QueryTrace.__annotations__})
         final_reason = reason_override if reason_override is not None else classify_empty(temp_trace)
         trace_data["empty_reason"] = final_reason
@@ -456,6 +516,8 @@ def answer_query(
             guard = context_guard
 
     if not guard.is_allowed:
+        if use_llm:
+            trace_data["generation_reason"] = "out_of_scope"
         return _finalize(
             AnswerResult(
                 query=question,
@@ -483,7 +545,13 @@ def answer_query(
 
     # 2. Retrieval and gating
     if fetch_fn is not None:
-        citations, active_ids, articles = fetch_fn(pipeline, effective_query, as_of_date, trace=trace_data)
+        if corpus_path == _DEFAULT_CORPUS_PATH:
+            citations, active_ids, articles = fetch_fn(pipeline, effective_query, as_of_date, trace=trace_data)
+        else:
+            citations, active_ids, articles = _invoke_callback(
+                fetch_fn, pipeline, effective_query, as_of_date, trace=trace_data, corpus_path=corpus_path,
+                verifier_fn=verifier_fn,
+            )
     else:
         citations, active_ids, articles = _fetch_pipeline_articles(
             pipeline,
@@ -492,12 +560,25 @@ def answer_query(
             trace=trace_data,
             retriever_fn=retriever_fn,
             verifier_fn=verifier_fn,
+            corpus_path=corpus_path,
         )
 
-    # 3. Temporal trap check on empty retrieval
+    if trace_data.get("unresolved_citations"):
+        return _finalize(AnswerResult(
+            query=question, as_of_date=as_of_date, pipeline=pipeline,
+            citations=citations, active_article_ids=active_ids,
+            risk_score=50, risk_level="MEDIUM",
+            warnings=trace_data.get("unresolved_warnings") or ["Chưa đủ căn cứ xác minh hiệu lực chắc chắn."],
+            irac_sections={}, llm_used=False, raw_llm_response=None,
+            answer_status="INSUFFICIENT_BASIS", articles=articles,
+        ))
+
+    # 3. Temporal trap check / unresolved check on empty retrieval
     if not citations and not articles:
-        trap_warnings = _check_temporal_trap(effective_query, as_of_date, corpus_tree_fn=corpus_tree_fn)
+        trap_warnings = _check_temporal_trap(effective_query, as_of_date, corpus_tree_fn=corpus_tree_fn, corpus_path=corpus_path)
         if trap_warnings:
+            if use_llm:
+                trace_data["generation_reason"] = "temporal_trap"
             return _finalize(
                 AnswerResult(
                     query=question,
@@ -529,14 +610,14 @@ def answer_query(
                 pipeline=pipeline,
                 citations=[],
                 active_article_ids=[],
-                risk_score=0,
-                risk_level="LOW",
-                warnings=["Không tìm thấy điều khoản pháp luật thuế GTGT nào điều chỉnh nội dung này tại mốc thời gian tra cứu."],
+                risk_score=50,
+                risk_level="MEDIUM",
+                warnings=["Chưa đủ căn cứ pháp lý trong kết quả truy xuất tại mốc thời gian tra cứu."],
                 irac_sections={
                     "issue": f"Xác định quy định pháp luật cho: '{question}' tại mốc {as_of_date}.",
                     "rule": "Không tìm thấy điều khoản pháp luật thuế GTGT phù hợp.",
-                    "application": f"Tại mốc {as_of_date}, hệ thống đã đối chiếu qua cơ sở dữ liệu pháp luật thuế GTGT nhưng không tìm thấy điều khoản nào quy định nội dung này.",
-                    "conclusion": "Câu hỏi không có căn cứ pháp luật thuế GTGT điều chỉnh tại mốc thời gian đã chọn.",
+                    "application": f"Tại mốc {as_of_date}, kết quả truy xuất chưa cung cấp đủ căn cứ để xác định quy định áp dụng.",
+                    "conclusion": "Chưa đủ căn cứ pháp lý để đưa ra kết luận chắc chắn tại mốc thời gian đã chọn.",
                 },
                 llm_used=False,
                 raw_llm_response=None,
@@ -552,26 +633,28 @@ def answer_query(
 
     if use_llm:
         prompt_articles = articles if pipeline != "P1_FlatRAG" else []
-        prompt = build_irac_prompt(effective_query, as_of_date, prompt_articles, history=history)
+        prompt = build_irac_prompt(effective_query, as_of_date, prompt_articles, history=history, corpus_path=corpus_path)
+        trace_data["generation_attempted"] = True
+        trace_data["prompt_sha256"] = text_sha256(prompt)
         raw_response = llm_gen(
             prompt,
             model=model,
             options={"num_ctx": 4096, "num_predict": 1024},
         )
+        trace_data["generation_disposition"] = "provider_no_output"
+        trace_data["generation_reason"] = "empty_provider_output"
+        trace_data["output_sha256"] = text_sha256(raw_response) if raw_response else None
         if raw_response is not None:
             extracted = extract_citations(raw_response)
             candidate_citations = list(dict.fromkeys(extracted))
-            rel_map = _build_candidate_relevance_map(effective_query, raw_response, candidate_citations, articles)
+            rel_map = _build_candidate_relevance_map(effective_query, raw_response, candidate_citations, articles, corpus_path=corpus_path)
 
             context_ids = {a.id for a in articles}
-            scorer_kwargs = {"context_ids": context_ids}
+            scorer_kwargs = {"context_ids": context_ids, "corpus_path": corpus_path}
             if rel_map is not None:
                 scorer_kwargs["relevance_map"] = rel_map
-            try:
-                v_res = scorer(raw_response, as_of_date, **scorer_kwargs)
-            except TypeError:
-                scorer_kwargs.pop("context_ids", None)
-                v_res = scorer(raw_response, as_of_date, **scorer_kwargs)
+            v_res = _invoke_callback(scorer, raw_response, as_of_date, **scorer_kwargs)
+            _record_uncertainty(v_res)
             v_report = getattr(v_res, "report", v_res)
             invalid_or_irrelevant = {
                 c.id for c in getattr(v_report, "citations", []) if getattr(c, "status", "") in {"IRRELEVANT", "NOT_FOUND"}
@@ -594,21 +677,27 @@ def answer_query(
             fallback_used = _needs_irac_fallback(raw_response, irac) or _is_llm_answer_unsupported(
                 raw_response, irac, prompt_articles, extracted, llm_citations, invalid_or_irrelevant, is_household=is_household
             )
+            if raw_response.strip():
+                trace_data["generation_disposition"] = "draft_replaced" if fallback_used else "generated_delivered"
+                trace_data["generation_reason"] = "unsupported_draft" if fallback_used else "verified_draft"
+                trace_data["generated_delivered"] = not fallback_used
             v_warnings = getattr(v_res, "warnings", [])
             v_score = getattr(v_res, "risk_score", 0)
             v_level = getattr(v_res, "risk_level", "LOW")
-            if fallback_used:
-                irac = _build_irac_sections(effective_query, as_of_date, citations, [], articles=articles)
+            if fallback_used and not trace_data.get("unresolved_citations"):
+                irac = _invoke_callback(
+                    _build_irac_sections, effective_query, as_of_date, citations, [],
+                    articles=articles, corpus_path=corpus_path,
+                )
                 final_text = "\n".join(irac.values())
                 final_relevance = _build_candidate_relevance_map(
-                    effective_query, final_text, extract_citations(final_text), articles,
+                    effective_query, final_text, extract_citations(final_text), articles, corpus_path=corpus_path,
                 )
-                try:
-                    final_verification = scorer(
-                        final_text, as_of_date, context_ids=context_ids, relevance_map=final_relevance,
-                    )
-                except TypeError:
-                    final_verification = scorer(final_text, as_of_date, relevance_map=final_relevance)
+                final_verification = _invoke_callback(
+                    scorer, final_text, as_of_date, context_ids=context_ids,
+                    relevance_map=final_relevance, corpus_path=corpus_path,
+                )
+                _record_uncertainty(final_verification)
                 llm_citations = extract_citations(final_text)
                 v_warnings = list(getattr(final_verification, "warnings", []))
                 v_warnings.append("Bản nháp LLM đã bị thay bằng câu trả lời tổng hợp từ tài liệu truy xuất; kiểm tra citation không xác nhận tính đúng đắn của kết luận pháp lý.")
@@ -639,14 +728,15 @@ def answer_query(
 
     context_ids = {a.id for a in articles}
     cite_text = " ".join(f"[{cid}]" for cid in citations)
-    try:
-        v_res = scorer(cite_text, as_of_date, context_ids=context_ids)
-    except TypeError:
-        v_res = scorer(cite_text, as_of_date)
+    v_res = _invoke_callback(scorer, cite_text, as_of_date, context_ids=context_ids, corpus_path=corpus_path)
+    _record_uncertainty(v_res)
     v_warnings = getattr(v_res, "warnings", [])
     v_score = getattr(v_res, "risk_score", 0)
     v_level = getattr(v_res, "risk_level", "LOW")
-    irac = _build_irac_sections(effective_query, as_of_date, citations, v_warnings, articles=articles)
+    irac = _invoke_callback(
+        _build_irac_sections, effective_query, as_of_date, citations, v_warnings,
+        articles=articles, corpus_path=corpus_path,
+    )
 
     return _finalize(
         AnswerResult(

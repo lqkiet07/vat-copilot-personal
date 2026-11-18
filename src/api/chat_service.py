@@ -7,12 +7,14 @@ import re
 import unicodedata
 from collections.abc import Iterator
 
-from src.api.answer_service import answer_query
+from src.config import selected_corpus_kwargs, selected_review_path
+from src.engine.diagnostics import emit_trace, text_sha256
+from src.api.answer_service import answer_query, _build_candidate_relevance_map
 from src.api.chat_domain import classify, resolve_date, rewrite_query
 from src.api.chat_models import ChatMessage, ChatResponse, ChatSource
 from src.engine.llm_client import generate_llm_response_stream
 from src.engine.models import ArticleNode
-from src.engine.retrieval_service import retrieve_and_gate
+from src.engine.retrieval_service import _invoke_callback, retrieve_and_gate
 from src.engine.temporal_retriever import query_temporal_rag
 from src.ui.corpus_viewer import load_corpus_tree
 from src.ui.demo_service import DEMO_SCENARIOS
@@ -75,7 +77,9 @@ def _last_user_text(history: list[tuple[str, str]]) -> str:
     return ""
 
 
-def _chat_verifier(cite_text: str, as_of_date: str, relevance_map: dict | None = None):
+def _chat_verifier(cite_text: str, as_of_date: str, relevance_map: dict | None = None,
+                   *, corpus_path: str = "data/processed/vat_corpus.json",
+                   reviewed_amendment_path: str | None = None):
     if verify_and_score is not _ORIGINAL_VERIFY_AND_SCORE:
         from types import SimpleNamespace
         cids = extract_citations(cite_text)
@@ -85,7 +89,8 @@ def _chat_verifier(cite_text: str, as_of_date: str, relevance_map: dict | None =
                 for cid in cids
             ]
         )
-    return verify_citations(cite_text, as_of_date, relevance_map=relevance_map)
+    return verify_citations(cite_text, as_of_date, relevance_map=relevance_map, corpus_path=corpus_path,
+                            reviewed_amendment_path=reviewed_amendment_path)
 
 
 def _to_source(article: ArticleNode) -> ChatSource:
@@ -130,7 +135,7 @@ def _load_corpus_index() -> dict[str, dict]:
     receives titles instead of the legal wording it has to reason about.
     """
     index: dict[str, dict] = {}
-    for document in load_corpus_tree():
+    for document in load_corpus_tree(**selected_corpus_kwargs()):
         doc_code = document.get("code", "")
         doc_id = document.get("id", "")
         doc_valid_from = document.get("valid_from", "")
@@ -260,7 +265,7 @@ def _direct_reply_events(reply: str, effective_date: str) -> Iterator[tuple[str,
 def _load_documents() -> list[dict]:
     """Return the corpus document metadata used to explain temporal gaps."""
     documents = []
-    for document in load_corpus_tree():
+    for document in load_corpus_tree(**selected_corpus_kwargs()):
         documents.append(
             {
                 "title": document.get("title", ""),
@@ -348,6 +353,23 @@ def stream_chat(
     as_of_date: str | None = None,
     model: str = "qwen2.5:7b",
 ) -> Iterator[tuple[str, dict]]:
+    trace = {"event": "chat_generation", "generation_disposition": "safety_bypass",
+             "generation_reason": "no_evidence",
+             "generation_attempted": False, "generated_delivered": False}
+    for name, payload in _stream_chat(messages, as_of_date, model, trace):
+        if name == "done":
+            trace["delivered_sha256"] = text_sha256(payload["message"])
+            trace["answer_status"] = payload["answer_status"]
+            emit_trace(trace)
+        yield name, payload
+
+
+def _stream_chat(
+    messages: list[ChatTurn],
+    as_of_date: str | None,
+    model: str,
+    trace: dict,
+) -> Iterator[tuple[str, dict]]:
     """Stream the chat answer as (event_name, payload) tuples."""
     history = _normalize_messages(messages)
     last_user_text = _last_user_text(history)
@@ -356,9 +378,11 @@ def stream_chat(
 
     decision = classify(last_user_text)
     if decision.kind == "greeting":
+        trace["generation_reason"] = "greeting"
         yield from _direct_reply_events(GREETING_REPLY, effective_date)
         return
     if decision.kind == "out_of_scope":
+        trace["generation_reason"] = "out_of_scope"
         yield from _direct_reply_events(OUT_OF_SCOPE_REPLY, effective_date)
         return
 
@@ -373,6 +397,7 @@ def stream_chat(
         verifier_fn=_chat_verifier,
         score_fn=verify_and_score,
         corpus_tree_fn=load_corpus_tree,
+        **selected_corpus_kwargs(),
     )
 
     if ans.is_out_of_domain:
@@ -380,6 +405,19 @@ def stream_chat(
         return
     if ans.is_greeting:
         yield from _direct_reply_events(GREETING_REPLY, effective_date)
+        return
+
+    if ans.answer_status == "INSUFFICIENT_BASIS" and ans.citations:
+        trace["generation_reason"] = "unresolved_evidence"
+        message = "\n".join(ans.irac_sections.values())
+        sources = [_to_source(article) for article in ans.articles]
+        yield ("meta", {"as_of_date": effective_date, "sources": [s.model_dump() for s in sources]})
+        yield ("token", {"delta": message})
+        yield ("done", ChatResponse(
+            message=message, citations=ans.citations, sources=sources,
+            risk_score=ans.risk_score, risk_level=ans.risk_level, warnings=ans.warnings,
+            llm_used=False, in_scope=True, answer_status=ans.answer_status, as_of_date=effective_date,
+        ).model_dump())
         return
 
     if not ans.active_article_ids and not ans.citations:
@@ -433,20 +471,55 @@ def stream_chat(
     ]
     prompt = _build_prompt(last_user_text, effective_date, prompt_articles, explicit_ids)
 
+    trace["generation_attempted"] = True
+    trace["prompt_sha256"] = text_sha256(prompt)
     answer_parts: list[str] = []
     for delta in generate_llm_response_stream(prompt, model=model):
         answer_parts.append(delta)
-        yield ("token", {"delta": delta})
 
     llm_text = "".join(answer_parts).strip()
     llm_used = bool(llm_text)
+    trace["output_sha256"] = text_sha256("".join(answer_parts)) if answer_parts else None
+    trace["generation_disposition"] = "provider_no_output"
+    trace["generation_reason"] = "empty_provider_output"
 
     if not llm_used:
         conclusion_msg = ans.irac_sections.get("conclusion") or _fallback_answer(prompt_articles)
         yield ("token", {"delta": conclusion_msg})
         final_message = conclusion_msg
     else:
-        final_message = llm_text
+        scoring_kwargs = selected_corpus_kwargs()
+        review_path = selected_review_path(scoring_kwargs.get("corpus_path", "data/processed/vat_corpus.json"))
+        if review_path is not None:
+            scoring_kwargs["reviewed_amendment_path"] = review_path
+        if scoring_kwargs:
+            scoring_kwargs["relevance_map"] = _build_candidate_relevance_map(
+                last_user_text, llm_text, extract_citations(llm_text), prompt_articles, **selected_corpus_kwargs(),
+            )
+        verification = _invoke_callback(
+            verify_and_score, llm_text, effective_date, context_ids=set(ans.active_article_ids),
+            **scoring_kwargs,
+        )
+        report = getattr(verification, "report", verification)
+        statuses = getattr(report, "citations", [])
+        unsafe = [c for c in statuses if c.status not in {"VALID", "AMENDED"}]
+        ans.risk_score = verification.risk_score
+        ans.risk_level = verification.risk_level
+        ans.warnings = list(verification.warnings)
+        ans.citations = extract_citations(llm_text)
+        trace["generation_disposition"] = "draft_replaced" if unsafe or not ans.citations else "generated_delivered"
+        trace["generation_reason"] = "unresolved_evidence" if any(c.status == "UNRESOLVED" for c in unsafe) else "unsupported_draft" if unsafe or not ans.citations else "verified_draft"
+        trace["generated_delivered"] = not unsafe and bool(ans.citations)
+        if unsafe or not ans.citations:
+            ans.answer_status = "INSUFFICIENT_BASIS"
+            ans.risk_score = max(ans.risk_score, 50)
+            if ans.risk_level == "LOW":
+                ans.risk_level = "MEDIUM"
+            ans.warnings = list(dict.fromkeys(ans.warnings + [c.message for c in unsafe if c.message]))
+            final_message = "Chưa đủ căn cứ pháp lý để đưa ra kết luận chắc chắn. Cần xác minh các điều khoản được viện dẫn."
+        else:
+            final_message = llm_text
+        yield ("token", {"delta": final_message})
 
     response = ChatResponse(
         message=final_message,

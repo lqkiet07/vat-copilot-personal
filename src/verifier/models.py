@@ -1,7 +1,7 @@
 from typing import Literal
 from pydantic import BaseModel, Field
 
-CitationState = Literal["VALID", "AMENDED", "NOT_YET_EFFECTIVE", "EXPIRED", "NOT_FOUND", "IRRELEVANT"]
+CitationState = Literal["VALID", "AMENDED", "NOT_YET_EFFECTIVE", "EXPIRED", "NOT_FOUND", "IRRELEVANT", "UNRESOLVED"]
 RiskLevel = Literal["LOW", "MEDIUM", "HIGH", "CRITICAL"]
 
 
@@ -10,7 +10,7 @@ class CitationStatus(BaseModel):
     id: str
     status: CitationState
     exists: bool
-    is_active: bool
+    is_active: bool | None = None
     message: str
     amended_by: list[str] = Field(default_factory=list)
     in_context: bool = True

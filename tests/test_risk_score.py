@@ -172,11 +172,11 @@ def test_verify_and_score_integration_valid():
 
 @pytest.mark.requires_neo4j
 def test_verify_and_score_integration_amended():
-    text = "Căn cứ theo [ND_181_2025_D9] vào ngày 2026-04-01."
-    res = verify_and_score(text=text, as_of_date="2026-04-01")
+    text = "Căn cứ theo [ND_181_2025_D9] vào ngày 2026-06-20."
+    res = verify_and_score(text=text, as_of_date="2026-06-20")
 
     assert isinstance(res, VerificationResult)
-    assert res.as_of_date == "2026-04-01"
+    assert res.as_of_date == "2026-06-20"
     assert res.risk_score == 25
     assert res.risk_level == "MEDIUM"
     assert len(res.warnings) == 1

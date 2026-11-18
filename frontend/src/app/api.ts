@@ -1,40 +1,75 @@
-import { type Result, type Citation, type AuditItem } from "./data";
+import { type Result, type Citation, type AuditItem, type LawDoc, type Article, DOCUMENT_LABELS, type DocumentLabel } from "./data";
+export { DOCUMENT_LABELS, type DocumentLabel };
 
 export function parseCitationId(cid: string): Citation {
-  let doc = "l48";
-  let label = cid;
-  let art = cid.toLowerCase().replace(/_/g, "-");
+  if (!cid || typeof cid !== "string") {
+    return { id: cid || "", label: cid || "", doc: null, art: null };
+  }
 
-  const match = cid.match(/^(LUAT_48_2024|ND_181_2025|TT_69_2025|ND_359_2025|ND_144_2026)_D(\d+)(?:_K(\d+))?(?:_([a-z0-9]+))?/i);
+  const documentId = cid.toUpperCase();
+  if (Object.hasOwn(DOCUMENT_LABELS, documentId)) {
+    return {
+      id: documentId,
+      label: DOCUMENT_LABELS[documentId].label,
+      doc: DOCUMENT_LABELS[documentId].libraryDocId,
+      art: null,
+    };
+  }
+
+  const match = cid.match(/^([A-Z0-9_]+)_D(\d+[a-z]?)(?:_K(\d+[a-z]?)(?:_([a-zđ]))?)?$/i);
   if (match) {
     const docKey = match[1].toUpperCase();
-    const articleNum = match[2];
-    const clauseNum = match[3];
-    const pointLetter = match[4];
+    const articleNum = match[2].toLowerCase();
+    const clauseNum = match[3]?.toLowerCase();
+    const pointLetter = match[4]?.toLowerCase();
 
-    const prefix = pointLetter
-      ? `Điểm ${pointLetter} Khoản ${clauseNum} `
-      : clauseNum
-      ? `Khoản ${clauseNum} `
-      : "";
+    const docMeta = Object.hasOwn(DOCUMENT_LABELS, docKey) ? DOCUMENT_LABELS[docKey] : null;
+    if (docMeta) {
+      const prefix = pointLetter
+        ? `Điểm ${pointLetter} Khoản ${clauseNum} `
+        : clauseNum
+        ? `Khoản ${clauseNum} `
+        : "";
 
-    const docLabels: Record<string, [string, string]> = {
-      LUAT_48_2024: ["l48", "Luật 48/2024"],
-      ND_181_2025: ["nd181", "NĐ 181/2025"],
-      TT_69_2025: ["tt69", "TT 69/2025"],
-      ND_359_2025: ["nd359", "NĐ 359/2025"],
-      ND_144_2026: ["nd144", "NĐ 144/2026"],
-    };
+      const docShortName = docMeta.libraryDocId === "l48"
+        ? "Luật 48/2024"
+        : docMeta.label;
 
-    if (docLabels[docKey]) {
-      const [docId, docName] = docLabels[docKey];
-      doc = docId;
-      label = `${prefix}Điều ${articleNum} ${docName}`;
-      art = `${docId}-d${articleNum}`;
+      const label = `${prefix}Điều ${articleNum} ${docShortName}`;
+      const doc = docMeta.libraryDocId;
+      const art = doc ? `${doc}-d${articleNum}` : null;
+
+      const id = `${docKey}_D${articleNum}${clauseNum ? `_K${clauseNum}` : ""}${pointLetter ? `_${pointLetter}` : ""}`;
+      return { id, label, doc, art };
     }
   }
 
-  return { label, doc, art };
+  return { id: cid, label: cid, doc: null, art: null };
+}
+
+export function findCitationBody(
+  citation: Citation,
+  docs: readonly LawDoc[]
+): { document: LawDoc; article: Article } | null {
+  if (!citation.doc || !citation.art) return null;
+  const document = docs.find((d) => d.id === citation.doc);
+  if (!document) return null;
+  for (const ch of document.chapters) {
+    for (const a of ch.articles) {
+      if (a.id === citation.art) {
+        return { document, article: a };
+      }
+    }
+  }
+  return null;
+}
+
+export function citationBodyMessage(citation: Citation): string {
+  const parsed = parseCitationId(citation.id);
+  const documentId = parsed.id.split("_D")[0];
+  return Object.hasOwn(DOCUMENT_LABELS, documentId) && parsed.label !== parsed.id
+    ? "Đã nhận diện văn bản trích dẫn; chưa có nội dung điều khoản trong thư viện hiện tại."
+    : "Chưa nhận diện được mã trích dẫn; chưa có nội dung điều khoản trong thư viện hiện tại.";
 }
 
 export async function queryLegalApi(
@@ -103,7 +138,7 @@ export async function queryLegalApi(
       return {
         score: 0,
         issue: "Hỏi đáp & Hướng dẫn sử dụng Hệ thống Thẩm định Pháp lý Thuế GTGT",
-        rule: "Cơ sở tri thức hiệu lực: Luật Thuế GTGT 48/2024/QH15, Nghị định 181/2025, Thông tư 69/2025, Nghị định 359/2025, Nghị định 144/2026.",
+        rule: "Hướng dẫn sử dụng; chưa thực hiện tra cứu hoặc xác minh căn cứ pháp lý.",
         citations: [],
         application: [
           "Xin chào Quý khách / Quý Doanh nghiệp! Tôi là Trợ lý Pháp lý ảo về Thuế Giá trị gia tăng (GTGT) Việt Nam, được vận hành bởi Đồ thị Tri thức Thời gian (Temporal GraphRAG).",
@@ -114,8 +149,7 @@ export async function queryLegalApi(
         ],
         conclusion: "Mời bạn nhập câu hỏi cụ thể về tình huống thuế GTGT hoặc chọn các kịch bản gợi ý bên dưới để bắt đầu thẩm định.",
         audit: [
-          { tone: "ok", text: "Hệ thống đã kết nối trực tiếp với Neo4j Knowledge Graph và FastAPI Backend." },
-          { tone: "ok", text: "Trạng thái đồ thị: 5 văn bản pháp luật, 76 điều luật, 271 khoản sẵn sàng tra cứu." },
+          { tone: "warn", text: "Phản hồi chào hỏi, chưa tra cứu hoặc xác minh căn cứ pháp lý." },
         ],
         is_greeting: true,
       };
@@ -154,7 +188,7 @@ export async function queryLegalApi(
     if (citations.length > 0 && !hasNoCitationWarning) {
       audit.push({
         tone: "ok",
-        text: `Đã đối chiếu ${citations.length} điều khoản viện dẫn qua Đồ thị Tri thức Neo4j tại mốc ${asOfDate}.`,
+        text: `Đã nhận ${citations.length} mã trích dẫn từ API cho mốc ${asOfDate}; việc hiển thị chưa xác minh hiệu lực hoặc nội dung.`,
       });
     } else if (citations.length === 0) {
       audit.push({
@@ -165,7 +199,7 @@ export async function queryLegalApi(
 
     let trap: string | undefined = undefined;
     if (data.risk_score >= 60 || data.risk_level === "CRITICAL" || data.risk_level === "HIGH") {
-      trap = "CẢNH BÁO RỦI RO PHÁP LÝ: CĂN CỨ TRÍCH DẪN CÓ NGUY CƠ HẾT HIỆU LỰC HOẶC CHƯA PHÁT SINH HIỆU LỰC TẠI MỐC ĐÃ CHỌN!";
+      trap = "API trả về lưu ý cần rà soát; hãy đối chiếu nội dung và hiệu lực căn cứ tại mốc đã chọn.";
     }
 
     return {

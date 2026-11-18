@@ -6,6 +6,7 @@ from unittest.mock import Mock
 
 import scripts.generate_embeddings as generation
 from src.engine.embedding_meta import validate_embedding_meta
+import scripts.seed_neo4j as seeding
 import pytest
 
 from src.engine.embedder import OllamaEmbedder
@@ -21,6 +22,7 @@ def isolated_embedding_files(tmp_path, monkeypatch):
     root = Path(__file__).resolve().parents[1]
     protected = {(root / "data/processed" / name).resolve() for name in (
         "article_embeddings.json", "embedding_meta.json", "vat_corpus.json",
+        "article_embeddings.staging.json", "embedding_meta.staging.json", "vat_corpus.staging.json",
     )}
     monkeypatch.chdir(tmp_path)
 
@@ -42,6 +44,163 @@ def isolated_embedding_files(tmp_path, monkeypatch):
     monkeypatch.setattr(os, "replace", guarded_replace)
     monkeypatch.setattr(generation, "init_schema", Mock(side_effect=AssertionError("DB forbidden")))
     monkeypatch.setattr(generation, "import_article_embeddings", Mock(side_effect=AssertionError("DB forbidden")))
+    for name in ("reset_neo4j", "init_schema", "import_corpus_to_neo4j", "import_amends_relations",
+                 "import_cites_relations", "import_guides_relations", "import_article_embeddings"):
+        monkeypatch.setattr(seeding, name, Mock(side_effect=AssertionError("DB forbidden")))
+    monkeypatch.setattr("src.graph.connection.get_neo4j_driver", Mock(side_effect=AssertionError("Driver forbidden")))
+
+
+@pytest.fixture
+def seed_artifacts(tmp_path, monkeypatch):
+    corpus = tmp_path / "vat_corpus.staging.json"
+    cache = tmp_path / "article_embeddings.staging.json"
+    meta = tmp_path / "embedding_meta.staging.json"
+    articles = [{"id": f"A{i}", "code": str(i), "content": "text", "valid_from": "2025-01-01"}
+                for i in range(494)]
+    corpus.write_text(json.dumps([{"id": "D", "valid_from": "2025-01-01", "articles": articles}]), encoding="utf-8")
+    vectors = {art["id"]: [0.0] * i + [0.6, 0.8] + [0.0] * (1022 - i)
+               for i, art in enumerate(articles)}
+    cache.write_text(json.dumps(vectors), encoding="utf-8")
+    meta.write_text(json.dumps({"provider": "ollama", "model": "bge-m3", "dimension": 1024,
+                                "count": 494, "corpus_sha256": hashlib.sha256(corpus.read_bytes()).hexdigest(),
+                                "cache_sha256": hashlib.sha256(cache.read_bytes()).hexdigest()}), encoding="utf-8")
+    monkeypatch.setenv("NEO4J_URI", "bolt://127.0.0.1:17687")
+    return corpus, cache, meta
+
+
+def test_seed_dry_run_validates_and_plans_all_phases_without_driver(seed_artifacts):
+    corpus, cache, meta = seed_artifacts
+    stats = seeding.seed(True, True, corpus, cache, meta_path=meta)
+    assert stats["articles"] == stats["embeddings"] == 494
+    assert stats["guides"] == stats["amends"] == stats["cites"] == 0
+
+
+@pytest.mark.parametrize("fault", ["missing", "malformed", "provider", "model", "dimension", "count",
+                                  "corpus_sha256", "cache_sha256", "ids", "duplicate", "invalid_id",
+                                  "short", "fallback", "nan", "wrong_dimension", "float_count", "float_dimension"])
+def test_seed_rejects_bad_staging_before_any_mutation(seed_artifacts, fault):
+    corpus, cache, meta = seed_artifacts
+    metadata = json.loads(meta.read_text(encoding="utf-8"))
+    if fault == "missing":
+        meta.unlink()
+    elif fault == "malformed":
+        meta.write_text("[]", encoding="utf-8")
+    elif fault.startswith("float_"):
+        field = fault.removeprefix("float_")
+        metadata[field] = float(metadata[field])
+        meta.write_text(json.dumps(metadata), encoding="utf-8")
+    elif fault in metadata:
+        metadata[fault] = "bad"
+        meta.write_text(json.dumps(metadata), encoding="utf-8")
+    else:
+        data = json.loads(corpus.read_text(encoding="utf-8"))
+        vectors = json.loads(cache.read_text(encoding="utf-8"))
+        if fault == "ids":
+            vectors["OTHER"] = vectors.pop("A0")
+        elif fault in {"duplicate", "invalid_id"}:
+            data[0]["articles"][0]["id"] = "A1" if fault == "duplicate" else ""
+        elif fault == "short":
+            data[0]["articles"].pop()
+            vectors.pop("A493")
+            metadata["count"] = 493
+        else:
+            vectors["A0"] = {"fallback": [1.0] + [0.0] * 1023,
+                             "nan": [float("nan")] * 1024, "wrong_dimension": [0.0]}[fault]
+        corpus.write_text(json.dumps(data), encoding="utf-8")
+        cache.write_text(json.dumps(vectors), encoding="utf-8")
+        metadata.update(corpus_sha256=hashlib.sha256(corpus.read_bytes()).hexdigest(),
+                        cache_sha256=hashlib.sha256(cache.read_bytes()).hexdigest())
+        meta.write_text(json.dumps(metadata), encoding="utf-8")
+    with pytest.raises((ValueError, RuntimeError), match="[Vv]alid|[Mm]etadata|494|ID|embedding"):
+        seeding.seed(True, False, corpus, cache, meta_path=meta)
+
+
+@pytest.mark.parametrize("uri", ["bolt://localhost:7687", "bolt://remote:17687", "neo4j://localhost:17687", "bad"])
+@pytest.mark.parametrize("staging", [True, False])
+def test_seed_rejects_unsafe_target_before_reset(seed_artifacts, monkeypatch, uri, staging):
+    corpus, cache, meta = seed_artifacts
+    if not staging:
+        corpus, cache, meta = seeding.CORPUS_PATH, seeding.EMBEDDINGS_PATH, None
+    monkeypatch.setenv("NEO4J_URI", uri)
+    with pytest.raises(ValueError, match="17687"):
+        seeding.seed(True, False, corpus, cache, meta_path=meta)
+
+
+@pytest.mark.parametrize("target", ["cache", "meta", "implicit_meta", "same"])
+def test_seed_rejects_canonical_or_implicit_staging_pair(seed_artifacts, target):
+    corpus, cache, meta = seed_artifacts
+    if target == "cache":
+        cache = seeding.EMBEDDINGS_PATH
+    elif target == "meta":
+        meta = seeding.ROOT / "data/processed/embedding_meta.json"
+    elif target == "implicit_meta":
+        meta = None
+    else:
+        meta = cache
+    with pytest.raises(ValueError, match="path|canonical|explicit"):
+        seeding.seed(True, False, corpus, cache, meta_path=meta)
+
+
+def test_seed_imports_selected_artifacts_in_order(seed_artifacts, monkeypatch):
+    corpus, cache, meta = seed_artifacts
+    calls = []
+    results = {"reset_neo4j": None, "init_schema": None, "import_corpus_to_neo4j": {"articles": 494},
+               "import_amends_relations": 2, "import_cites_relations": 3,
+               "import_guides_relations": 4, "import_article_embeddings": 494}
+    for name, result in results.items():
+        def record(*args, _name=name, _result=result, **kwargs):
+            calls.append((_name, args, kwargs))
+            return _result
+        monkeypatch.setattr(seeding, name, record)
+    stats = seeding.seed(True, False, corpus, cache, meta_path=meta)
+    assert [name for name, _, _ in calls] == ["reset_neo4j", "init_schema", "import_corpus_to_neo4j",
+                                             "import_amends_relations", "import_guides_relations",
+                                             "import_cites_relations", "import_article_embeddings"]
+    assert calls[0][2] == {"confirm": True}
+    assert all(args == (str(corpus),) for _, args, _ in calls[2:4] + calls[5:6])
+    assert calls[-1][1] == (json.loads(cache.read_text(encoding="utf-8")),)
+    assert stats == {"articles": 494, "amends": 2, "cites": 3, "guides": 4, "embeddings": 494}
+
+
+def test_seed_cli_explicit_dry_run_from_tmp(seed_artifacts, tmp_path):
+    import subprocess
+    import sys
+
+    corpus, cache, meta = seed_artifacts
+    result = subprocess.run([sys.executable, str(Path(seeding.__file__).resolve()), "--dry-run", "--reset",
+                             "--corpus", str(corpus), "--embeddings", str(cache), "--meta", str(meta)],
+                            cwd=tmp_path, capture_output=True, text=True)
+    assert result.returncode == 0, result.stderr
+    assert "'embeddings': 494" in result.stdout
+    assert "'guides': 0" in result.stdout
+
+
+def test_seed_explicit_metadata_never_falls_back_outside_staging(seed_artifacts):
+    corpus, cache, meta = seed_artifacts
+    ordinary = [path.with_name(path.name.replace(".staging", "")) for path in (corpus, cache, meta)]
+    for source, destination in zip((corpus, cache), ordinary):
+        destination.write_bytes(source.read_bytes())
+    with pytest.raises(ValueError, match="metadata"):
+        seeding.seed(False, True, ordinary[0], ordinary[1], meta_path=ordinary[2])
+
+
+def test_seed_legacy_dry_run_keeps_canonical_defaults_without_metadata(monkeypatch):
+    monkeypatch.setenv("NEO4J_URI", "bolt://localhost:7687")
+    planner = Mock(return_value={"stats": {"articles": 76}, "resolved_amends": [],
+                                "unresolved_amends": [], "cites": []})
+    monkeypatch.setattr(seeding, "plan_corpus_import", planner)
+    assert seeding.seed(dry_run=True) == {"articles": 76, "amends": 0, "unresolved_amends": 0, "cites": 0}
+    planner.assert_called_once_with(str(seeding.CORPUS_PATH))
+
+
+def test_seed_reports_partial_vector_import(seed_artifacts, monkeypatch):
+    corpus, cache, meta = seed_artifacts
+    for name in ("init_schema", "import_amends_relations", "import_cites_relations", "import_guides_relations"):
+        monkeypatch.setattr(seeding, name, Mock(return_value=0))
+    monkeypatch.setattr(seeding, "import_corpus_to_neo4j", Mock(return_value={"articles": 494}))
+    monkeypatch.setattr(seeding, "import_article_embeddings", Mock(return_value=493))
+    with pytest.raises(RuntimeError, match="imported 493 articles, expected 494"):
+        seeding.seed(False, False, corpus, cache, meta_path=meta)
 
 
 def test_canonical_write_guard_blocks_absolute_paths():

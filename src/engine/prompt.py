@@ -1,5 +1,6 @@
 """IRAC prompt generation module with domain relevance discernment."""
 from src.engine.models import ArticleNode
+from src.ui.corpus_viewer import load_corpus_index
 
 
 def build_irac_prompt(
@@ -7,12 +8,20 @@ def build_irac_prompt(
     as_of_date: str,
     articles: list[ArticleNode],
     history: list[dict] | None = None,
+    *, corpus_path: str = "data/processed/vat_corpus.json",
 ) -> str:
     """Build IRAC-formatted prompt containing active legal rules and conversation context."""
     rules = []
+    index = load_corpus_index(corpus_path) if articles else {}
     for art in articles:
         related = f" (Sửa đổi/liên quan: {', '.join(art.related_ids)})" if art.related_ids else ""
         rules.append(f"- [{art.id}] {art.code} - {art.title}{related}\n  {art.content}")
+        for provision in index.get(art.id, {}).get("provisions", {}).values():
+            text = provision["text"].strip()
+            if (provision["kind"] in {"clause", "point"} and text and text in art.content
+                    and provision["valid_from"] <= as_of_date < provision["valid_to"]
+                    and not provision["has_provision_spans"]):
+                rules.append(f"  - [{provision['id']}] {text}")
 
     rule_text = (
         "\n\n".join(rules)

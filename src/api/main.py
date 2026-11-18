@@ -1,10 +1,23 @@
 """FastAPI application initialization and middleware configuration."""
+from contextlib import asynccontextmanager
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from src.api.routes import api_router
+from src.config import get_runtime_config, validate_runtime_artifacts
+
+
+@asynccontextmanager
+async def lifespan(app):
+    selected = get_runtime_config()
+    app.state.environment = selected.environment
+    app.state.artifacts = validate_runtime_artifacts(selected)
+    yield
+
 
 app = FastAPI(
+    lifespan=lifespan,
     title="VAT Legal Temporal GraphRAG API",
     version="1.0.0",
     description="Backend RESTful API for Vietnamese VAT Legal Reasoning",

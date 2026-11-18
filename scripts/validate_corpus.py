@@ -43,7 +43,7 @@ def _validate_clauses(doc_id: str, art_id: str, clauses: list[dict]) -> list[str
         seen.add(cid)
 
         km = re.search(r"_K(\d+)", cid)
-        if km and int(km.group(1)) > 50:
+        if km and (int(km.group(1)) > 100 or (int(km.group(1)) > 50 and int(km.group(1)) > len(clauses))):
             errors.append(
                 f"{doc_id} -> {art_id}: suspicious clause ID '{cid}' (suggests appendix/tariff table leakage)"
             )

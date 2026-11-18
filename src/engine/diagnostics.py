@@ -36,6 +36,14 @@ class QueryTrace:
     answer_status: str = "ANSWERED"
     empty_reason: EmptyReason = EmptyReason.ANSWERED
     pipeline_note: str | None = None
+    generation_disposition: str = "deterministic_off"
+    generation_reason: str = "llm_disabled"
+    generation_attempted: bool = False
+    generated_delivered: bool = False
+    event: str = "query"
+    prompt_sha256: str | None = None
+    output_sha256: str | None = None
+    delivered_sha256: str | None = None
 
 
 def classify_empty(trace: QueryTrace) -> EmptyReason:
@@ -52,14 +60,19 @@ def classify_empty(trace: QueryTrace) -> EmptyReason:
     return EmptyReason.ANSWERED
 
 
-def emit_trace(trace: QueryTrace) -> None:
+def text_sha256(text: str) -> str:
+    import hashlib
+    return hashlib.sha256(text.encode("utf-8")).hexdigest()
+
+
+def emit_trace(trace: QueryTrace | dict) -> None:
     path_str = os.environ.get("VAT_DIAGNOSTICS")
     if not path_str:
         return
     try:
         path = Path(path_str)
         path.parent.mkdir(parents=True, exist_ok=True)
-        line = json.dumps(asdict(trace), default=str) + "\n"
+        line = json.dumps(trace if isinstance(trace, dict) else asdict(trace), default=str) + "\n"
         with _TRACE_LOCK:
             with open(path, "a", encoding="utf-8") as f:
                 f.write(line)

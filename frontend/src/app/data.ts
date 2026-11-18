@@ -210,8 +210,50 @@ export const DOCS: LawDoc[] = [
   },
 ];
 
-export type Citation = { label: string; doc: string; art: string };
+export type Citation = { id: string; label: string; doc: string | null; art: string | null };
 export type AuditItem = { tone: "ok" | "warn" | "bad"; text: string };
+
+export type DocumentLabel = {
+  code: string;
+  label: string;
+  libraryDocId: string | null;
+};
+
+export const DOCUMENT_LABELS: Record<string, DocumentLabel> = {
+  ND_174_2025: { code: "174/2025/NĐ-CP", label: "Nghị định 174/2025/NĐ-CP", libraryDocId: null },
+  TT_77_2025: { code: "77/2025/TT-BTC", label: "Thông tư 77/2025/TT-BTC", libraryDocId: null },
+  TT_101_2025: { code: "101/2025/TT-BNNMT", label: "Thông tư 101/2025/TT-BNNMT", libraryDocId: null },
+  NQ_34_2026: { code: "34/2026/NQ-CP", label: "Nghị quyết 34/2026/NQ-CP", libraryDocId: null },
+  NQ_43_2026: { code: "43/2026/NQ-CP", label: "Nghị quyết 43/2026/NQ-CP", libraryDocId: null },
+  VBHN_25_2026: { code: "25/2026/VBHN-BTC", label: "Văn bản hợp nhất 25/2026/VBHN-BTC", libraryDocId: null },
+  QD_482_2026: { code: "482/QĐ-TTg", label: "Quyết định 482/QĐ-TTg", libraryDocId: null },
+  TT_18_2026: { code: "18/2026/TT-BTC", label: "Thông tư 18/2026/TT-BTC", libraryDocId: null },
+  NQ_19_2026: { code: "19/2026/QH16", label: "Nghị quyết 19/2026/QH16", libraryDocId: null },
+  NQ_204_2025: { code: "204/2025/QH15", label: "Nghị quyết 204/2025/QH15", libraryDocId: null },
+  ND_245_2026: { code: "245/2026/NĐ-CP", label: "Nghị định 245/2026/NĐ-CP", libraryDocId: null },
+  ND_252_2026: { code: "252/2026/NĐ-CP", label: "Nghị định 252/2026/NĐ-CP", libraryDocId: null },
+  QD_2551_2026: { code: "2551/QĐ-BTC", label: "Quyết định 2551/QĐ-BTC", libraryDocId: null },
+  TT_32_2026: { code: "32/2026/TT-BTC", label: "Thông tư 32/2026/TT-BTC", libraryDocId: null },
+  TT_50_2026: { code: "50/2026/TT-BTC", label: "Thông tư 50/2026/TT-BTC", libraryDocId: null },
+  TT_84_2026: { code: "84/2026/TT-BTC", label: "Thông tư 84/2026/TT-BTC", libraryDocId: null },
+  TT_89_2026: { code: "89/2026/TT-BTC", label: "Thông tư 89/2026/TT-BTC", libraryDocId: null },
+  TT_97_2026: { code: "97/2026/TT-BTC", label: "Thông tư 97/2026/TT-BTC", libraryDocId: null },
+  LUAT_48_2024: { code: "48/2024/QH15", label: "Luật 48/2024/QH15", libraryDocId: "l48" },
+  ND_181_2025: { code: "181/2025/NĐ-CP", label: "Nghị định 181/2025/NĐ-CP", libraryDocId: "nd181" },
+  TT_69_2025: { code: "69/2025/TT-BTC", label: "Thông tư 69/2025/TT-BTC", libraryDocId: "tt69" },
+  ND_359_2025: { code: "359/2025/NĐ-CP", label: "Nghị định 359/2025/NĐ-CP", libraryDocId: "nd359" },
+  LUAT_108_2025: { code: "108/2025/QH15", label: "Luật 108/2025/QH15", libraryDocId: null },
+  NQ_05_2025: { code: "05/2025/NQ-CP", label: "Nghị quyết 05/2025/NQ-CP", libraryDocId: null },
+  TT_72_2014: { code: "72/2014/TT-BTC", label: "Thông tư 72/2014/TT-BTC", libraryDocId: null },
+  TT_92_2019: { code: "92/2019/TT-BTC", label: "Thông tư 92/2019/TT-BTC", libraryDocId: null },
+  TT_41_2026: { code: "41/2026/TT-BTC", label: "Thông tư 41/2026/TT-BTC", libraryDocId: null },
+  LUAT_90_2025: { code: "90/2025/QH15", label: "Luật 90/2025/QH15", libraryDocId: null },
+  LUAT_149_2025: { code: "149/2025/QH15", label: "Luật 149/2025/QH15", libraryDocId: null },
+  LUAT_09_2026: { code: "09/2026/QH16", label: "Luật 09/2026/QH16", libraryDocId: null },
+  ND_68_2026: { code: "68/2026/NĐ-CP", label: "Nghị định 68/2026/NĐ-CP", libraryDocId: null },
+  ND_141_2026: { code: "141/2026/NĐ-CP", label: "Nghị định 141/2026/NĐ-CP", libraryDocId: null },
+  ND_144_2026: { code: "144/2026/NĐ-CP", label: "Nghị định 144/2026/NĐ-CP", libraryDocId: "nd144" },
+};
 export type Result = {
   score: number;
   issue: string;
@@ -250,13 +292,13 @@ export const SCENARIOS = [
 ];
 
 const cite = {
-  l48d9: { label: "Điều 9 Luật 48/2024", doc: "l48", art: "l48-d9" },
-  l48d19: { label: "Điều 19 Luật 48/2024", doc: "l48", art: "l48-d19" },
-  nd181d5: { label: "Điều 5 NĐ 181/2025", doc: "nd181", art: "nd181-d5" },
-  nd181d12: { label: "Điều 12 NĐ 181/2025", doc: "nd181", art: "nd181-d12" },
-  nd359d1: { label: "Điều 1 NĐ 359/2025", doc: "nd359", art: "nd359-d1" },
-  nd144d1: { label: "Điều 1 NĐ 144/2026", doc: "nd144", art: "nd144-d1" },
-  tt69d3: { label: "Điều 3 TT 69/2025", doc: "tt69", art: "tt69-d3" },
+  l48d9: { id: "LUAT_48_2024_D9", label: "Điều 9 Luật 48/2024", doc: "l48", art: "l48-d9" },
+  l48d19: { id: "LUAT_48_2024_D19", label: "Điều 19 Luật 48/2024", doc: "l48", art: "l48-d19" },
+  nd181d5: { id: "ND_181_2025_D5", label: "Điều 5 NĐ 181/2025", doc: "nd181", art: "nd181-d5" },
+  nd181d12: { id: "ND_181_2025_D12", label: "Điều 12 NĐ 181/2025", doc: "nd181", art: "nd181-d12" },
+  nd359d1: { id: "ND_359_2025_D1", label: "Điều 1 NĐ 359/2025", doc: "nd359", art: "nd359-d1" },
+  nd144d1: { id: "ND_144_2026_D1", label: "Điều 1 NĐ 144/2026", doc: "nd144", art: "nd144-d1" },
+  tt69d3: { id: "TT_69_2025_D3", label: "Điều 3 TT 69/2025", doc: "tt69", art: "tt69-d3" },
 };
 
 const R1: Result = {

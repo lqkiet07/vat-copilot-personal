@@ -27,7 +27,7 @@ def setup_test_point():
               ON CREATE SET base.valid_from = date('2025-01-01'), base.valid_to = date('9999-12-31'), base.code = 'D1'
             MERGE (amender:Article {id: 'ND_999_2025_D1'})
               ON CREATE SET amender.valid_from = date('2025-01-01'), amender.valid_to = date('2025-12-31'), amender.code = 'D1'
-            MERGE (amender)-[:AMENDS]->(base)
+            MERGE (amender)-[:AMENDS {target_scope: 'article'}]->(base)
             """
         )
     yield
@@ -70,9 +70,28 @@ def test_verify_valid_citation():
     assert c.amended_by == []
 
 
-def test_verify_valid_point_citation():
+@pytest.fixture
+def point_corpus(tmp_path):
+    import json
+    from pathlib import Path
+    documents = json.loads(Path("data/processed/vat_corpus.json").read_text(encoding="utf-8"))
+    document = next(doc for doc in documents if doc["id"] == "LUAT_48_2024")
+    articles = document.get("articles", []) + [
+        article for chapter in document.get("chapters", []) for article in chapter.get("articles", [])]
+    article = next(item for item in articles if item["id"] == "LUAT_48_2024_D1")
+    article["clauses"] = [item for item in article.get("clauses", []) if item["id"] != "LUAT_48_2024_D1_K2"]
+    article["clauses"].append({"id": "LUAT_48_2024_D1_K2", "code": "Khoan 2",
+        "valid_from": "2025-07-01", "valid_to": "9999-12-31", "points": [
+            {"id": "LUAT_48_2024_D1_K2_a", "code": "Diem a",
+             "valid_from": "2025-07-01", "valid_to": "9999-12-31"}]})
+    path = tmp_path / "point.json"
+    path.write_text(json.dumps(documents), encoding="utf-8")
+    return str(path)
+
+
+def test_verify_valid_point_citation(point_corpus):
     text = "Theo quy định tại điểm a khoản 2 [LUAT_48_2024_D1_K2_a] về phạm vi đối tượng."
-    report = verify_citations(text=text, as_of_date="2026-04-01")
+    report = verify_citations(text=text, as_of_date="2026-04-01", corpus_path=point_corpus)
 
     assert report.as_of_date == "2026-04-01"
     assert report.total_citations == 1
@@ -105,10 +124,10 @@ def test_verify_not_yet_effective_citation():
 
 
 def test_verify_amended_citation():
-    text = "Căn cứ theo [ND_181_2025_D9] vào ngày 2026-04-01."
-    report = verify_citations(text=text, as_of_date="2026-04-01")
+    text = "Căn cứ theo [ND_181_2025_D9] vào ngày 2026-06-20."
+    report = verify_citations(text=text, as_of_date="2026-06-20")
 
-    assert report.as_of_date == "2026-04-01"
+    assert report.as_of_date == "2026-06-20"
     assert report.total_citations == 1
     assert report.valid_citations == 0
     assert report.is_clean is False
@@ -141,7 +160,7 @@ def test_verify_nonexistent_citation():
 
 def test_verify_mixed_citations():
     text = "Hợp lệ [LUAT_48_2024_D9] nhưng sửa đổi [ND_181_2025_D9]."
-    report = verify_citations(text=text, as_of_date="2026-04-01")
+    report = verify_citations(text=text, as_of_date="2026-06-20")
 
     assert report.total_citations == 2
     assert report.valid_citations == 1
@@ -172,12 +191,13 @@ def test_extract_and_verify_citations_lowercase_canonicalized():
     assert report.citations[0].status == "VALID"
 
 
-def test_verify_citations_outside_context_ids_marked_irrelevant():
+def test_verify_citations_outside_context_ids_marked_irrelevant(point_corpus):
     text = "Căn cứ theo [LUAT_48_2024_D9] và [LUAT_48_2024_D1_K2_a]."
     report = verify_citations(
         text=text,
         as_of_date="2026-04-01",
         context_ids={"LUAT_48_2024_D1"},
+        corpus_path=point_corpus,
     )
     statuses = {c.id: c for c in report.citations}
     d9 = statuses["LUAT_48_2024_D9"]
@@ -190,14 +210,17 @@ def test_verify_citations_outside_context_ids_marked_irrelevant():
     assert d1.in_context is True
 
 
-def test_verify_citations_expired_amender_not_returned():
-    # Active on 2025-06-01: amender valid_to (2025-12-31) >= 2025-06-01
-    report_active = verify_citations("Theo [LUAT_999_2024_D1]", as_of_date="2025-06-01")
+def test_verify_citations_expired_amender_not_returned(tmp_path):
+    import json
+    path = tmp_path / "synthetic.json"
+    path.write_text(json.dumps([{"id": "LUAT_999_2024", "valid_from": "2025-01-01",
+        "valid_to": "9999-12-31", "articles": [{"id": "LUAT_999_2024_D1", "clauses": []}]}]), encoding="utf-8")
+    report_active = verify_citations("Theo [LUAT_999_2024_D1]", as_of_date="2025-06-01", corpus_path=str(path))
     assert report_active.citations[0].status == "AMENDED"
     assert "ND_999_2025_D1" in report_active.citations[0].amended_by
 
     # Expired on 2026-04-01: amender valid_to (2025-12-31) < 2026-04-01
-    report_expired = verify_citations("Theo [LUAT_999_2024_D1]", as_of_date="2026-04-01")
+    report_expired = verify_citations("Theo [LUAT_999_2024_D1]", as_of_date="2026-04-01", corpus_path=str(path))
     assert report_expired.citations[0].status == "VALID"
     assert report_expired.citations[0].amended_by == []
 

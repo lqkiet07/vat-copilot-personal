@@ -1,5 +1,7 @@
 """Load vat_corpus.json into Neo4j using Dual-Node + CONTAINS model."""
 import json
+import re
+from datetime import date
 
 from ..parser.relation_extractor import extract_amends_from_article, extract_cites_relations
 from .connection import get_neo4j_driver
@@ -121,9 +123,143 @@ def _import_document(session, doc: dict, stats: dict) -> None:
     _import_articles(session, doc["id"], doc.get("articles", []), doc.get("status", "ACTIVE"), stats)
 
 
-def import_corpus_to_neo4j(corpus_path: str = "data/processed/vat_corpus.json") -> dict[str, int]:
+def _build_corpus_index(corpus: list[dict]) -> dict:
+    index = {"documents": {}, "articles": {}, "units": {}}
+    for doc in corpus:
+        index["documents"].setdefault(doc["id"], []).append(doc)
+        for art in doc.get("articles", []):
+            index["articles"].setdefault((doc["id"], art.get("code")), []).append(art)
+            paths = [(art, [doc, art])]
+            for clause in art.get("clauses", []):
+                paths.append((clause, [doc, art, clause]))
+                paths.extend((point, [doc, art, clause, point]) for point in clause.get("points", []))
+            for unit, path in paths:
+                index["units"].setdefault(unit["id"], []).append(path)
+    return index
+
+
+def _unit_path_errors(path: list[dict]) -> list[str]:
+    errors = []
+    parent_id = path[0]["id"]
+    if not re.fullmatch(r"(?:ND|LUAT|TT|NQ|QD|VBHN)_\d+_\d{4}", parent_id):
+        errors.append("invalid document id")
+    for unit, prefix, separator in zip(path[1:], ("Dieu", "Khoan", "Diem"), ("_D", "_K", "_")):
+        pattern = rf"{prefix} ([a-zđ])" if prefix == "Diem" else rf"{prefix} ([1-9][0-9]*)"
+        match = re.fullmatch(pattern, unit.get("code", ""))
+        if not match or unit["id"] != parent_id + separator + match[1]:
+            errors.append("invalid unit id/code ownership")
+        parent_id = unit["id"]
+    return errors
+
+
+def _source_date_errors(path: list[dict]) -> list[str]:
+    errors = []
+    for unit in path:
+        values = [unit.get("valid_from"), unit.get("valid_to")]
+        try:
+            if any(not isinstance(value, str) or not re.fullmatch(r"\d{4}-\d{2}-\d{2}", value) for value in values):
+                raise ValueError
+            start, end = map(date.fromisoformat, values)
+            if start > end:
+                raise ValueError
+        except (TypeError, ValueError):
+            errors.append(f"invalid source dates: {unit['id']}")
+    return errors
+
+
+def _validate_amends_relation(rel: dict, corpus_index: dict) -> list[str]:
+    if rel.get("resolved") is False:
+        return []
+    if rel.get("resolved") is not True:
+        return ["resolved must be explicitly True or False"]
+    if corpus_index is None:
+        return ["corpus index required for resolved amendment"]
+    errors = []
+    if rel.get("action") not in ("sua_doi", "thay_the", "bai_bo"):
+        errors.append("unsupported action")
+    scope = rel.get("target_scope")
+    clause, point = rel.get("target_clause"), rel.get("target_point")
+    if scope not in ("article", "clause", "point") or bool(clause) != (scope in ("clause", "point")) or bool(point) != (scope == "point"):
+        errors.append("target scope/fields mismatch")
+    if rel.get("unresolved_reason"):
+        errors.append("resolved amendment has unresolved reason")
+    sources = corpus_index["units"].get(rel.get("source_unit"), [])
+    if len(sources) != 1:
+        errors.append("source unit missing or ambiguous")
+    else:
+        path = sources[0]
+        if path[1]["id"] != rel.get("source_article") or rel.get("source_doc", path[0]["id"]) != path[0]["id"]:
+            errors.append("source ownership mismatch")
+        if len(corpus_index["documents"].get(path[0]["id"], [])) != 1 or len(corpus_index["units"].get(path[1]["id"], [])) != 1:
+            errors.append("ambiguous source ownership")
+        errors.extend(_unit_path_errors(path))
+        errors.extend(_source_date_errors(path))
+    errors.extend(_amends_target_errors(rel, corpus_index))
+    return errors
+
+
+def _amends_target_errors(rel: dict, index: dict) -> list[str]:
+    docs = index["documents"].get(rel.get("target_doc"), [])
+    articles = index["articles"].get((rel.get("target_doc"), rel.get("target_article")), [])
+    if len(docs) != 1 or len(articles) != 1:
+        return ["target document/article missing or ambiguous"]
+    path = [docs[0], articles[0]]
+    for field, children in (("target_clause", "clauses"), ("target_point", "points")):
+        code = rel.get(field)
+        if code is None or code == "":
+            continue
+        matches = [unit for unit in path[-1].get(children, []) if unit.get("code") == code]
+        if len(matches) != 1:
+            return [f"{field} missing or ambiguous in target owner"]
+        path.append(matches[0])
+    errors = _unit_path_errors(path)
+    if any(len(index["units"].get(unit["id"], [])) != 1 for unit in path[1:]):
+        errors.append("ambiguous target unit id")
+    return errors
+
+
+def plan_corpus_import(corpus_path: str = "data/processed/vat_corpus.json") -> dict:
+    """Compute dry-run import statistics and partition resolved vs unresolved amendments without touching Neo4j."""
+    with open(corpus_path, encoding="utf-8") as f:
+        corpus = json.load(f)
+    stats = {"documents": 0, "chapters": 0, "articles": 0, "clauses": 0, "points": 0}
+    resolved_amends, unresolved_amends, cites, blockers = [], [], [], []
+    corpus_index = _build_corpus_index(corpus)
+    for doc in corpus:
+        stats["documents"] += 1
+        stats["chapters"] += len(doc.get("chapters", []))
+        for art in doc.get("articles", []):
+            stats["articles"] += 1
+            for cl in art.get("clauses", []):
+                stats["clauses"] += 1
+                stats["points"] += len(cl.get("points", []))
+                cites.extend(extract_cites_relations(doc["id"], cl["id"], cl.get("content", "")))
+            for rel in extract_amends_from_article(doc["id"], art):
+                errors = _validate_amends_relation(rel, corpus_index)
+                if errors:
+                    blockers.append({"relation": rel, "errors": errors})
+                elif rel.get("resolved") is True:
+                    resolved_amends.append(rel)
+                else:
+                    unresolved_amends.append(rel)
+    return {
+        "stats": stats,
+        "resolved_amends": resolved_amends,
+        "unresolved_amends": unresolved_amends,
+        "amends_blockers": blockers,
+        "cites": cites,
+    }
+
+
+def import_corpus_to_neo4j(
+    corpus_path: str = "data/processed/vat_corpus.json",
+    dry_run: bool = False,
+) -> dict[str, int]:
     """Import entire corpus into Neo4j. Returns statistics dictionary. Idempotent via MERGE."""
-    corpus = json.loads(open(corpus_path, encoding="utf-8").read())
+    if dry_run:
+        return plan_corpus_import(corpus_path)["stats"]
+    with open(corpus_path, encoding="utf-8") as f:
+        corpus = json.load(f)
     driver = get_neo4j_driver()
     stats = {"documents": 0, "chapters": 0, "articles": 0, "clauses": 0, "points": 0}
     with driver.session() as session:
@@ -132,31 +268,58 @@ def import_corpus_to_neo4j(corpus_path: str = "data/processed/vat_corpus.json") 
     return stats
 
 
-def _insert_amends_relation(session, rel: dict) -> None:
+def _insert_amends_relation(session, rel: dict, corpus_index: dict | None = None) -> None:
+    errors = _validate_amends_relation(rel, corpus_index)
+    if errors:
+        raise ValueError("Invalid AMENDS relation: " + "; ".join(errors))
+    if rel.get("resolved") is False:
+        return
     session.run(
         """MATCH (s:Article {id: $src}), (t:Article {doc_id: $tdoc, code: $tcode})
-           MERGE (s)-[r:AMENDS]->(t)
-           SET r.action = $action""",
+           MERGE (s)-[r:AMENDS {
+               target_scope: $tscope,
+               target_clause: $tclause,
+               target_point: $tpoint,
+               source_unit: $sunit,
+               action: $action
+           }]->(t)""",
         src=rel["source_article"],
+        sunit=rel.get("source_unit", rel["source_article"]),
         tdoc=rel["target_doc"],
         tcode=rel["target_article"],
+        tscope=rel.get("target_scope", "article"),
+        tclause=rel.get("target_clause") or "",
+        tpoint=rel.get("target_point") or "",
         action=rel["action"],
     )
 
 
-def _process_article_amends(session, doc_id: str, art: dict) -> None:
-    for rel in extract_amends_from_article(doc_id, art):
-        _insert_amends_relation(session, rel)
+def _process_article_amends(session, doc_id: str, art: dict, corpus_index: dict | None = None) -> None:
+    relations = extract_amends_from_article(doc_id, art)
+    errors = [error for rel in relations for error in _validate_amends_relation(rel, corpus_index)]
+    if errors:
+        raise ValueError("Invalid AMENDS batch: " + "; ".join(errors))
+    for rel in relations:
+        _insert_amends_relation(session, rel, corpus_index)
 
 
 def import_amends_relations(corpus_path: str = "data/processed/vat_corpus.json") -> int:
     """Create (:Article)-[:AMENDS {action}]->(:Article) edges from Decree 359/144 to Decree 181."""
-    corpus = json.loads(open(corpus_path, encoding="utf-8").read())
+    with open(corpus_path, encoding="utf-8") as f:
+        corpus = json.load(f)
+    corpus_index = _build_corpus_index(corpus)
+    relations = [rel for doc in corpus for art in doc.get("articles", [])
+                 for rel in extract_amends_from_article(doc["id"], art)]
+    errors = [error for rel in relations for error in _validate_amends_relation(rel, corpus_index)]
+    if errors:
+        raise ValueError("Invalid AMENDS batch: " + "; ".join(errors))
+    resolved = [rel for rel in relations if rel.get("resolved") is True]
+    if not resolved:
+        return 0
     driver = get_neo4j_driver()
     with driver.session() as session:
-        for doc in corpus:
-            for art in doc.get("articles", []):
-                _process_article_amends(session, doc["id"], art)
+        for rel in resolved:
+            _insert_amends_relation(session, rel, corpus_index)
         created = session.run(
             "MATCH ()-[r:AMENDS]->() RETURN count(r) AS c"
         ).single()["c"]
@@ -188,6 +351,8 @@ def import_guides_relations() -> int:
 
 
 def _insert_cite_relation(session, rel: dict) -> None:
+    if not rel.get("resolved", True) or not rel.get("target_doc"):
+        return
     session.run(
         """MATCH (s:Clause {id: $src}), (t:Article {doc_id: $tdoc, code: $tcode})
            MERGE (s)-[r:CITES]->(t)

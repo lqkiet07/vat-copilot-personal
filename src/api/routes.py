@@ -2,7 +2,8 @@
 import json
 from collections.abc import Iterator
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Request
+from src.config import get_runtime_config, selected_corpus_kwargs
 from fastapi.responses import StreamingResponse
 
 from src.api.chat_models import ChatRequest, ChatResponse
@@ -17,7 +18,7 @@ api_router = router
 
 
 @router.get("/health", response_model=HealthResponse)
-def get_health() -> HealthResponse:
+def get_health(request: Request) -> HealthResponse:
     """Verify Neo4j connectivity and return system operational status."""
     try:
         driver = get_neo4j_driver()
@@ -27,13 +28,17 @@ def get_health() -> HealthResponse:
         neo4j_connected = False
 
     status = "healthy" if neo4j_connected else "degraded"
-    return HealthResponse(status=status, neo4j_connected=neo4j_connected, version="1.0.0")
+    return HealthResponse(
+        status=status, neo4j_connected=neo4j_connected, version="1.0.0",
+        environment=getattr(request.app.state, "environment", "canonical"),
+        artifacts=getattr(request.app.state, "artifacts", {}),
+    )
 
 
 @router.get("/documents", response_model=list[DocumentSummary])
 def get_documents() -> list[DocumentSummary]:
     """Retrieve summaries of all legal documents in the knowledge base."""
-    docs = load_corpus_tree()
+    docs = load_corpus_tree(**selected_corpus_kwargs())
     return [
         DocumentSummary(
             id=doc["id"],
@@ -49,7 +54,7 @@ def get_documents() -> list[DocumentSummary]:
 @router.get("/documents/{doc_id}")
 def get_document_detail(doc_id: str) -> dict:
     """Retrieve full document detail by unique document identifier."""
-    docs = load_corpus_tree()
+    docs = load_corpus_tree(**selected_corpus_kwargs())
     for doc in docs:
         if doc.get("id") == doc_id:
             return doc
@@ -65,6 +70,8 @@ def get_scenarios() -> list[dict]:
 @router.post("/query", response_model=QueryResponse)
 def post_query(req: QueryRequest) -> QueryResponse:
     """Execute legal query retrieval, temporal verification, and risk analysis."""
+    if get_runtime_config().environment == "staging" and req.pipeline not in {"P3", "P3_FullSystem"}:
+        raise HTTPException(status_code=400, detail="Staging supports P3 only")
     try:
         result = execute_demo_query(
             query=req.query,

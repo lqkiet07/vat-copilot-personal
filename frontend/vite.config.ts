@@ -28,11 +28,12 @@ export default defineConfig({
   },
   assetsInclude: ['**/*.svg', '**/*.csv'],
   server: {
-    host: '0.0.0.0',
-    port: 5173,
+    host: process.env.VAT_VITE_HOST || '0.0.0.0',
+    port: Number(process.env.VAT_VITE_PORT || 5173),
+    strictPort: process.env.VAT_VITE_STRICT_PORT === '1',
     proxy: {
       '/api': {
-        target: 'http://127.0.0.1:8000',
+        target: process.env.VAT_API_PROXY_TARGET || 'http://127.0.0.1:8000',
         changeOrigin: true,
       },
     },

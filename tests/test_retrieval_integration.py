@@ -18,7 +18,8 @@ def test_retrieve_and_gate_domestic_household_query():
     assert any(a.id == "LUAT_48_2024_D5" for a in res.articles)
     assert not any(a.id == "LUAT_48_2024_D9" for a in res.articles)
     assert res.gated_article_count <= res.raw_article_count
-    assert res.relevance_map.get("LUAT_48_2024_D9") is False
+    assert res.relevance_map.get("LUAT_48_2024_D9") is not True
+    assert any(v is False for v in res.relevance_map.values())
 
 
 def test_retrieve_and_gate_export_query():

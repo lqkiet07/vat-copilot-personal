@@ -139,6 +139,21 @@ def _valid_artifact_pair(meta, cache_path, corpus_path, strict):
         return False
 
 
+def validate_artifact_identity(meta_path: Path, cache_path: Path, corpus_path: Path) -> dict:
+    meta = load_embedding_meta(meta_path)
+    if meta is None or not _valid_artifact_pair(meta, cache_path, corpus_path, True):
+        raise ValueError("Staging artifact hashes, IDs or embedding metadata mismatch or missing")
+    try:
+        return {
+            "corpus_sha256": hashlib.sha256(corpus_path.read_bytes()).hexdigest(),
+            "cache_sha256": hashlib.sha256(cache_path.read_bytes()).hexdigest(),
+            "meta_sha256": hashlib.sha256(meta_path.read_bytes()).hexdigest(),
+            **{key: meta[key] for key in ("provider", "model", "dimension", "count")},
+        }
+    except (OSError, KeyError):
+        raise ValueError("Staging artifacts unavailable") from None
+
+
 def resolve_embedder_for_index(
     meta_path: str | Path = DEFAULT_META_PATH,
     cache_path: str | Path = DEFAULT_CACHE_PATH,

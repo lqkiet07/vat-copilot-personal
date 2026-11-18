@@ -9,6 +9,100 @@ from src.engine.llm_client import generate_llm_response_stream
 from src.engine.models import ArticleNode
 from src.verifier.models import VerificationReport, VerificationResult
 
+@pytest.mark.parametrize("mixed", [False, True])
+def test_step86_chat_canonical_uncertainty_skips_generation(monkeypatch, mixed):
+    from src.verifier.models import CitationStatus
+    article = _fake_article()
+    uncertain = article.model_copy(update={"id": "VBHN_25_2026_D1"})
+    articles = [article, uncertain] if mixed else [uncertain]
+    monkeypatch.setattr(chat_service, "query_temporal_rag", lambda *a: SimpleNamespace(articles=articles))
+    monkeypatch.setattr(chat_service, "verify_citations", lambda *a, **k: SimpleNamespace(citations=[
+        CitationStatus(id=a.id, status="UNRESOLVED" if a.id == uncertain.id else "VALID",
+                       exists=True, is_active=None if a.id == uncertain.id else True,
+                       message="Exact chat uncertainty" if a.id == uncertain.id else "Valid")
+        for a in articles
+    ]))
+
+    def forbidden(*a, **k):
+        pytest.fail("Canonical uncertainty must not enter chat generation")
+
+    monkeypatch.setattr(chat_service, "generate_llm_response_stream", forbidden)
+    response = chat_service.build_response([{"role": "user", "content": VAT_QUESTION}])
+    assert response.answer_status == "INSUFFICIENT_BASIS"
+    assert uncertain.id in response.citations
+    assert "Exact chat uncertainty" in response.warnings
+    assert "chưa đủ căn cứ" in response.message.lower()
+    assert "không có điều khoản nào còn hiệu lực" not in response.message.lower()
+    assert response.llm_used is False
+
+
+def test_step86_chat_verifies_generated_text_before_tokens_and_metadata(monkeypatch, stub_retrieval):
+    from src.verifier.models import CitationStatus
+    checked = []
+    article = _fake_article()
+    monkeypatch.setattr(chat_service, "verify_citations", lambda *a, **k: SimpleNamespace(citations=[
+        CitationStatus(id=article.id, status="VALID", exists=True, is_active=True, message=""),
+    ]))
+
+    def scorer(text, date, **kwargs):
+        checked.append(text)
+        uncertain = "UNVERIFIED ASSERTION" in text
+        result = _fake_verification(date, 50 if uncertain else 0, ["Generated citation unresolved"] if uncertain else [])
+        result.report.citations = [CitationStatus(
+            id=article.id, status="UNRESOLVED" if uncertain else "VALID", exists=True,
+            is_active=None if uncertain else True, message="Generated citation unresolved" if uncertain else "",
+        )]
+        return result
+
+    monkeypatch.setattr(chat_service, "verify_and_score", scorer)
+    monkeypatch.setattr(chat_service, "generate_llm_response_stream", lambda *a, **k: iter([
+        f"UNVERIFIED ASSERTION [{article.id}]",
+    ]))
+    events = list(chat_service.stream_chat([{"role": "user", "content": VAT_QUESTION}]))
+    response = events[-1][1]
+    assert any("UNVERIFIED ASSERTION" in text for text in checked)
+    assert response["answer_status"] == "INSUFFICIENT_BASIS"
+    assert response["risk_score"] >= 50
+    assert "Generated citation unresolved" in response["warnings"]
+    assert "UNVERIFIED ASSERTION" not in response["message"]
+    assert all("UNVERIFIED ASSERTION" not in payload.get("delta", "") for name, payload in events if name == "token")
+
+
+@pytest.mark.parametrize("output,disposition", [(None, "provider_no_output"), ("  ", "provider_no_output"), ("safe", "generated_delivered"), ("unsafe", "draft_replaced")])
+def test_r5_chat_outer_generation_trace(monkeypatch, stub_retrieval, tmp_path, output, disposition):
+    import json
+    from src.verifier.models import CitationStatus
+    path = tmp_path / "trace.jsonl"
+    monkeypatch.setenv("VAT_DIAGNOSTICS", str(path))
+    article = _fake_article()
+    monkeypatch.setattr(chat_service, "verify_citations", lambda *a, **k: SimpleNamespace(citations=[
+        CitationStatus(id=article.id, status="VALID", exists=True, is_active=True, message=""),
+    ]))
+
+    def scorer(text, date, **kwargs):
+        unsafe = "unsafe" in text
+        result = _fake_verification(date, 50 if unsafe else 0)
+        result.report.citations = [CitationStatus(
+            id=article.id, status="UNRESOLVED" if unsafe else "VALID", exists=True,
+            is_active=None if unsafe else True, message="review required" if unsafe else "",
+        )]
+        return result
+
+    monkeypatch.setattr(chat_service, "verify_and_score", scorer)
+    text = f"{output} [{article.id}]" if output in {"safe", "unsafe"} else output
+    monkeypatch.setattr(chat_service, "generate_llm_response_stream", lambda *a, **k: iter([text] if text else []))
+    events = list(chat_service.stream_chat([{"role": "user", "content": VAT_QUESTION}]))
+    rows = [json.loads(line) for line in path.read_text().splitlines()]
+    outer, = [row for row in rows if row["event"] == "chat_generation"]
+    assert outer["generation_disposition"] == disposition
+    assert outer["generation_attempted"] is True
+    assert outer["generated_delivered"] is (output == "safe")
+    inner, = [row for row in rows if row["event"] == "query"]
+    assert inner["generation_disposition"] == "deterministic_off"
+    assert "generation_disposition" not in events[-1][1]
+    assert "".join(payload["delta"] for name, payload in events if name == "token") == events[-1][1]["message"]
+
+
 VAT_QUESTION = "Áp dụng thuế suất xuất khẩu ra sao?"
 OUT_OF_SCOPE_QUESTION = "Người bị cáo cướp tài sản thì xử lý thế nào?"
 
@@ -361,6 +455,8 @@ class _FakeStreamResponse:
 
 
 def test_generate_llm_response_stream_yields_response_chunks(monkeypatch: pytest.MonkeyPatch):
+    for name in ("LLM_PROVIDER", "GEMINI_API_KEY", "OPENAI_API_KEY"):
+        monkeypatch.delenv(name, raising=False)
     body = [
         b'{"response": "Thu\xe1\xba\xbf ", "done": false}\n',
         b'{"response": "0%", "done": true}\n',
@@ -382,9 +478,76 @@ def test_generate_llm_response_stream_yields_response_chunks(monkeypatch: pytest
 
 
 def test_generate_llm_response_stream_stops_silently_on_error(monkeypatch: pytest.MonkeyPatch):
+    for name in ("LLM_PROVIDER", "GEMINI_API_KEY", "OPENAI_API_KEY"):
+        monkeypatch.delenv(name, raising=False)
+
     def _fake_urlopen(req, timeout=None):
         raise OSError("connection refused")
 
     monkeypatch.setattr("urllib.request.urlopen", _fake_urlopen)
 
     assert list(generate_llm_response_stream("prompt")) == []
+
+
+@pytest.mark.parametrize("mode", ["good", "none", "blank", "bad", "unresolved"])
+def test_r5_chat_trace_is_independent_of_inner_deterministic_answer(monkeypatch, tmp_path, mode):
+    import json
+    from pathlib import Path
+    from unittest.mock import MagicMock, Mock
+    from src.engine.diagnostics import text_sha256
+    from src.ui.corpus_viewer import load_corpus_index
+    import src.verifier.citation_verifier as verifier
+
+    root = Path(__file__).resolve().parents[1]
+    corpus = str(root / "data/processed/vat_corpus.staging.json")
+    ledger = str(root / "tests/fixtures/amendment_review.staging.json")
+    monkeypatch.setattr(chat_service, "selected_corpus_kwargs", lambda: {"corpus_path": corpus})
+    monkeypatch.setenv("VAT_ENV", "staging")
+    monkeypatch.setenv("VAT_CORPUS_PATH", corpus)
+    monkeypatch.setenv("VAT_EMBEDDINGS_PATH", str(root / "data/processed/article_embeddings.staging.json"))
+    monkeypatch.setenv("VAT_EMBEDDING_META_PATH", str(root / "data/processed/embedding_meta.staging.json"))
+    monkeypatch.setenv("VAT_AMENDMENT_REVIEW_PATH", ledger)
+    monkeypatch.setenv("NEO4J_URI", "bolt://127.0.0.1:17687")
+    cid = "VBHN_25_2026_D5" if mode == "unresolved" else "LUAT_48_2024_D4"
+    meta = load_corpus_index(corpus)[cid]
+    article = ArticleNode(id=cid, doc_id=meta["doc_id"], code=meta["code"], title=meta["title"],
+                          content=meta["text"], valid_from=meta["valid_from"], valid_to=meta["valid_to"])
+    monkeypatch.setattr(chat_service, "query_temporal_rag", lambda *a, **k: SimpleNamespace(articles=[article]))
+    driver = MagicMock()
+    session = driver.session.return_value.__enter__.return_value
+    session.run.side_effect = lambda query, **kw: MagicMock(data=lambda: [
+        {"cid": value, "exists": True, "valid_from": "2025-07-01", "valid_to": "9999-12-31", "amendments": []}
+        for value in kw["ids"]])
+    monkeypatch.setattr(verifier, "get_neo4j_driver", lambda: driver)
+    draft = f"Theo [{cid}], {article.content.splitlines()[0]}" if mode == "good" else "unverified draft"
+    generator = Mock(return_value=iter({"none": [], "blank": ["  "]}.get(mode, [draft])))
+    monkeypatch.setattr(chat_service, "generate_llm_response_stream", generator)
+    log = tmp_path / "trace.jsonl"
+    monkeypatch.setenv("VAT_DIAGNOSTICS", str(log))
+    question = "Hộ kinh doanh có phải nộp thuế GTGT không?" if mode == "unresolved" else "Người nộp thuế GTGT khi nhập khẩu là ai?"
+    events = list(chat_service.stream_chat([{"role": "user", "content": question}], "2026-03-20"))
+    rows = [json.loads(line) for line in log.read_text(encoding="utf-8").splitlines()]
+    inner, outer = rows
+    assert inner["generation_disposition"] == "deterministic_off"
+    assert outer["event"] == "chat_generation"
+    assert outer["generation_disposition"] == {
+        "good": "generated_delivered", "none": "provider_no_output", "blank": "provider_no_output",
+        "bad": "draft_replaced", "unresolved": "safety_bypass",
+    }[mode]
+    assert outer["generation_reason"] == {
+        "good": "verified_draft", "none": "empty_provider_output", "blank": "empty_provider_output",
+        "bad": "unsupported_draft", "unresolved": "unresolved_evidence",
+    }[mode]
+    assert outer["generation_attempted"] is (mode != "unresolved")
+    assert outer["generated_delivered"] is (mode == "good")
+    assert generator.call_count == (0 if mode == "unresolved" else 1)
+    done = events[-1][1]
+    assert done["llm_used"] is (mode in {"good", "bad"})
+    assert "".join(payload["delta"] for name, payload in events if name == "token") == done["message"]
+    assert outer["delivered_sha256"] == text_sha256(done["message"])
+    if mode == "good":
+        assert done["message"] == draft
+        assert article.content.splitlines()[0] in generator.call_args.args[0]
+    if mode == "unresolved":
+        assert done["answer_status"] == "INSUFFICIENT_BASIS"
+        assert done["warnings"]

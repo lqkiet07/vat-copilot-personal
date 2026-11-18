@@ -4,6 +4,7 @@ from src.verifier.models import CitationStatus, RiskLevel, VerificationReport, V
 _WEIGHTS: dict[str, int] = {
     "AMENDED": 25,
     "NOT_YET_EFFECTIVE": 40,
+    "UNRESOLVED": 50,
     "EXPIRED": 60,
     "IRRELEVANT": 70,
     "NOT_FOUND": 80,
@@ -27,6 +28,8 @@ def _format_warning(citation: CitationStatus) -> str:
     """Format warning message for a non-valid citation."""
     if citation.message:
         return citation.message
+    if citation.status == "UNRESOLVED":
+        return f"Điều khoản {citation.id} chưa đủ dữ liệu để xác minh hiệu lực chắc chắn."
     if citation.status == "AMENDED":
         amenders = ", ".join(citation.amended_by) if citation.amended_by else "văn bản sửa đổi"
         return f"Điều khoản {citation.id} đã bị sửa đổi/bổ sung bởi {amenders}."
@@ -67,6 +70,9 @@ def verify_and_score(
     as_of_date: str,
     relevance_map: dict[str, bool] | None = None,
     context_ids: set[str] | None = None,
+    *,
+    corpus_path: str = "data/processed/vat_corpus.json",
+    reviewed_amendment_path: str | None = None,
 ) -> VerificationResult:
     """End-to-end verification and risk scoring for response text."""
     report = verify_citations(
@@ -74,6 +80,8 @@ def verify_and_score(
         as_of_date,
         relevance_map=relevance_map,
         context_ids=context_ids,
+        corpus_path=corpus_path,
+        reviewed_amendment_path=reviewed_amendment_path,
     )
     score, level, warnings = calculate_risk_score(report)
     return VerificationResult(

@@ -9,7 +9,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/app/components/ui/pop
 import emblem from "@/imports/tai-xuong.png";
 import drum from "@/imports/img_6-hinh-nen-powerpoint-trong-dong.jpg";
 import { DOCS, SCENARIOS, type Result, type Citation } from "./data";
-import { queryLegalApi } from "./api";
+import { queryLegalApi, findCitationBody, citationBodyMessage, parseCitationId } from "./api";
 import { DATA_FREEZE_DATE, getEffectiveDate } from "./config";
 
 type Pipeline = "P3" | "P2" | "P1";
@@ -85,6 +85,14 @@ export function App() {
   const [libraryCategory, setLibraryCategory] = useState<"all" | "luat" | "nghidinh" | "thongtu">("all");
   const [activeLibraryDoc, setActiveLibraryDoc] = useState("l48");
   const [librarySearch, setLibrarySearch] = useState("");
+  const [libraryArticle, setLibraryArticle] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (libraryOpen && libraryArticle) {
+      document.getElementById(`lib-art-${libraryArticle}`)?.scrollIntoView({ behavior: "smooth", block: "center" });
+      setLibraryArticle(null);
+    }
+  }, [libraryOpen, libraryArticle, activeLibraryDoc]);
 
   const [relatedOpen, setRelatedOpen] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
@@ -261,7 +269,7 @@ export function App() {
   }, [libraryCategory, librarySearch]);
 
   const activeDocData = useMemo(() => {
-    return DOCS.find((d) => d.id === activeLibraryDoc) || DOCS[0];
+    return DOCS.find((d) => d.id === activeLibraryDoc) || null;
   }, [activeLibraryDoc]);
 
   return (
@@ -808,44 +816,57 @@ export function App() {
 
         {/* Selected Document Details & Content */}
         <div className="scroll-quiet flex-1 overflow-y-auto p-4 space-y-4">
-          <div className="rounded-2xl border border-[#BFDBFE] bg-[#EFF6FF] p-3 text-[12px]">
-            <div className="font-bold text-[#1E3A8A]">{activeDocData.full}</div>
-            <div className="mt-1 flex items-center gap-2">
-              <span className="font-semibold text-[#475569]">Hiệu lực: {activeDocData.effective}</span>
-              <span className={`rounded px-1.5 py-0.2 text-[10px] font-bold ${
-                activeDocData.badge.tone === "green" ? "bg-green-100 text-green-800" : "bg-gray-200 text-gray-700"
-              }`}>
-                {activeDocData.badge.text}
-              </span>
+          {!activeDocData ? (
+            <div className="rounded-2xl border border-[#CBD5E1] bg-white p-6 text-center text-[#475569]">
+              <p className="font-semibold text-[13px] text-[#1E3A8A]">
+                Chưa có bản trích demo cho văn bản được chọn trong thư viện hiện tại.
+              </p>
+              <p className="mt-2 text-[12px] text-[#64748B]">
+                Thư viện demo hiện cung cấp bản trích của 5 văn bản trọng yếu (Luật 48, NĐ 181, TT 69, NĐ 359, NĐ 144).
+              </p>
             </div>
-          </div>
-
-          {activeDocData.chapters.map((ch, idx) => (
-            <div key={idx} className="space-y-3">
-              <div className="font-bold text-[12px] uppercase text-[#64748B] border-b border-[#CBD5E1]/50 pb-1">
-                {ch.title}
+          ) : (
+            <>
+              <div className="rounded-2xl border border-[#BFDBFE] bg-[#EFF6FF] p-3 text-[12px]">
+                <div className="font-bold text-[#1E3A8A]">{activeDocData.full}</div>
+                <div className="mt-1 flex items-center gap-2">
+                  <span className="font-semibold text-[#475569]">Hiệu lực: {activeDocData.effective}</span>
+                  <span className={`rounded px-1.5 py-0.2 text-[10px] font-bold ${
+                    activeDocData.badge.tone === "green" ? "bg-green-100 text-green-800" : "bg-gray-200 text-gray-700"
+                  }`}>
+                    {activeDocData.badge.text}
+                  </span>
+                </div>
               </div>
-              {ch.articles.map((art) => (
-                <div
-                  key={art.id}
-                  id={`lib-art-${art.id}`}
-                  className="rounded-2xl border border-[#CBD5E1] bg-white p-3.5 text-[12.5px]"
-                >
-                  <div className="font-bold text-[#1E3A8A]">
-                    Điều {art.no}: {art.title}
+
+              {activeDocData.chapters.map((ch, idx) => (
+                <div key={idx} className="space-y-3">
+                  <div className="font-bold text-[12px] uppercase text-[#64748B] border-b border-[#CBD5E1]/50 pb-1">
+                    {ch.title}
                   </div>
-                  <div className="mt-2 space-y-1.5 leading-relaxed text-[#334155]">
-                    {art.clauses.map((c) => (
-                      <div key={c.n}>
-                        <span className="font-semibold text-[#0F172A]">{c.n}. </span>
-                        <span>{c.text}</span>
+                  {ch.articles.map((art) => (
+                    <div
+                      key={art.id}
+                      id={`lib-art-${art.id}`}
+                      className="rounded-2xl border border-[#CBD5E1] bg-white p-3.5 text-[12.5px]"
+                    >
+                      <div className="font-bold text-[#1E3A8A]">
+                        Điều {art.no}: {art.title}
                       </div>
-                    ))}
-                  </div>
+                      <div className="mt-2 space-y-1.5 leading-relaxed text-[#334155]">
+                        {art.clauses.map((c) => (
+                          <div key={c.n}>
+                            <span className="font-semibold text-[#0F172A]">{c.n}. </span>
+                            <span>{c.text}</span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  ))}
                 </div>
               ))}
-            </div>
-          ))}
+            </>
+          )}
         </div>
       </aside>
 
@@ -885,40 +906,37 @@ export function App() {
           ) : (
             <>
               <div className="rounded-2xl border border-[#BFDBFE] bg-[#EFF6FF] p-3 text-[12px] text-[#1E3A8A]">
-                <strong>Cơ chế liên kết tự động:</strong> Danh sách dưới đây chỉ gồm các điều khoản được AI và Đồ thị tri thức đối chiếu trực tiếp cho câu hỏi hiện tại.
+                <strong>Trích dẫn từ câu trả lời:</strong> Nhãn trích dẫn không xác nhận nội dung hoặc hiệu lực. Nội dung có sẵn bên dưới là bản trích demo.
               </div>
 
               {latestCitations.map((c, i) => {
-                const targetDoc = DOCS.find((d) => d.id === c.doc);
-                let targetArticle = null;
-                if (targetDoc) {
-                  for (const ch of targetDoc.chapters) {
-                    for (const a of ch.articles) {
-                      if (a.id === c.art) {
-                        targetArticle = a;
-                        break;
-                      }
-                    }
-                  }
-                }
+                const match = findCitationBody(c, DOCS);
+                const targetArticle = match ? match.article : null;
 
                 return (
                   <div
-                    key={c.art || `${c.doc}-${i}`}
+                    key={c.id || `${c.art || c.doc || "cite"}-${i}`}
                     className="rounded-2xl border border-[#CBD5E1] bg-white p-4 shadow-xs"
                   >
                     <div className="flex items-center justify-between gap-2 border-b border-[#F1F5F9] pb-2">
                       <span className="font-bold text-[13px] text-[#1E3A8A]">{c.label}</span>
-                      <button
-                        onClick={() => {
-                          setActiveLibraryDoc(c.doc);
-                          setLibraryOpen(true);
-                        }}
-                        className="flex items-center gap-1 text-[11px] font-semibold text-[#2563EB] hover:underline"
-                      >
-                        <span>Mở toàn văn</span>
-                        <ExternalLink className="h-3 w-3" />
-                      </button>
+                      {match ? (
+                        <button
+                          onClick={() => {
+                            setActiveLibraryDoc(match.document.id);
+                            setLibraryOpen(true);
+                            setLibraryCategory("all");
+                            setLibrarySearch("");
+                            setLibraryArticle(match.article.id);
+                          }}
+                          className="flex items-center gap-1 text-[11px] font-semibold text-[#2563EB] hover:underline"
+                        >
+                          <span>Xem bản trích demo</span>
+                          <ExternalLink className="h-3 w-3" />
+                        </button>
+                      ) : (
+                        <span className="text-[11px] text-[#94A3B8] italic">Chưa có bản trích</span>
+                      )}
                     </div>
 
                     {targetArticle ? (
@@ -936,7 +954,7 @@ export function App() {
                       </div>
                     ) : (
                       <p className="mt-2 text-[12px] text-[#64748B]">
-                        Văn bản liên quan: {targetDoc?.tab}
+                        {citationBodyMessage(c)}
                       </p>
                     )}
                   </div>
@@ -1034,6 +1052,11 @@ function Answer({
   const r = msg.result!;
   const [copied, setCopied] = useState(false);
   const [showTrace, setShowTrace] = useState(false);
+  const canonicalIds = r.citations.flatMap((c) => {
+    if (!c.id) return [];
+    const parsed = parseCitationId(c.id);
+    return parsed.label !== parsed.id ? [parsed.id] : [];
+  });
 
   function copyText() {
     navigator.clipboard.writeText(r.conclusion + "\n\nCăn cứ: " + r.rule);
@@ -1090,7 +1113,7 @@ function Answer({
         <div className="mt-3 flex items-start gap-2.5 rounded-2xl border border-[#FED7AA] bg-[#FFF7ED] p-3.5 text-[12.5px] text-[#9A3412]">
           <AlertTriangle className="h-4 w-4 shrink-0 text-[#EA580C] mt-0.5" />
           <div className="leading-relaxed">
-            <strong>Cảnh báo bẫy niên đại:</strong> {r.trap}
+            <strong>Lưu ý cần rà soát:</strong> {r.trap}
           </div>
         </div>
       )}
@@ -1115,7 +1138,7 @@ function Answer({
       {/* Audit Checklist */}
       <div className="mt-3.5 space-y-1.5">
         <div className="text-[11.5px] font-bold uppercase tracking-wider text-[#64748B]">
-          Kiểm định căn cứ pháp lý đồ thị:
+          Thông tin và lưu ý từ phản hồi:
         </div>
         <ul className="space-y-1.5 text-[13px]">
           {r.audit.map((a, i) => (
@@ -1133,7 +1156,7 @@ function Answer({
           <span className="text-[11px] font-bold text-[#64748B]">Văn bản trích dẫn:</span>
           {r.citations.map((c, idx) => (
             <button
-              key={c.art || `${c.label}-${idx}`}
+              key={c.id || `${c.art || c.label}-${idx}`}
               onClick={onOpenRelated}
               className="flex items-center gap-1 rounded-full border border-[#BFDBFE] bg-[#EFF6FF] px-2.5 py-0.5 text-[11px] font-semibold text-[#1E3A8A] transition hover:bg-[#DBEAFE]"
               title="Bấm để xem chi tiết văn bản liên quan"
@@ -1153,29 +1176,29 @@ function Answer({
             className="flex items-center gap-1.5 text-[12px] font-medium text-[#1E3A8A] hover:underline"
           >
             <GitBranch className="h-3.5 w-3.5" />
-            <span>{showTrace ? "Ẩn đường đi đồ thị tri thức Neo4j" : "Xem đường đi suy luận trên Đồ thị Thời gian"}</span>
+            <span>{showTrace ? "Ẩn mô phỏng trích dẫn" : "Xem mô phỏng trích dẫn (không phải kết quả xác minh)"}</span>
           </button>
 
           {showTrace && (
             <div className="mt-2 space-y-1.5 rounded-2xl border border-[#CBD5E1] bg-[#0F172A] p-3.5 text-[11.5px] font-mono text-[#E2E8F0] shadow-inner">
-              <div className="text-[#94A3B8] font-bold">// 1. Truy vấn lát cắt thời gian & quan hệ trên Neo4j (Mô phỏng Cypher)</div>
+              <div className="text-[#94A3B8] font-bold">Mô phỏng Cypher — không thực thi, không phải kết quả xác minh</div>
               <div className="text-[#38BDF8]">
-                {`MATCH (d:Document)-[:CONTAINS]->(art:Article)`}
+                {`MATCH (citation)`}
               </div>
               <div className="text-[#FBBF24]">
-                {`WHERE art.id IN [${r.citations.map((c) => `'${c.art.toUpperCase().replace(/-/g, "_")}'`).join(", ")}]`}
+                {`WHERE citation.id IN ${JSON.stringify(canonicalIds)}`}
               </div>
               <div className="text-[#FBBF24]">
-                {`  AND art.valid_from <= date('${msg.date}') <= art.valid_to`}
+                {`RETURN citation.id`}
               </div>
               <div className="text-[#38BDF8]">
-                {`OPTIONAL MATCH (amender:Article)-[r:AMENDS]->(art)`}
+                {`Mốc yêu cầu: ${fmtDate(msg.date)}; không mô phỏng kết quả hiệu lực.`}
               </div>
               <div className="text-[#38BDF8]">
-                {`RETURN art.id, art.title, collect(amender.id) AS amended_by`}
+                {`${r.citations.length - canonicalIds.length} trích dẫn chưa có ID chuẩn được nhận diện; không suy ID từ nhãn hoặc neo thư viện.`}
               </div>
               <div className="mt-2 pt-2 border-t border-slate-700/60 text-[#4ADE80]">
-                {`✔ Kết quả: ${r.citations.length} điều luật thỏa mãn hiệu lực tại mốc ${fmtDate(msg.date)}.`}
+                {`[Mô phỏng]: ${canonicalIds.length} ID chuẩn từ phản hồi; chưa xác minh nội dung hoặc hiệu lực.`}
               </div>
               <div className="text-[#94A3B8]">
                 {`→ Căn cứ viện dẫn: ${r.citations.map((c) => c.label).join(", ")}`}

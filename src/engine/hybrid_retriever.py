@@ -1,5 +1,6 @@
 """Hybrid temporal retrieval combining fulltext and vector search with RRF."""
 from ..api.chat_domain import normalize_query, understand_query
+from ..config import get_runtime_config
 from ..graph.connection import get_neo4j_driver
 from .embedder import DeterministicEmbedder
 from .embedding_meta import resolve_embedder_for_index
@@ -183,7 +184,14 @@ def query_hybrid_temporal(
 ) -> list[ArticleNode]:
     """Execute hybrid search combining fulltext and vector retrieval."""
     query = normalize_query(query)
-    active_embedder = embedder if embedder is not None else resolve_embedder_for_index()
+    selected = get_runtime_config()
+    resolver_kwargs = {}
+    if selected.environment == "staging":
+        resolver_kwargs = {
+            "meta_path": selected.embedding_meta_path, "cache_path": selected.embeddings_path,
+            "corpus_path": selected.corpus_path, "strict": True,
+        }
+    active_embedder = embedder if embedder is not None else resolve_embedder_for_index(**resolver_kwargs)
     entities = understand_query(query)
     synonyms = list(entities.industry_synonyms)
     if entities.business_type == "HỘ_KINH_DOANH":

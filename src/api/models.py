@@ -38,7 +38,7 @@ class QueryRequest(BaseModel):
     def validate_pipeline(cls, v: str) -> str:
         if v not in ALLOWED_PIPELINES:
             raise ValueError(f"pipeline must be one of {ALLOWED_PIPELINES}")
-        return v
+        return {"P1": "P1_FlatRAG", "P2": "P2_TemporalGraphRAG", "P3": "P3_FullSystem"}.get(v, v)
 
 
 class QueryResponse(BaseModel):
@@ -76,3 +76,5 @@ class HealthResponse(BaseModel):
     status: str = Field(..., description="API operational status")
     neo4j_connected: bool = Field(..., description="Neo4j database connection status")
     version: str = Field(default="1.0.0", description="API version")
+    environment: str = "canonical"
+    artifacts: dict = Field(default_factory=dict)

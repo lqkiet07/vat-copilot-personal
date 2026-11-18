@@ -26,6 +26,20 @@ def test_query_request_validation():
         QueryRequest(query="x" * 4001, as_of_date="2024-01-01")
 
 
+@pytest.mark.parametrize("alias,canonical", [("P1", "P1_FlatRAG"), ("P2", "P2_TemporalGraphRAG"), ("P3", "P3_FullSystem")])
+def test_pipeline_alias_has_canonical_public_identity(alias, canonical, monkeypatch, client):
+    calls = []
+    def execute(**kwargs):
+        calls.append(kwargs)
+        return {**kwargs, "risk_score": 0, "risk_level": "LOW", "irac_sections": {}}
+    monkeypatch.setattr("src.api.routes.execute_demo_query", execute)
+    for pipeline in (alias, canonical):
+        response = client.post("/api/query", json={"query": "Thuế GTGT", "as_of_date": "2026-03-20", "pipeline": pipeline})
+        assert response.status_code == 200
+        assert response.json()["pipeline"] == canonical
+        assert calls[-1]["pipeline"] == canonical
+
+
 def test_document_summary_model():
     doc = DocumentSummary(
         id="doc_1",
