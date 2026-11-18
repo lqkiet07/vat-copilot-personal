@@ -287,6 +287,12 @@ def rewrite_query(history: list[tuple[str, str]]) -> str:
     if not user_turns:
         return ""
     last_turn = user_turns[-1]
-    if len(last_turn) <= _FOLLOW_UP_MAX_CHARS and len(user_turns) >= 2:
+    date_follow_up = re.fullmatch(
+        r"(?:(?:còn|vậy|nếu)\s+)?(?:(?:vào|trong)\s+)?"
+        r"(?:ngày\s+\d{1,2}[/-]\d{1,2}[/-]\d{4}|tháng\s+\d{1,2}[/-]\d{4}|năm\s+\d{4})"
+        r"(?:\s+thì\s+(?:sao|thế nào))?[?.!]*",
+        _normalize(last_turn),
+    )
+    if (len(last_turn) <= _FOLLOW_UP_MAX_CHARS or date_follow_up) and len(user_turns) >= 2:
         return f"{user_turns[-2]}{_QUERY_JOINER}{last_turn}"
     return last_turn

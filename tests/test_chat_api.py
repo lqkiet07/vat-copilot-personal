@@ -32,6 +32,28 @@ def test_chat_calendar_date_preserves_optional_none(value):
     assert ChatRequest(messages=[{"role": "user", "content": VAT_QUESTION}]).as_of_date is None
 
 
+@pytest.mark.parametrize("endpoint", ["/api/chat", "/api/chat/stream"])
+def test_date_follow_up_preserves_context_and_date(endpoint, client, monkeypatch):
+    from src.api import answer_service
+
+    captured = []
+
+    def retrieve(query, as_of_date):
+        captured.append((query, as_of_date))
+        return SimpleNamespace(articles=[])
+
+    monkeypatch.setattr(chat_service, "query_temporal_rag", retrieve)
+    monkeypatch.setattr(answer_service, "_check_temporal_trap", lambda *args, **kwargs: [])
+    history = [{"role": "user", "content": "Hộ kinh doanh có phải nộp thuế GTGT không?"},
+               {"role": "assistant", "content": "Cần xác minh căn cứ."},
+               {"role": "user", "content": "Còn ngày 20/06/2026 thì sao?"}]
+    response = client.post(endpoint, json={"messages": history, "as_of_date": "2026-03-20"})
+    assert response.status_code == 200
+    assert captured and "Hộ kinh doanh" in captured[0][0]
+    assert captured[0][1] == "2026-06-20"
+    assert "OUT_OF_SCOPE" not in response.text
+
+
 def _fake_article() -> ArticleNode:
     return ArticleNode(
         id="LUAT_48_2024_D10",

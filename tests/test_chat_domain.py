@@ -1,5 +1,20 @@
 """Behaviour tests for the pure VAT Copilot domain helpers."""
+import pytest
+
 from src.api.chat_domain import classify, resolve_date, rewrite_query
+
+
+@pytest.mark.parametrize("follow_up", ["Còn ngày 20/06/2026 thì sao?", "Vậy vào ngày 20-06-2026 thì sao?", "Còn tháng 06/2026 thì thế nào?", "Nếu trong năm 2026 thì thế nào?"])
+def test_date_follow_up_preserves_user_subject(follow_up):
+    subject = "Hộ kinh doanh doanh thu 300 triệu đồng có phải nộp thuế GTGT không?"
+    history = [("user", subject), ("assistant", "Không lấy lời trợ lý làm chủ đề"), ("user", follow_up)]
+    assert rewrite_query(history) == f"{subject} ; {follow_up}"
+    assert rewrite_query([("assistant", subject), ("user", follow_up)]) == follow_up
+
+
+@pytest.mark.parametrize("question", ["Tôi muốn hỏi thủ tục ly hôn và chia tài sản thế nào?", "Còn ngày 20/06/2026 tôi cần hỏi thủ tục ly hôn thì sao?"])
+def test_date_follow_up_does_not_adopt_unrelated_long_question(question):
+    assert rewrite_query([("user", "Hỏi về thuế GTGT"), ("user", question)]) == question
 
 
 def test_classify_vat_question_returns_in_scope_vat():

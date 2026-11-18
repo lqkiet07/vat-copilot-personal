@@ -164,7 +164,8 @@ def test_household_conclusion_threshold_disappears_without_evidence():
     assert "LUAT_48_2024_D1" in irac["conclusion"]
 
 
-def test_deterministic_multi_turn_uses_rewritten_query():
+@pytest.mark.parametrize("follow_up", ["còn thuế suất thì sao?", "Còn ngày 20/06/2026 thì sao?"])
+def test_deterministic_multi_turn_uses_rewritten_query(follow_up):
     from src.api.answer_service import answer_query
 
     captured: dict[str, str] = {}
@@ -187,9 +188,9 @@ def test_deterministic_multi_turn_uses_rewritten_query():
     svc._build_irac_sections = _build
     try:
         answer_query(
-            question="còn thuế suất thì sao?",
+            question=follow_up,
             as_of_date="2026-03-20",
-            history=[{"role": "user", "content": "tôi mở tiệm net dưới quê"}],
+            history=[{"role": "user", "content": "tôi mở tiệm net dưới quê có phải nộp thuế GTGT không?"}],
             use_llm=False,
             fetch_fn=_fetch,
             score_fn=lambda *a, **k: _V(),
