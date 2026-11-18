@@ -40,6 +40,21 @@ def test_pipeline_alias_has_canonical_public_identity(alias, canonical, monkeypa
         assert calls[-1]["pipeline"] == canonical
 
 
+@pytest.mark.parametrize("value", ["2026-02-30", "2026-02-29", "2100-02-29", "2026-00-01", "2026-01-00", "2026-13-01", "2026-04-31", "2026-2-01", "2026-02-01\n", "1999-12-31", "2101-01-01"])
+def test_calendar_date_rejects_impossible_dates_before_dispatch(value, monkeypatch, client):
+    def forbidden(**kwargs):
+        pytest.fail("Invalid date reached query dispatch")
+
+    monkeypatch.setattr("src.api.routes.execute_demo_query", forbidden)
+    response = client.post("/api/query", json={"query": "Thuế GTGT", "as_of_date": value})
+    assert response.status_code == 422
+
+
+@pytest.mark.parametrize("value", ["2024-02-29", "2000-02-29", "2000-01-01", "2100-12-31"])
+def test_calendar_date_accepts_valid_leap_days(value):
+    assert QueryRequest(query="Thuế GTGT", as_of_date=value).as_of_date == value
+
+
 def test_document_summary_model():
     doc = DocumentSummary(
         id="doc_1",

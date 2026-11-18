@@ -1,5 +1,6 @@
 """Request and response models for the VAT Copilot chat endpoints."""
 import re
+from datetime import date
 from typing import Literal
 
 from pydantic import BaseModel, Field, field_validator
@@ -25,11 +26,12 @@ class ChatRequest(BaseModel):
     @classmethod
     def validate_as_of_date(cls, v: str | None) -> str | None:
         if v is not None:
-            if not isinstance(v, str) or not re.match(r"^\d{4}-\d{2}-\d{2}$", v):
+            if not isinstance(v, str) or not re.fullmatch(r"\d{4}-\d{2}-\d{2}", v):
                 raise ValueError("as_of_date must be in YYYY-MM-DD format")
             year = int(v[:4])
             if year < 2000 or year > 2100:
                 raise ValueError("as_of_date year must be between 2000 and 2100")
+            date.fromisoformat(v)
         return v
 
 

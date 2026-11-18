@@ -12,6 +12,26 @@ from src.verifier.models import VerificationReport, VerificationResult
 VAT_QUESTION = "Áp dụng thuế suất xuất khẩu ra sao?"
 
 
+@pytest.mark.parametrize("endpoint", ["/api/chat", "/api/chat/stream"])
+@pytest.mark.parametrize("value", ["2026-02-30", "2026-02-29", "2100-02-29", "2026-00-01", "2026-01-00", "2026-13-01", "2026-04-31", "2026-2-01", "2026-02-01\n", "1999-12-31", "2101-01-01"])
+def test_calendar_date_rejects_before_chat_dispatch(endpoint, value, monkeypatch, client):
+    def forbidden(*args, **kwargs):
+        pytest.fail("Invalid date reached chat dispatch")
+
+    monkeypatch.setattr("src.api.routes.build_response", forbidden)
+    monkeypatch.setattr("src.api.routes.stream_chat", forbidden)
+    response = client.post(endpoint, json={"messages": [{"role": "user", "content": VAT_QUESTION}], "as_of_date": value})
+    assert response.status_code == 422
+
+
+@pytest.mark.parametrize("value", [None, "2024-02-29", "2000-02-29", "2000-01-01", "2100-12-31"])
+def test_chat_calendar_date_preserves_optional_none(value):
+    from src.api.chat_models import ChatRequest
+
+    assert ChatRequest(messages=[{"role": "user", "content": VAT_QUESTION}], as_of_date=value).as_of_date == value
+    assert ChatRequest(messages=[{"role": "user", "content": VAT_QUESTION}]).as_of_date is None
+
+
 def _fake_article() -> ArticleNode:
     return ArticleNode(
         id="LUAT_48_2024_D10",
