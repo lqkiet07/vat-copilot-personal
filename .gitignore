@@ -21,11 +21,12 @@ handoff/
 .handoffs/
 .scratch/
 *.log
-*.png
+/*.png
 .DS_Store
 Thumbs.db
 .env.*
 !.env.example
+!.env.staging.example
 *.pem
 *.key
 .streamlit/secrets.toml
@@ -35,14 +36,3 @@ frontend/.env*
 .idea/
 .vscode/
 frontend_old_harvey/
-
-# Ignore raw binary/snapshot acquisitions and staging build artifacts while keeping canonical tracked data.
-data/raw/*.pdf
-data/raw/*.rar
-data/raw/*.zip
-data/raw/*.docx
-data/raw/*.snapshot.json
-data/processed/*.staging.json
-data/processed/*.png
-data/processed/document_*_coverage.json
-data/processed/tt89_qt_lncl_table_evidence.json

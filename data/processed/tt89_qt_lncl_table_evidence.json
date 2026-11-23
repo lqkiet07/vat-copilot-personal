@@ -1,0 +1,54 @@
+{
+  "schema_version": 1,
+  "form_identifier": "01-1/QT-LNCL",
+  "review_required": true,
+  "completeness": "incomplete",
+  "source": {
+    "archive_path": "data/raw/Phụ lục I.  Khai thuế mẫu 8-19.rar",
+    "archive_sha256": "8b74ee76465eead278e9d3b57281afd42308b9517138fead75b3869471f7c164",
+    "member_index": 16,
+    "member_name": "12. Mẫu biểu khai LN, CT/01-1.QTLNCL.doc",
+    "member_sha256": "4f2c0a2c44a37bd344f01d6e4409816d0ca25bbe554fedae36c9b088f31eb55b",
+    "converted_sha256": "81c1cbcd88895f958093ae1c461ca1a0a34bc1035090144e47c595c1a44af331",
+    "image_id": "sha256:01c5a16070b3013acf8b0063144b0141a6943d2cdbc8f82879cb157a5fdd3dd1",
+    "conversion_tool": "LibreOffice 7.4.7.2 40(Build:2)",
+    "extraction_api": "src.parser.document_sources.extract_docx_blocks"
+  },
+  "table": {
+    "block_index": 12,
+    "logical_column_count": 13,
+    "header_row_1_spans": [1, 1, 1, 2, 1, 1, 1, 1, 1, 1, 1, 1],
+    "header_row_2_vertical_merge_continuation_columns": [0, 1, 2, 5, 6, 7, 8, 9, 10, 11, 12],
+    "columns": [
+      {"field": "06", "heading": "STT"},
+      {"field": "07", "heading": "Tên đơn vị phụ thuộc, địa điểm kinh doanh, tên tỉnh nơi phát sinh doanh thu bán vé thực tế (khác tỉnh nơi đóng trụ sở chính)"},
+      {"field": "08", "heading": "Mã số thuế/Mã địa điểm kinh doanh"},
+      {"field": "09", "heading": "Địa bàn nơi có hoạt động kinh doanh / Xã/ phường/ đặc khu"},
+      {"field": "10", "heading": "Địa bàn nơi có hoạt động kinh doanh / Tỉnh"},
+      {"field": "11", "heading": "Cơ quan thuế quản lý địa bàn nhận phân bổ"},
+      {"field": "12", "heading": "Doanh thu bán vé thực tế theo địa bàn"},
+      {"field": "13", "heading": "Tỷ lệ doanh thu bán vé thực tế theo địa bàn (%)", "formula_literal": "[12]/[05]*100%"},
+      {"field": "14", "heading": "Số lợi nhuận sau thuế còn lại phải nộp cho từng tỉnh theo quyết toán", "formula_literal": "[04]*[13]"},
+      {"field": "15", "heading": "Số lợi nhuận sau thuế còn lại nộp thừa kỳ trước chuyển sang kỳ này"},
+      {"field": "16", "heading": "Số lợi nhuận sau thuế còn lại đã tạm nộp cho từng tỉnh"},
+      {"field": "17", "heading": "Chênh lệch giữa số phải nộp và số đã tạm nộp trong năm", "formula_literal": "[14]-[16]"},
+      {"field": "18", "heading": "Số lợi nhuận sau thuế còn lại còn phải nộp cho từng tỉnh", "formula_literal": "[14]-[15]-[16]"}
+    ]
+  },
+  "signed_pdf_comparison": {
+    "path": "data/raw/source_TT_89_2026.signed.pdf",
+    "source_sha256": "952c45ffc0f10bfc176bd9ae6b3d204fd3a034294ee270278957b9c11e1471dc",
+    "page": 420,
+    "image_path": "data/processed/tt89_sample_page_420.png",
+    "image_sha256": "abae7f427f4d0a49717c2675883496aeeede6de6d54992ce7ec2c0132f879502",
+    "result": "Header hierarchy, field labels 06-18 and four formula cells agree with previously visually inspected signed-page image.",
+    "scope": "Selected header and formula comparison only. Full table body continues beyond page 420 and remains unverified. No blanket equivalence of editable attachment and signed PDF."
+  },
+  "limitations": [
+    "Headings are normalized by collapsing whitespace; raw DOC/DOCX source remains in the declared archive, not reproduced here.",
+    "Formula strings are literal source transcription, not executable arithmetic or interpretation of percentage units.",
+    "Conversion reports unresolved relationships, unevaluated cached fields, unsupported DrawingML/VML textboxes and package metadata. These warnings preclude completeness certification.",
+    "Other table rows, the second signature-layout table and full-page continuation have not been visually certified.",
+    "Conversion output SHA-256 differs from historical conversion; this run retains its own hash and does not claim byte reproducibility."
+  ]
+}
