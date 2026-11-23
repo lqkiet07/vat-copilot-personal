@@ -68,11 +68,20 @@ def _parse_cid_parts(cid: str) -> tuple[str, str | None, str | None]:
     return art_id, kl_code, pt_code
 
 
+_META_CACHE: dict[tuple[str, str], dict[str, dict]] = {}
+_PROJECTION_CACHE: dict[tuple[str, str, str], list[tuple[str, dict]]] = {}
+
+
 def _load_verification_metadata(corpus_path: str) -> dict[str, dict]:
     target = Path(corpus_path)
     if not target.is_absolute() and not target.exists():
         target = Path(__file__).resolve().parents[2] / target
     target = target.resolve()
+    digest = hashlib.sha256(target.read_bytes()).hexdigest()
+    cache_key = (str(target), digest)
+    cached = _META_CACHE.get(cache_key)
+    if cached is not None:
+        return {k: dict(v) for k, v in cached.items()}
     _CORPUS_CACHE.pop(str(target), None)
     index = load_corpus_index(str(target))
     for document in load_corpus_tree(str(target)):
@@ -83,7 +92,10 @@ def _load_verification_metadata(corpus_path: str) -> dict[str, dict]:
                 if article["doc_id"] == document["id"]:
                     for meta in article["provisions"].values():
                         meta["inherited_provision_spans"].extend(spans)
-    return index
+    if len(_META_CACHE) >= 4:
+        _META_CACHE.clear()
+    _META_CACHE[cache_key] = index
+    return {k: dict(v) for k, v in index.items()}
 
 
 def _validate_review_evidence(ref: dict, pins: dict) -> None:
@@ -105,11 +117,12 @@ def _review_intervals(candidate: dict, pins: dict) -> list[dict]:
         if interval["to"] is not None and date.fromisoformat(interval["to"]) < start:
             raise ValueError("Invalid reviewed amendment interval")
         date.fromisoformat(interval["issued_on"])
-        if not isinstance(interval["end_status"], str) or not interval["end_status"].strip():
-            raise ValueError("Missing reviewed amendment end status")
-        fields = interval["inventory_fields"]
-        if not isinstance(fields, list) or not fields or any(not isinstance(f, str) or not f for f in fields):
-            raise ValueError("Missing reviewed amendment inventory fields")
+        if {"end_status", "inventory_fields"}.intersection(interval):
+            if not isinstance(interval.get("end_status"), str) or not interval["end_status"].strip():
+                raise ValueError("Missing reviewed amendment end status")
+            fields = interval.get("inventory_fields")
+            if not isinstance(fields, list) or not fields or any(not isinstance(f, str) or not f for f in fields):
+                raise ValueError("Missing reviewed amendment inventory fields")
         refs = interval["date_evidence_refs"]
         if not isinstance(refs, list) or not refs:
             raise ValueError("Missing reviewed amendment date evidence")
@@ -189,19 +202,29 @@ def _load_reviewed_amendments(review_path: str, corpus_path: str, index: dict) -
     if not target.is_absolute() and not target.exists():
         target = Path(__file__).resolve().parents[2] / target
     try:
-        ledger = json.loads(Path(review_path).read_text(encoding="utf-8"))
-        if (ledger["schema_version"] != 1 or ledger["oracle"] != "independent_raw_source_review"
-                or ledger["review_complete"] is not True):
-            raise ValueError("Unsupported or incomplete amendment review")
+        review_bytes = Path(review_path).read_bytes()
+        review_sha = hashlib.sha256(review_bytes).hexdigest()
         digest = hashlib.sha256(target.read_bytes()).hexdigest()
-        if ledger["pins"]["data/processed/vat_corpus.staging.json"] != digest:
-            raise ValueError("Reviewed amendment corpus hash mismatch")
-        projections = _ledger_uncertainties(ledger, index)
+        cache_key = (str(Path(review_path).resolve()), review_sha, digest)
+        projections = _PROJECTION_CACHE.get(cache_key)
+        if projections is None:
+            ledger = json.loads(review_bytes.decode("utf-8"))
+            if (ledger["schema_version"] != 1 or ledger["oracle"] != "independent_raw_source_review"
+                    or ledger["review_complete"] is not True):
+                raise ValueError("Unsupported or incomplete amendment review")
+            pinned = [pin for name, pin in ledger["pins"].items()
+                      if any((root / name).resolve() == target.resolve() for root in target.resolve().parents)]
+            if pinned != [digest]:
+                raise ValueError("Reviewed amendment corpus hash mismatch")
+            projections = _ledger_uncertainties(ledger, index)
+            if len(_PROJECTION_CACHE) >= 8:
+                _PROJECTION_CACHE.clear()
+            _PROJECTION_CACHE[cache_key] = projections
     except (KeyError, TypeError, AttributeError) as exc:
         raise ValueError("Invalid reviewed amendment ledger") from exc
     for owner, projection in projections:
         article = index.setdefault(owner, {"doc_id": projection["doc_id"], "provisions": {}})
-        article.setdefault("reviewed_uncertainties", []).append(projection)
+        article["reviewed_uncertainties"] = [*article.get("reviewed_uncertainties", ()), projection]
 
 
 def _reviewed_uncertainty(cid: str, as_of_date: str, corpus_meta: dict | None) -> str | None:
@@ -372,6 +395,32 @@ def _evaluate_status(
     )
 
 
+def _resolved_status(row, day, relevant, in_context, resolution, supplied, corpus_meta):
+    cid = row["cid"]
+    if not in_context or not row["exists"] or not relevant:
+        return _evaluate_status(row, day, is_relevant=relevant, in_context=in_context)
+    provisions = {p.id: p for item in resolution.items for p in item.provisions}
+    provision = provisions.get(cid)
+    if supplied is not None:
+        expected = {p.id: p for item in supplied.items for p in item.provisions}
+        if provision != expected.get(cid):
+            return _unresolved(cid, "Evidence projection absent or differs from pinned source.")
+    if provision is None:
+        reasons = [reason for unit, reason in resolution.blocked.items()
+                   if unit == cid or unit.startswith(cid + "_")]
+        meta, spans = _scope_metadata(cid, corpus_meta)
+        if spans:
+            reasons.append("provision spans: exact scoped evidence required.")
+        reviewed = _reviewed_uncertainty(cid, day, corpus_meta)
+        if reviewed:
+            reasons.append(reviewed)
+        return _unresolved(cid, " ".join(dict.fromkeys(reasons)) or "Missing exact resolved evidence.")
+    return CitationStatus(
+        id=cid, status="AMENDED" if provision.status in {"AMENDED", "INSERTED"} else "VALID",
+        exists=True, is_active=True, message="", amended_by=[], in_context=True,
+    )
+
+
 def verify_citations(
     text: str,
     as_of_date: str,
@@ -380,6 +429,7 @@ def verify_citations(
     *,
     corpus_path: str = "data/processed/vat_corpus.json",
     reviewed_amendment_path: str | None = None,
+    resolved_evidence=None,
 ) -> VerificationReport:
     """Query Neo4j to verify status of all extracted citations as of given date."""
     citation_ids = extract_citations(text)
@@ -393,9 +443,18 @@ def verify_citations(
         )
 
     date.fromisoformat(as_of_date)
-    corpus_meta = _load_verification_metadata(corpus_path)
+    corpus_meta = None
+    resolution = None
     if reviewed_amendment_path is not None:
+        from src.engine.provision_evidence import resolve_provision_evidence
+        corpus_meta = _load_verification_metadata(corpus_path)
         _load_reviewed_amendments(reviewed_amendment_path, corpus_path, corpus_meta)
+        resolution = resolve_provision_evidence(
+            citation_ids, as_of_date, corpus_path=corpus_path,
+            reviewed_amendment_path=reviewed_amendment_path,
+        )
+    else:
+        corpus_meta = _load_verification_metadata(corpus_path)
 
     driver = get_neo4j_driver()
     with driver.session() as session:
@@ -407,7 +466,7 @@ def verify_citations(
         row = row_map.get(cid, {"cid": cid, "exists": False, "valid_from": None, "valid_to": None, "amended_by": [], "amendments": []})
         in_ctx = True
         if context_ids is not None:
-            in_ctx = (cid in context_ids) or (cid.split("_K")[0] in context_ids)
+            in_ctx = cid in context_ids or (resolution is None and cid.split("_K")[0] in context_ids)
 
         is_rel = True
         if relevance_map is not None:
@@ -417,7 +476,10 @@ def verify_citations(
                 art_id = cid.split("_K")[0]
                 is_rel = relevance_map.get(art_id, True)
 
-        statuses.append(_evaluate_status(row, as_of_date, is_relevant=is_rel, in_context=in_ctx, corpus_meta=corpus_meta))
+        if resolution is not None:
+            statuses.append(_resolved_status(row, as_of_date, is_rel, in_ctx, resolution, resolved_evidence, corpus_meta))
+        else:
+            statuses.append(_evaluate_status(row, as_of_date, is_relevant=is_rel, in_context=in_ctx, corpus_meta=corpus_meta))
 
     total = len(statuses)
     valid_count = sum(1 for s in statuses if s.status == "VALID")

@@ -12,7 +12,6 @@ from src.engine.retrieval_service import _DEFAULT_CORPUS_PATH, _invoke_callback,
 from src.engine.temporal_retriever import query_temporal_rag
 from src.ui.corpus_viewer import load_corpus_index, load_corpus_tree
 from src.verifier.citation_verifier import extract_citations
-from src.verifier.evidence_numbers import extract_revenue_thresholds
 from src.verifier.guardrails import check_query_domain
 from src.verifier.relevance import build_relevance_map, score_article_relevance
 from src.verifier.risk_score import verify_and_score
@@ -41,6 +40,7 @@ class AnswerResult:
     is_out_of_domain: bool = False
     is_greeting: bool = False
     articles: list[ArticleNode] = field(default_factory=list)
+    resolved_evidence: Any = None
 
     def to_dict(self) -> dict:
         return {
@@ -74,8 +74,6 @@ def _extract_citation_evidence(
     entities = understand_query(query)
     raw_words = re.findall(r"\w+", q_norm)
     words = [w for w in raw_words if w not in _STOPWORDS and len(w) > 1]
-    is_hh = entities.business_type == "HỘ_KINH_DOANH"
-    is_domestic_hh = is_hh and not any(m in q_norm for m in ("xuất khẩu", "xuat khau"))
 
     evidence_items = []
     for cid in citations:
@@ -92,15 +90,6 @@ def _extract_citation_evidence(
                 continue
             line_l = line_clean.lower()
             score = sum(3 for w in words if w in line_l)
-            if is_hh:
-                if any(k in line_l for k in ("hộ, cá nhân", "hộ kinh doanh", "cá nhân kinh doanh")):
-                    score += 25
-                if "200 triệu" in line_l or "doanh thu hằng năm" in line_l or "doanh thu hàng năm" in line_l:
-                    score += 35
-                if "trực tiếp" in line_l or "khoán" in line_l:
-                    score += 20
-                if is_domestic_hh and any(e in line_l for e in ("xuất khẩu", "0%", "phi thuế quan")):
-                    score -= 50
             if any(s in line_l for s in entities.industry_synonyms):
                 score += 15
             for n in (4, 3, 2):
@@ -144,12 +133,6 @@ def _build_irac_sections(
     rule = rule_str
 
     evidence_items = _extract_citation_evidence(query, citations, articles=articles, corpus_path=corpus_path)
-    entities = understand_query(query)
-    q_check = (normalize_query(query) + " " + query).lower()
-    is_domestic_hh = (
-        entities.business_type == "HỘ_KINH_DOANH"
-        and not any(m in q_check for m in ("xuất khẩu", "xuat khau"))
-    )
 
     if evidence_items:
         app_lines = [f"Theo các quy định pháp luật thuế GTGT có hiệu lực tại mốc {as_of_date}:"]
@@ -159,49 +142,14 @@ def _build_irac_sections(
             app_lines.append("\nCảnh báo hiệu lực: " + "; ".join(warnings))
         app = "\n".join(app_lines)
 
-        all_evidence_text = " ".join(text.lower() for _, _, text in evidence_items)
-        if articles:
-            all_evidence_text += " " + " ".join(art.content.lower() for art in articles)
-
-        is_hh = is_domestic_hh
-        threshold_sources = [art.content for art in articles if art.id in citations] if articles is not None else [text for _, _, text in evidence_items]
-        thresholds = list(dict.fromkeys(
-            threshold for text in threshold_sources for threshold in extract_revenue_thresholds(text)
-        ))
-
-        if is_hh and thresholds:
-            t = thresholds[0]
-            amount_note = ""
-            if any(w in query.lower() for w in ("bao nhiêu", "bnh", "mấy %", "may %", "nhiêu")):
-                amount_note = (
-                    "\n- Về số tiền thuế phải nộp: Do chưa có dữ liệu doanh thu thực tế và bảng tỷ lệ % cụ thể theo ngành nghề, "
-                    "hệ thống chưa thể tính ra số tiền phát sinh chính xác. Bạn có thể ước tính mức doanh thu để hệ thống tư vấn sát hơn."
-                )
-            conc = (
-                "Nghĩa vụ thuế GTGT được xác định theo mức doanh thu hằng năm:\n"
-                f"- Doanh thu từ {t} đồng/năm trở xuống: Thuộc đối tượng không chịu thuế GTGT (không phát sinh số thuế GTGT phải nộp).\n"
-                f"- Doanh thu trên {t} đồng/năm: Không thuộc trường hợp không chịu thuế theo ngưỡng doanh thu nêu trên; cần đối chiếu thêm điều kiện áp dụng, phương pháp và tỷ lệ tính thuế có căn cứ.\n"
-                f"Người nộp thuế cần căn cứ mức doanh thu thực tế ước tính để xác định chính xác số thuế phát sinh.{amount_note}"
-            )
-        elif is_hh:
-            conc = (
-                f"Nghĩa vụ thuế GTGT đối với hộ, cá nhân kinh doanh được áp dụng căn cứ theo quy định tại {rule_str}. "
-                "Người nộp thuế thực hiện nghĩa vụ thuế theo phương pháp và tỷ lệ quy định đối với ngành nghề kinh doanh theo các điều khoản nêu trên."
-            )
-        elif "thuế suất 0%" in all_evidence_text or ("0%" in all_evidence_text and "xuất khẩu" in all_evidence_text):
-            conc = (
-                f"Áp dụng mức thuế suất thuế GTGT 0% đối với hàng hóa, dịch vụ xuất khẩu theo quy định hiện hành ({rule_str}) "
-                "khi đáp ứng đầy đủ điều kiện về hợp đồng và chứng từ thanh toán không dùng tiền mặt."
-            )
-        else:
-            conc = f"Các tài liệu {rule_str} đã được truy xuất tại mốc {as_of_date}, nhưng chưa đủ căn cứ để xác định nghĩa vụ thuế cụ thể cho tình huống này."
+        conc = f"Các tài liệu {rule_str} đã được truy xuất tại mốc {as_of_date}, nhưng chưa đủ căn cứ để xác định nghĩa vụ thuế cụ thể cho tình huống này."
     elif warnings:
         warn_text = "; ".join(warnings)
         app = f"Tại mốc {as_of_date}, các quy định viện dẫn có cảnh báo sau: {warn_text}"
         conc = f"Cần thận trọng: Phát hiện rủi ro thời gian hoặc hiệu lực pháp lý đối với câu hỏi tại ngày {as_of_date}."
     else:
-        app = f"Tại thời điểm tra cứu {as_of_date}, các quy định trên đang có hiệu lực thi hành đầy đủ."
-        conc = f"Các căn cứ pháp lý {rule_str} có hiệu lực áp dụng tại mốc thời gian tra cứu."
+        app = f"Tại mốc {as_of_date}, chưa có trích đoạn chứng cứ đủ để áp dụng."
+        conc = "Chưa đủ căn cứ pháp lý để kết luận cho tình huống này."
 
     return {
         "issue": issue,
@@ -248,34 +196,26 @@ def _parse_irac_sections(raw_text: str) -> dict[str, str]:
         "conclusion": "",
         "raw_text": raw_text,
     }
+    labels = {
+        "issue": ("issue", "vấn đề"),
+        "rule": ("rule", "quy định", "quy định pháp luật", "cơ sở pháp lý"),
+        "application": ("application", "áp dụng", "phân tích"),
+        "conclusion": ("conclusion", "kết luận"),
+    }
+    aliases = {label: key for key, names in labels.items() for label in names}
     current_key: str | None = None
     for line in raw_text.splitlines():
-        stripped = line.strip().lstrip("#* -0123456789.:").strip()
-        lower_header = stripped.lower()
-        if lower_header.startswith("issue"):
-            current_key = "issue"
-            val = line.split(":", 1)[-1].strip() if ":" in line else ""
-            if val and val.lower() != "issue":
-                sections[current_key] = val
-        elif lower_header.startswith("rule"):
-            current_key = "rule"
-            val = line.split(":", 1)[-1].strip() if ":" in line else ""
-            if val and val.lower() != "rule":
-                sections[current_key] = val
-        elif lower_header.startswith("application"):
-            current_key = "application"
-            val = line.split(":", 1)[-1].strip() if ":" in line else ""
-            if val and val.lower() != "application":
-                sections[current_key] = val
-        elif lower_header.startswith("conclusion"):
-            current_key = "conclusion"
-            val = line.split(":", 1)[-1].strip() if ":" in line else ""
-            if val and val.lower() != "conclusion":
-                sections[current_key] = val
+        heading, separator, body = line.strip().lstrip("- ").partition(":")
+        heading = re.sub(r"[*_`#]", "", heading).strip()
+        heading = re.sub(r"^(?:\d+|[IVXLCDM]+)[.)\-:]\s*", "", heading, flags=re.I)
+        body = body.lstrip("*_` ")
+        names = [name.strip().casefold() for name in re.split(r"[()]", heading) if name.strip()]
+        keys = {aliases.get(name) for name in names}
+        if names and None not in keys and len(keys) == 1:
+            current_key = keys.pop()
+            sections[current_key] = body.strip() if separator else ""
         elif current_key and line.strip():
             sections[current_key] = (sections[current_key] + " " + line.strip()).strip()
-    if not any([sections["issue"], sections["rule"], sections["application"], sections["conclusion"]]):
-        sections["application"] = raw_text
     return sections
 
 
@@ -283,7 +223,8 @@ def _needs_irac_fallback(raw_response: str | None, irac: dict[str, str]) -> bool
     """Return True if raw response is empty or missing essential IRAC sections."""
     if not (raw_response or "").strip():
         return True
-    return not bool(irac.get("rule", "").strip()) or not bool(irac.get("conclusion", "").strip())
+    return any(not re.search(r"\w", irac.get(key, ""))
+               for key in ("issue", "rule", "application", "conclusion"))
 
 
 def _is_llm_answer_unsupported(
@@ -308,25 +249,6 @@ def _is_llm_answer_unsupported(
     if prompt_articles and not llm_citations:
         lower_resp = raw_response.lower()
         if not any(p in lower_resp for p in ("không thuộc phạm vi", "không có quy phạm", "không có căn cứ")):
-            return True
-
-    # 3. Household business guardrails
-    if is_household:
-        lower_conc = conc_text.lower()
-        # Household businesses cannot be assigned deduction method (ND_181_2025_D21 explicitly excludes them)
-        if "khấu trừ" in lower_conc and "trừ hộ" not in lower_conc and "không áp dụng" not in lower_conc:
-            return True
-        # Unconditional exemption claims without threshold
-        unconditional_free = any(p in lower_conc for p in (
-            "được miễn thuế hoàn toàn",
-            "không cần phải chịu thuế",
-            "không phải chịu thuế giá trị gia tăng",
-            "không phải nộp thuế gtgt",
-            "không phải đóng thuế",
-            "không chịu thuế giá trị gia tăng theo quy định của",
-        ))
-        has_threshold = any(t in lower_conc for t in ("200 triệu", "doanh thu", "ngưỡng", "mức doanh thu"))
-        if unconditional_free and not has_threshold:
             return True
 
     return False
@@ -375,14 +297,6 @@ def _build_candidate_relevance_map(
         base_id = cid.split("_K")[0]
         if base_id in rel_map or cid in rel_map:
             continue
-        if base_id == "LUAT_48_2024_D9":
-            is_domestic_shop = any(k in query.lower() for k in ("hộ", "quán", "tiệm", "cá nhân", "dưới quê"))
-            if not has_export_query and (is_domestic_shop or any(p in raw_response.lower() for p in ("0%", "xuất khẩu", "xuat khau"))):
-                is_rel = False
-            else:
-                is_rel = has_export_query
-            rel_map[cid] = rel_map[base_id] = is_rel
-            continue
         corpus_meta = load_corpus_index(corpus_path).get(base_id)
         if not corpus_meta:
             rel_map[cid] = rel_map[base_id] = False
@@ -423,11 +337,6 @@ def answer_query(
     if reviewed_amendment_path is None:
         from src.config import selected_review_path
         reviewed_amendment_path = selected_review_path(corpus_path)
-    if reviewed_amendment_path is not None:
-        from functools import partial
-        from src.verifier.citation_verifier import verify_citations
-        verifier_fn = partial(verifier_fn or verify_citations, reviewed_amendment_path=reviewed_amendment_path)
-        score_fn = partial(score_fn or verify_and_score, reviewed_amendment_path=reviewed_amendment_path)
     trace_data: dict = {
         "generation_disposition": "safety_bypass" if use_llm else "deterministic_off",
         "generation_reason": "no_evidence" if use_llm else "llm_disabled",
@@ -480,6 +389,15 @@ def answer_query(
                 "application": "; ".join(res.warnings),
                 "conclusion": "Chưa đủ căn cứ pháp lý để đưa ra kết luận chắc chắn. Cần xác minh hiệu lực từng điều khoản trước khi áp dụng.",
             }
+        if (reviewed_amendment_path is None
+                and pipeline not in {"P1_FlatRAG", "P2", "P2_TemporalGraphRAG"}
+                and res.answer_status != "OUT_OF_SCOPE"):
+            limitation = "Chưa có hồ sơ thẩm định được cấu hình; chỉ cung cấp trích đoạn qua kiểm tra, không tổng hợp kết luận pháp lý."
+            res.answer_status = "INSUFFICIENT_BASIS"
+            res.warnings = list(dict.fromkeys(res.warnings + [limitation]))
+            if reason_override == EmptyReason.TEMPORAL_TRAP:
+                res.irac_sections["conclusion"] = "Chưa đủ căn cứ pháp lý để kết luận tại mốc tra cứu; cần thẩm định hiệu lực và quy định áp dụng."
+            trace_data.update(generation_reason="review_required_for_generation", generation_disposition="safety_bypass")
         trace_data["answer_status"] = res.answer_status
         trace_data["llm_used"] = res.llm_used
         irac = res.irac_sections
@@ -542,6 +460,14 @@ def answer_query(
             ),
             reason_override=EmptyReason.OUT_OF_SCOPE,
         )
+
+    if reviewed_amendment_path is not None and pipeline not in {"P1_FlatRAG", "P2", "P2_TemporalGraphRAG"}:
+        from src.api.reviewed_answer import reviewed_answer
+        return _finalize(reviewed_answer(
+            question, effective_query, as_of_date, pipeline, use_llm, model, history, trace_data,
+            fetch_fn, retriever_fn or query_temporal_rag, verifier_fn, score_fn or verify_and_score,
+            llm_fn or generate_llm_response, corpus_path, reviewed_amendment_path,
+        ))
 
     # 2. Retrieval and gating
     if fetch_fn is not None:
@@ -627,7 +553,32 @@ def answer_query(
             )
         )
 
-    # 4. LLM Generation or Deterministic IRAC
+    if pipeline not in {"P1_FlatRAG", "P2", "P2_TemporalGraphRAG"}:
+        cite_text = " ".join(f"[{cid}]" for cid in citations)
+        verification = _invoke_callback(
+            score_fn or verify_and_score, cite_text, as_of_date,
+            context_ids={a.id for a in articles}, corpus_path=corpus_path,
+        )
+        _record_uncertainty(verification)
+        statuses = getattr(getattr(verification, "report", verification), "citations", [])
+        rejected = {c.id for c in statuses if c.status not in {"VALID", "AMENDED"}}
+        articles = [a for a in articles if a.id not in rejected]
+        sections = _invoke_callback(
+            _build_irac_sections, effective_query, as_of_date,
+            [cid for cid in citations if cid not in rejected], list(getattr(verification, "warnings", [])),
+            articles=articles, corpus_path=corpus_path,
+        )
+        return _finalize(AnswerResult(
+            query=question, as_of_date=as_of_date, pipeline=pipeline,
+            citations=extract_citations("\n".join(sections.values())),
+            active_article_ids=[a.id for a in articles],
+            risk_score=getattr(verification, "risk_score", 50),
+            risk_level=getattr(verification, "risk_level", "MEDIUM"),
+            warnings=list(getattr(verification, "warnings", [])),
+            irac_sections=sections, llm_used=False, raw_llm_response=None,
+            answer_status="INSUFFICIENT_BASIS", articles=articles,
+        ))
+
     scorer = score_fn or verify_and_score
     llm_gen = llm_fn or generate_llm_response
 
@@ -647,7 +598,7 @@ def answer_query(
         if raw_response is not None:
             extracted = extract_citations(raw_response)
             candidate_citations = list(dict.fromkeys(extracted))
-            rel_map = _build_candidate_relevance_map(effective_query, raw_response, candidate_citations, articles, corpus_path=corpus_path)
+            rel_map = {}
 
             context_ids = {a.id for a in articles}
             scorer_kwargs = {"context_ids": context_ids, "corpus_path": corpus_path}
@@ -690,9 +641,7 @@ def answer_query(
                     articles=articles, corpus_path=corpus_path,
                 )
                 final_text = "\n".join(irac.values())
-                final_relevance = _build_candidate_relevance_map(
-                    effective_query, final_text, extract_citations(final_text), articles, corpus_path=corpus_path,
-                )
+                final_relevance = {}
                 final_verification = _invoke_callback(
                     scorer, final_text, as_of_date, context_ids=context_ids,
                     relevance_map=final_relevance, corpus_path=corpus_path,

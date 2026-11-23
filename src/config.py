@@ -81,6 +81,37 @@ def default_as_of_date() -> str:
     return min(today_iso(), DATA_FREEZE_DATE)
 
 
+def local_llm_limits() -> tuple[float, float, float, int]:
+    from math import isfinite
+    limits = []
+    for name, ceiling in (("OLLAMA_TOTAL_TIMEOUT", 300), ("OLLAMA_GENERATION_TIMEOUT", 120),
+                          ("OLLAMA_ASSESSMENT_TIMEOUT", 180)):
+        try:
+            value = float(os.getenv(name, str(ceiling)))
+        except ValueError:
+            raise ValueError(f"{name} must be finite and in (0, {ceiling}]") from None
+        if not isfinite(value) or not 0 < value <= ceiling:
+            raise ValueError(f"{name} must be finite and in (0, {ceiling}]")
+        limits.append(value)
+    context = os.getenv("OLLAMA_NUM_CTX", "8192").strip()
+    if context not in {"4096", "8192"}:
+        raise ValueError("OLLAMA_NUM_CTX must be 4096 or 8192")
+    return (*limits, int(context))
+
+
+def provider_context_limit(provider: str) -> int:
+    if provider == "ollama":
+        return local_llm_limits()[3]
+    raw = os.getenv("CLOUD_LLM_CONTEXT_LIMIT", "24576").strip()
+    try:
+        limit = int(raw)
+    except ValueError:
+        raise ValueError("CLOUD_LLM_CONTEXT_LIMIT must be in [4096, 131072]") from None
+    if not 4096 <= limit <= 131072:
+        raise ValueError("CLOUD_LLM_CONTEXT_LIMIT must be in [4096, 131072]")
+    return limit
+
+
 def is_vector_enabled() -> bool:
     return os.getenv("VECTOR_ENABLED", "1").lower() not in ("0", "false", "no")
 

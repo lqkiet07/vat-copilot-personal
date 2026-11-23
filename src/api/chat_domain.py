@@ -90,14 +90,15 @@ def extract_entities(text: str) -> QueryEntities:
 
     # 2. Business type classification
     business_type = None
-    if any(k in norm_lower for k in ("hộ kinh doanh", "hộ cá thể", "tiệm", "quán", "dưới quê")):
+    if any(k in norm_lower for k in ("hộ kinh doanh", "hộ cá thể", "cá nhân kinh doanh")):
         business_type = "HỘ_KINH_DOANH"
     elif any(k in norm_lower for k in ("công ty", "doanh nghiệp", "tổng công ty", "tập đoàn")):
         business_type = "DOANH_NGHIEP"
 
     # 3. Revenue extraction
     revenue_vnd = None
-    rev_match = _REVENUE_PATTERN.search(norm_lower)
+    revenue_context = re.search(r"doanh thu\s*(?:là\s*|khoảng\s*|ước tính\s*|năm\s*)?(\d+(?:[.,]\d+)?\s*(?:triệu|tr|tỷ|tỉ)\b)", norm_lower)
+    rev_match = _REVENUE_PATTERN.search(revenue_context.group(1)) if revenue_context else None
     if rev_match:
         val_str = rev_match.group(1).replace(",", ".")
         unit = rev_match.group(2).lower()

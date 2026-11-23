@@ -50,11 +50,15 @@ DEMO_SCENARIOS: list[dict] = [
 def _fetch_pipeline_articles(
     pipeline: str, query: str, as_of_date: str, trace: dict | None = None,
     *, corpus_path: str = "data/processed/vat_corpus.json", verifier_fn=None,
+    reviewed_amendment_path: str | None = None,
 ) -> tuple[list[str], list[str], list[ArticleNode]]:
     """Retrieve citations, active IDs, and articles for the selected pipeline."""
     res = retrieve_and_gate(query, as_of_date, top_k=5, pipeline=pipeline, retriever_fn=query_temporal_rag,
-                            verifier_fn=verifier_fn, corpus_path=corpus_path)
+                            verifier_fn=verifier_fn, corpus_path=corpus_path,
+                            reviewed_amendment_path=reviewed_amendment_path)
     if trace is not None:
+        if res.resolved_evidence is not None:
+            trace["_resolved_evidence"] = res.resolved_evidence
         trace["raw_article_count"] = res.raw_article_count
         trace["gated_article_count"] = res.gated_article_count
         trace["unresolved_citations"] = getattr(res, "unresolved_citations", [])

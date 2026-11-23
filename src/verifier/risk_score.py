@@ -73,6 +73,7 @@ def verify_and_score(
     *,
     corpus_path: str = "data/processed/vat_corpus.json",
     reviewed_amendment_path: str | None = None,
+    resolved_evidence=None,
 ) -> VerificationResult:
     """End-to-end verification and risk scoring for response text."""
     report = verify_citations(
@@ -82,6 +83,7 @@ def verify_and_score(
         context_ids=context_ids,
         corpus_path=corpus_path,
         reviewed_amendment_path=reviewed_amendment_path,
+        **({"resolved_evidence": resolved_evidence} if resolved_evidence is not None else {}),
     )
     score, level, warnings = calculate_risk_score(report)
     return VerificationResult(

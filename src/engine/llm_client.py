@@ -1,6 +1,9 @@
 """LLM client supporting local Ollama, Google Gemini API, and OpenAI API."""
 from collections.abc import Iterator
+from contextlib import contextmanager
+from contextvars import ContextVar
 import json
+from io import BytesIO
 import os
 import time
 from json import JSONDecodeError
@@ -9,15 +12,95 @@ import urllib.request
 from src.engine.diagnostics import emit_trace, text_sha256
 
 
+_RESPONSE_DEADLINE = ContextVar("llm_response_deadline", default=None)
+_ASSESSMENT_REQUEST = ContextVar("llm_assessment_request", default=False)
+
+
+class AssessmentProviderError(ValueError):
+    def __init__(self, reason):
+        self.reason = reason
+        super().__init__(reason)
+
+
+@contextmanager
+def assessment_request():
+    token = _ASSESSMENT_REQUEST.set(True)
+    try:
+        yield
+    finally:
+        _ASSESSMENT_REQUEST.reset(token)
+
+
+@contextmanager
+def response_deadline(deadline):
+    token = _RESPONSE_DEADLINE.set(deadline)
+    try:
+        yield
+    finally:
+        _RESPONSE_DEADLINE.reset(token)
+
+
+def _remaining_response_time():
+    remaining = _RESPONSE_DEADLINE.get() - time.monotonic()
+    if remaining <= 0:
+        raise TimeoutError("Provider deadline exceeded")
+    return remaining
+
+
+def _read_response(response, limit=4 * 1024 * 1024):
+    if _RESPONSE_DEADLINE.get() is None:
+        return response.read()
+    read = getattr(response, "read1", None)
+    sock = getattr(getattr(getattr(response, "fp", None), "raw", None), "_sock", None)
+    if not callable(read) or not callable(getattr(sock, "settimeout", None)):
+        raise OSError("Provider response does not support bounded consumption")
+    chunks, size = [], 0
+    while True:
+        sock.settimeout(_remaining_response_time())
+        chunk = read(min(65536, limit + 1 - size))
+        _remaining_response_time()
+        if not chunk:
+            return b"".join(chunks)
+        size += len(chunk)
+        if size > limit:
+            raise OSError("Provider response exceeds size limit")
+        chunks.append(chunk)
+
+
+def _gemini_config(model, config=None):
+    if config:
+        return config
+    if _ASSESSMENT_REQUEST.get():
+        from src.engine.answer_assessment import assessment_generation_config
+        return assessment_generation_config(model)
+    # Thinking tokens count inside maxOutputTokens on Gemini 2.5 Flash; cap thinking to preserve full IRAC output.
+    default: dict = {"temperature": 0.2, "maxOutputTokens": 4096}
+    if model in {"gemini-2.5-flash", "gemini-2.5-flash-lite"}:
+        default["thinkingConfig"] = {"thinkingBudget": 512}
+    return default
+
+
 def _provider_call(provider, model, prompt, callback, **kwargs):
-    response = callback(prompt, model=model, **kwargs)
-    emit_trace({
+    event = {
         "event": "provider_generation", "provider": provider, "model": model,
-        "prompt_sha256": text_sha256(prompt),
-        "output_sha256": text_sha256(response) if response else None,
-        "has_output": bool(response and response.strip()),
-    })
-    return response
+        "prompt_sha256": text_sha256(prompt), "output_sha256": None,
+        "has_output": False, "failed": True,
+    }
+    if provider == "gemini":
+        config = _gemini_config(model, kwargs.get("generation_config"))
+        event["request_config_sha256"] = text_sha256(json.dumps(config, sort_keys=True, separators=(",", ":")))
+    try:
+        if _RESPONSE_DEADLINE.get() is not None:
+            kwargs["timeout"] = min(kwargs.get("timeout", 120.0), _remaining_response_time())
+        response = callback(prompt, model=model, **kwargs)
+        if _RESPONSE_DEADLINE.get() is not None:
+            _remaining_response_time()
+        event.update(output_sha256=text_sha256(response) if isinstance(response, str) else None,
+                     has_output=isinstance(response, str) and bool(response.strip()))
+        event["failed"] = not event["has_output"]
+        return response
+    finally:
+        emit_trace(event)
 
 
 def check_ollama_available(
@@ -104,10 +187,11 @@ def _gemini_output(data, event):
     return output
 
 
-def _call_gemini_api(prompt: str, api_key: str, model: str = "gemini-2.5-flash", timeout: float = 30.0) -> str | None:
+def _call_gemini_api(prompt: str, api_key: str, model: str = "gemini-2.5-flash", timeout: float = 30.0,
+                     generation_config: dict | None = None) -> str | None:
     """Call Google Gemini REST API."""
     deadline = time.monotonic() + timeout
-    config = {"temperature": 0.2, "maxOutputTokens": 2048}
+    config = _gemini_config(model, generation_config)
     template = {
         "event": "gemini_response", "provider": "gemini", "model": model,
         "prompt_sha256": text_sha256(prompt),
@@ -127,7 +211,10 @@ def _call_gemini_api(prompt: str, api_key: str, model: str = "gemini-2.5-flash",
                      max_attempts=3, will_retry=False, retry_delay=0)
         remaining = deadline - time.monotonic()
         if remaining <= 0:
+            if _ASSESSMENT_REQUEST.get():
+                raise AssessmentProviderError("deadline")
             return None
+        output = None
         try:
             output = _gemini_attempt(req, remaining, event)
             delay = attempt
@@ -137,18 +224,84 @@ def _call_gemini_api(prompt: str, api_key: str, model: str = "gemini-2.5-flash",
                     event["will_retry"] = time.monotonic() < deadline
                     event["retry_delay"] = delay if event["will_retry"] else 0
         finally:
+            if _ASSESSMENT_REQUEST.get():
+                event["operation"] = "assessment"
+                event["output_sha256"] = text_sha256(output) if isinstance(locals().get("output"), str) else None
             emit_trace(event)
         if not event["will_retry"]:
+            if _ASSESSMENT_REQUEST.get():
+                reasons = {"max_tokens": "truncated", "transport_timeout": "timeout",
+                           "transport_error": "transport", "invalid_json": "invalid_json",
+                           "invalid_schema": "invalid_schema"}
+                if event["status"] != "success":
+                    raise AssessmentProviderError(reasons.get(event["status"],
+                        "transport" if event["error_type"] == "HTTPError" else "no_output"))
             return output
     return None
 
 
+_ERROR_STATUSES = frozenset({
+    "OK", "CANCELLED", "UNKNOWN", "INVALID_ARGUMENT", "DEADLINE_EXCEEDED", "NOT_FOUND",
+    "ALREADY_EXISTS", "PERMISSION_DENIED", "UNAUTHENTICATED", "RESOURCE_EXHAUSTED",
+    "FAILED_PRECONDITION", "ABORTED", "OUT_OF_RANGE", "UNIMPLEMENTED", "INTERNAL",
+    "UNAVAILABLE", "DATA_LOSS",
+})
+_ERROR_FIELDS = frozenset({
+    "contents", "contents[0].parts", "contents[0].parts[0].text",
+    "generationConfig", "generation_config",
+    *[f"{root}.{field}" for root in ("generationConfig", "generation_config") for field in (
+        "temperature", "maxOutputTokens", "max_output_tokens", "responseMimeType", "response_mime_type",
+        "responseJsonSchema", "response_json_schema", "thinkingConfig", "thinking_config",
+        "thinkingConfig.thinkingBudget", "thinking_config.thinking_budget")],
+})
+
+
+def _gemini_error_body(error, timeout, event):
+    deadline = time.monotonic() + min(timeout, 1.0)
+    if _RESPONSE_DEADLINE.get() is not None:
+        deadline = min(deadline, _RESPONSE_DEADLINE.get())
+    try:
+        with response_deadline(deadline):
+            if isinstance(error.fp, BytesIO):
+                _remaining_response_time()
+                raw = error.fp.read(16385)
+                _remaining_response_time()
+                if len(raw) > 16384:
+                    return
+            else:
+                raw = _read_response(error.fp, limit=16384)
+            data = json.loads(raw)
+            _remaining_response_time()
+        detail = data.get("error") if isinstance(data, dict) else None
+        if not isinstance(detail, dict):
+            return
+        code, status = detail.get("code"), detail.get("status")
+        event["error_code"] = code if type(code) is int and 0 <= code <= 2 ** 31 - 1 else None
+        event["error_status"] = status if isinstance(status, str) and status in _ERROR_STATUSES else None
+        details = detail.get("details", [])
+        fields = set()
+        for item in details if isinstance(details, list) else []:
+            if not isinstance(item, dict) or item.get("@type") != "type.googleapis.com/google.rpc.BadRequest":
+                continue
+            violations = item.get("fieldViolations", [])
+            for violation in violations if isinstance(violations, list) else []:
+                field = violation.get("field") if isinstance(violation, dict) else None
+                if isinstance(field, str) and field in _ERROR_FIELDS:
+                    fields.add(field)
+        event["error_fields"] = sorted(fields)
+    except (OSError, ValueError, RecursionError, TypeError):
+        return
+    finally:
+        error.close()
+
+
 def _gemini_attempt(req, timeout, event):
+    deadline = time.monotonic() + timeout
     try:
         with urllib.request.urlopen(req, timeout=timeout) as resp:
             code = resp.status
             event["http_status"] = code if type(code) is int and 100 <= code <= 599 else None
-            data = json.loads(resp.read().decode("utf-8"))
+            data = json.loads(_read_response(resp).decode("utf-8"))
         return _gemini_output(data, event)
     except HTTPError as error:
         code = error.code
@@ -156,7 +309,7 @@ def _gemini_attempt(req, timeout, event):
         event["error_type"] = "HTTPError"
         event["status"] = {401: "http_unauthorized", 403: "http_forbidden", 429: "http_rate_limited"}.get(
             event["http_status"], "http_server_error" if event["http_status"] is not None and code >= 500 else "http_error")
-        error.close()
+        _gemini_error_body(error, max(0, deadline - time.monotonic()), event)
     except (URLError, OSError) as error:
         timed_out = isinstance(error, TimeoutError) or isinstance(getattr(error, "reason", None), TimeoutError)
         event["status"] = "transport_timeout" if timed_out else "transport_error"
@@ -190,7 +343,7 @@ def _call_openai_api(prompt: str, api_key: str, model: str = "gpt-4o-mini", time
     )
     try:
         with urllib.request.urlopen(req, timeout=timeout) as resp:
-            data = json.loads(resp.read().decode("utf-8"))
+            data = json.loads(_read_response(resp).decode("utf-8"))
             choices = data.get("choices", [])
             if choices:
                 return choices[0].get("message", {}).get("content")
@@ -205,6 +358,7 @@ def _call_ollama(
     host: str = "http://localhost:11434",
     timeout: float = 120.0,
     options: dict | None = None,
+    generation_config: dict | None = None,
 ) -> str | None:
     """Generate a response from Ollama API using the specified prompt and model."""
     url = f"{host}/api/generate"
@@ -213,6 +367,10 @@ def _call_ollama(
         "prompt": prompt,
         "stream": False,
     }
+    if _ASSESSMENT_REQUEST.get() or generation_config:
+        config = _gemini_config(model, generation_config)
+        payload_dict["format"] = config["responseJsonSchema"]
+        options = {"temperature": config["temperature"], "num_predict": config["maxOutputTokens"], **(options or {})}
     if options:
         payload_dict["options"] = options
     payload = json.dumps(payload_dict).encode("utf-8")
@@ -222,19 +380,66 @@ def _call_ollama(
         headers={"Content-Type": "application/json"},
         method="POST",
     )
+    event = {"event": "ollama_response", "provider": "ollama", "model": model,
+             "operation": "assessment" if _ASSESSMENT_REQUEST.get() else "generation",
+             "prompt_sha256": text_sha256(prompt), "prompt_chars": len(prompt),
+             "num_ctx": (options or {}).get("num_ctx"), "num_predict": (options or {}).get("num_predict", 0),
+             "prompt_eval_count": None,
+             "prompt_coverage": "unknown", "output_sha256": None, "status": "transport"}
+    deadline = time.monotonic() + timeout
+    enclosing = _RESPONSE_DEADLINE.get()
+    if enclosing is not None:
+        deadline = min(deadline, enclosing)
     try:
         with urllib.request.urlopen(req, timeout=timeout) as response:
-            data = json.loads(response.read().decode("utf-8"))
-            res = data.get("response")
-            return str(res) if res is not None else None
-    except (URLError, OSError, TimeoutError, JSONDecodeError):
+            if enclosing is None:
+                data = json.loads(_read_response(response).decode("utf-8"))
+            else:
+                with response_deadline(deadline):
+                    data = json.loads(_read_response(response).decode("utf-8"))
+        output = _ollama_output(data, event)
+        if _ASSESSMENT_REQUEST.get() and event["status"] != "success":
+            raise AssessmentProviderError(event["status"])
+        return output
+    except (JSONDecodeError, UnicodeDecodeError) as error:
+        event["status"] = "invalid_json"
+        if _ASSESSMENT_REQUEST.get():
+            raise AssessmentProviderError("invalid_json") from error
         return None
+    except (URLError, OSError) as error:
+        event["status"] = "timeout" if isinstance(error, TimeoutError) or isinstance(
+            getattr(error, "reason", None), TimeoutError) else "transport"
+        if _ASSESSMENT_REQUEST.get():
+            raise AssessmentProviderError(event["status"]) from error
+        return None
+    finally:
+        emit_trace(event)
+
+
+def _ollama_output(data, event):
+    event["status"] = "invalid_schema"
+    if not isinstance(data, dict):
+        return None
+    count = data.get("prompt_eval_count")
+    if type(count) is int and 0 <= count <= 2 ** 31 - 1:
+        event["prompt_eval_count"] = count
+    output = data.get("response")
+    if not isinstance(output, str):
+        return None
+    event["output_sha256"] = text_sha256(output)
+    event["status"] = "success" if output.strip() else "no_output"
+    if data.get("done_reason") == "length":
+        event["status"] = "truncated"
+    context = event["num_ctx"]
+    if context and event["prompt_eval_count"] is not None and count >= context - event["num_predict"]:
+        event.update(status="context_capacity", prompt_coverage="capacity_reached")
+    return output if event["status"] == "success" else None
 
 
 def _llm_provider() -> str:
     provider = os.getenv("LLM_PROVIDER", "auto").strip().lower()
-    if provider not in {"auto", "gemini"}:
-        raise ValueError("LLM_PROVIDER must be auto or gemini")
+    if provider not in {"auto", "gemini", "ollama"}:
+        raise ValueError("LLM_PROVIDER must be auto, gemini or ollama")
     return provider
 
 
@@ -244,17 +449,22 @@ def generate_llm_response(
     host: str = "http://localhost:11434",
     timeout: float = 120.0,
     options: dict | None = None,
+    generation_config: dict | None = None,
 ) -> str | None:
     """Generate a response using Ollama API, with optional Gemini/OpenAI cloud provider."""
     provider = _llm_provider()
+    if provider == "ollama":
+        return _provider_call("ollama", model, prompt, _call_ollama, host=host, timeout=timeout,
+                              options=options, generation_config=generation_config)
     gemini_model = model if model.startswith("gemini-") else "gemini-2.5-flash"
     gemini_key = os.getenv("GEMINI_API_KEY", "").strip()
+    config_kwargs = {"generation_config": generation_config} if generation_config is not None else {}
     if provider == "gemini":
         if not gemini_key:
             raise ValueError("GEMINI_API_KEY is required when LLM_PROVIDER=gemini")
-        return _provider_call("gemini", gemini_model, prompt, _call_gemini_api, api_key=gemini_key, timeout=timeout)
+        return _provider_call("gemini", gemini_model, prompt, _call_gemini_api, api_key=gemini_key, timeout=timeout, **config_kwargs)
     if gemini_key:
-        res = _provider_call("gemini", gemini_model, prompt, _call_gemini_api, api_key=gemini_key, timeout=timeout)
+        res = _provider_call("gemini", gemini_model, prompt, _call_gemini_api, api_key=gemini_key, timeout=timeout, **config_kwargs)
         if res:
             return res
 
@@ -275,7 +485,7 @@ def generate_llm_response_stream(
 ) -> Iterator[str]:
     """Yield buffered cloud responses or native Ollama NDJSON fragments."""
     provider = _llm_provider()
-    if provider == "gemini" or os.getenv("GEMINI_API_KEY") or os.getenv("OPENAI_API_KEY"):
+    if provider != "ollama" and (provider == "gemini" or os.getenv("GEMINI_API_KEY") or os.getenv("OPENAI_API_KEY")):
         response = generate_llm_response(prompt, model=model, host=host, timeout=timeout)
         if response:
             yield response

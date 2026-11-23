@@ -19,7 +19,6 @@ VAT_DOMAIN_KEYWORDS = [
     # Legal terms & references
     "luật", "luat", "nghị định", "nghi dinh", "thông tư", "thong tu", "điều", "dieu", "khoản", "khoan",
     "hiệu lực", "hieu luc", "thi hành", "thi hanh", "áp dụng", "ap dung", "văn bản", "van ban",
-    "48/2024", "181/2025", "69/2025", "359/2025", "144/2026", "13/2008",
 ]
 
 GREETING_KEYWORDS = [
@@ -38,6 +37,21 @@ CORE_TAX_KEYWORDS = [
     "kê khai", "ke khai", "nộp thuế", "nop thue", "miễn thuế", "mien thue", "tờ khai", "to khai",
     "quyết toán", "quyet toan",
 ]
+
+UNRELATED_INTENT_PATTERNS = (
+    r"\b(?:viết|tạo|sinh|generate|write|create)\b.*\b(?:mã|code|script|program)\b",
+    r"\b(?:lập trình|lap trinh|coding|programming)\b",
+    r"\b(?:dịch|translate)\b.*\b(?:văn|đoạn|tiếng|text|passage|into|to)\b",
+    r"\b(?:viết|sáng tác|write|compose)\b.*\b(?:thơ|truyện|poem|story|song)\b",
+)
+
+LEGAL_BUSINESS_CONTEXT = re.compile(
+    r"\b(?:pháp luật|phap luat|luật|luat|nghị định|nghi dinh|thông tư|thong tu|"
+    r"kinh doanh|doanh nghiệp|doanh nghiep|công ty|cong ty|hợp đồng|hop dong|"
+    r"xuất khẩu|xuat khau|nhập khẩu|nhap khau|quán|tiệm|legal|tax|business|contract)\b"
+    r"|\b(?:điều|dieu|khoản|khoan)\s+\d+|\b\d+/\d{4}\b",
+    re.IGNORECASE,
+)
 
 CORE_TAX_PATTERN = re.compile(
     r"\b(" + "|".join(re.escape(k) for k in sorted(CORE_TAX_KEYWORDS, key=len, reverse=True)) + r")\b",
@@ -73,10 +87,14 @@ def check_query_domain(query: str) -> GuardrailResult:
             refusal_message="Xin chào! Tôi là Trợ lý Pháp lý ảo về Thuế Giá trị gia tăng (GTGT) Việt Nam. Hãy đặt câu hỏi về chính sách thuế, thuế suất hoặc quy định hóa đơn chứng từ để tôi hỗ trợ bạn."
         )
 
-    # 2. Check explicit out-of-domain patterns
+    from src.api.chat_domain import OUT_OF_SCOPE_KEYWORDS
     has_core_tax = bool(CORE_TAX_PATTERN.search(q_clean))
-    if not has_core_tax:
-        for pat in CLEAR_OUT_OF_DOMAIN_PATTERNS:
+    if not has_core_tax and any(word in q_clean for word in OUT_OF_SCOPE_KEYWORDS):
+        return GuardrailResult(is_allowed=False, reason="EXPLICIT_OUT_OF_DOMAIN",
+                               refusal_message="Câu hỏi nằm ngoài phạm vi thuế GTGT.")
+    has_legal_business_context = has_core_tax or bool(LEGAL_BUSINESS_CONTEXT.search(q_clean))
+    if not has_legal_business_context:
+        for pat in (*CLEAR_OUT_OF_DOMAIN_PATTERNS, *UNRELATED_INTENT_PATTERNS):
             if re.search(pat, q_clean, re.IGNORECASE):
                 return GuardrailResult(
                     is_allowed=False,
@@ -85,12 +103,9 @@ def check_query_domain(query: str) -> GuardrailResult:
                 )
 
     # 3. Check domain presence
-    has_domain_keyword = has_core_tax or any(kw in q_clean for kw in VAT_DOMAIN_KEYWORDS)
+    has_domain_keyword = (has_core_tax or any(kw in q_clean for kw in VAT_DOMAIN_KEYWORDS)
+                          or bool(re.search(r"\b\d+/\d{4}(?:/[\w-]+)?\b", q_clean)))
     if not has_domain_keyword:
-        return GuardrailResult(
-            is_allowed=False,
-            reason="NO_DOMAIN_ENTITY",
-            refusal_message="Câu hỏi của bạn không thuộc phạm vi điều chỉnh của Hệ thống Pháp lý Thuế Giá trị gia tăng (GTGT). Vui lòng đặt câu hỏi liên quan đến chính sách thuế, thuế suất hoặc quy định hóa đơn chứng từ."
-        )
+        return GuardrailResult(is_allowed=True, reason="UNCLEAR_REQUIRES_RETRIEVAL")
 
     return GuardrailResult(is_allowed=True, reason="IN_DOMAIN")

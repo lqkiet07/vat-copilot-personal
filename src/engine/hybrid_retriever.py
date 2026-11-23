@@ -194,17 +194,6 @@ def query_hybrid_temporal(
     active_embedder = embedder if embedder is not None else resolve_embedder_for_index(**resolver_kwargs)
     entities = understand_query(query)
     synonyms = list(entities.industry_synonyms)
-    if entities.business_type == "HỘ_KINH_DOANH":
-        synonyms.extend([
-            "hộ, cá nhân sản xuất, kinh doanh",
-            "hộ kinh doanh",
-            "cá nhân kinh doanh",
-            "200 triệu",
-            "phương pháp tính trực tiếp",
-            "doanh thu",
-        ])
-    if any(m in query.lower() for m in ("xuất khẩu", "xuat khau")):
-        synonyms.extend(["xuất khẩu", "phần mềm", "thuế suất 0%"])
 
     driver = get_neo4j_driver()
     with driver.session() as session:
