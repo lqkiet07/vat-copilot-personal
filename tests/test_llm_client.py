@@ -213,7 +213,7 @@ def _gemini_diagnostic(body=None, error=None):
     assert event["provider"] == "gemini"
     assert event["model"] == "gemini-2.5-flash"
     assert event["prompt_sha256"] == text_sha256("private-prompt-secret")
-    config = {"temperature": 0.2, "maxOutputTokens": 2048}
+    config = {"temperature": 0.2, "maxOutputTokens": 4096, "thinkingConfig": {"thinkingBudget": 512}}
     assert json.loads(request.call_args.args[0].data)["generationConfig"] == config
     assert event["generation_config"] == config
     assert event["request_config_sha256"] == text_sha256(json.dumps(config, sort_keys=True, separators=(",", ":")))
@@ -235,12 +235,12 @@ def _gemini_diagnostic(body=None, error=None):
     (403, "http_forbidden"), (429, "http_rate_limited"), (500, "http_server_error"), (501, "http_server_error")])
 def test_gemini_diagnostic_http_errors_are_safe_and_not_retried(code, status):
     stream = BytesIO(b"private-error-secret")
-    stream.read = MagicMock(side_effect=AssertionError("Error body must not be read"))
+    stream.read = MagicMock(wraps=stream.read)
     error = HTTPError("https://private-error-secret", code, "private-error-secret", {}, stream)
     result, event = _gemini_diagnostic(error=error)
     assert result is None
     assert (event["status"], event["http_status"], event["error_type"]) == (status, code, "HTTPError")
-    stream.read.assert_not_called()
+    stream.read.assert_called_once_with(16385)
     assert stream.closed
 
 
@@ -318,7 +318,7 @@ def test_gemini_transient_retries_preserve_request_and_logical_event(monkeypatch
     monkeypatch.setenv("OPENAI_API_KEY", "unused-secret")
     streams = [BytesIO(b"private-error-secret") for code in codes]
     for stream in streams:
-        stream.read = MagicMock(side_effect=AssertionError("Error body must not be read"))
+        stream.read = MagicMock(wraps=stream.read)
     errors = [HTTPError("https://private-error-secret", code, "private-error-secret",
                         {"secret": "private-key-secret"}, stream) for code, stream in zip(codes, streams)]
     def sleep(delay):
@@ -351,7 +351,7 @@ def test_gemini_transient_retries_preserve_request_and_logical_event(monkeypatch
     assert all(event["max_attempts"] == 3 for event in diagnostics)
     assert events[-1]["has_output"] is bool(expected)
     for stream in streams:
-        stream.read.assert_not_called()
+        stream.read.assert_called_once_with(16385)
         assert stream.closed
     assert all(secret not in json.dumps(events) for secret in (
         "private-key-secret", "private-error-secret", "private-prompt-secret", "private-output-secret", "https://"))
@@ -391,6 +391,199 @@ def test_gemini_semantically_wrong_visible_output_is_not_retried(gemini_clock):
     assert event["attempt"] == 1 and event["max_attempts"] == 3
     assert event["will_retry"] is False and event["retry_delay"] == 0
     assert gemini_clock.sleeps == []
+
+
+@pytest.mark.parametrize("secret", ["private-key-secret", "private-prompt-secret", "private-error-secret"])
+def test_http_diagnostics_only_extract_allowlisted_json(secret):
+    from src.engine.llm_client import _gemini_error_body
+    body = {"error": {"code": 400, "status": "INVALID_ARGUMENT", "message": secret,
+        "unknown": secret, "details": [{"@type": "type.googleapis.com/google.rpc.BadRequest",
+        "fieldViolations": [{"field": "generationConfig.responseJsonSchema", "description": secret},
+                            {"field": secret, "description": secret}]}]}}
+    stream = BytesIO(json.dumps(body).encode())
+    error = HTTPError("https://" + secret, 400, secret, {"secret": secret}, stream)
+    event = {}
+    _gemini_error_body(error, 7, event)
+    assert event == {"error_code": 400, "error_status": "INVALID_ARGUMENT",
+                     "error_fields": ["generationConfig.responseJsonSchema"]}
+    assert secret not in json.dumps(event)
+    assert stream.closed
+
+
+@pytest.mark.parametrize("code,status", [(True, "secret"), (-1, {}), (2 ** 31, []), ("secret", None)])
+def test_http_error_values_are_type_and_range_checked(code, status):
+    from src.engine.llm_client import _gemini_error_body
+    stream = BytesIO(json.dumps({"error": {"code": code, "status": status}}).encode())
+    event = {}
+    _gemini_error_body(HTTPError("secret", 400, "secret", {}, stream), 7, event)
+    assert event == {"error_code": None, "error_status": None, "error_fields": []}
+    assert stream.closed
+
+
+@pytest.mark.parametrize("body", [b"secret", b"\xff", b"[", b"x" * 16385, b"[" * 2000])
+def test_http_error_invalid_or_oversized_body_is_closed_without_leaks(body):
+    from src.engine.llm_client import _gemini_error_body
+    stream = BytesIO(body)
+    event = {}
+    _gemini_error_body(HTTPError("secret", 400, "secret", {}, stream), 7, event)
+    assert event == {}
+    assert stream.closed
+
+
+def test_http_error_body_deadline_and_unsupported_stream_fail_closed(gemini_clock):
+    from src.engine.llm_client import _gemini_error_body
+    class SlowBody(BytesIO):
+        def read(self, size):
+            gemini_clock.now += 2
+            return super().read(size)
+    for stream in (SlowBody(b'{"error":{"code":400}}'), MagicMock()):
+        if not isinstance(stream, BytesIO):
+            stream.read1 = None
+        event = {}
+        _gemini_error_body(HTTPError("secret", 400, "secret", {}, stream), 7, event)
+        assert event == {}
+        if isinstance(stream, BytesIO):
+            assert stream.closed
+        else:
+            stream.close.assert_called_once()
+            stream.read.assert_not_called()
+
+
+@pytest.mark.parametrize("failure", ["400", "429", "timeout", "200", "exception"])
+def test_provider_failure_emits_one_correlated_event_and_reraises(monkeypatch, failure):
+    from src.engine.llm_client import AssessmentProviderError, assessment_request
+    monkeypatch.setenv("LLM_PROVIDER", "gemini")
+    monkeypatch.setenv("GEMINI_API_KEY", "private-key-secret")
+    response = MagicMock(status=200)
+    response.__enter__.return_value = response
+    response.read.return_value = b'{"candidates":[]}'
+    error = (HTTPError("secret", int(failure), "secret", {}, BytesIO(b"secret"))
+             if failure.isdigit() and failure != "200" else TimeoutError("secret")
+             if failure == "timeout" else RuntimeError("secret") if failure == "exception" else None)
+    events = []
+    with patch("urllib.request.urlopen", return_value=response, side_effect=error) as request:
+        with patch("src.engine.llm_client.emit_trace", side_effect=events.append), assessment_request():
+            with pytest.raises(RuntimeError if failure == "exception" else AssessmentProviderError):
+                generate_llm_response("private-prompt-secret", model="gemini-2.5-flash")
+    request.assert_called_once()
+    diagnostic, generation = events
+    assert generation["event"] == "provider_generation"
+    assert generation["failed"] is True and generation["has_output"] is False
+    assert generation["output_sha256"] is None
+    for key in ("prompt_sha256", "request_config_sha256"):
+        assert generation[key] == diagnostic[key]
+    assert diagnostic["http_status"] == (int(failure) if failure.isdigit() else None)
+    assert "secret" not in json.dumps(events)
+
+
+@pytest.mark.parametrize("streaming", [False, True])
+def test_explicit_ollama_ignores_cloud_keys(monkeypatch, streaming):
+    monkeypatch.setenv("LLM_PROVIDER", "ollama")
+    monkeypatch.setenv("GEMINI_API_KEY", "unused")
+    monkeypatch.setenv("OPENAI_API_KEY", "unused")
+    response = MagicMock()
+    response.__enter__.return_value = response
+    response.read.return_value = b'{"response":"local"}'
+    response.__iter__.return_value = iter([b'{"response":"local","done":true}'])
+    with patch("urllib.request.urlopen", return_value=response) as request:
+        assert _generate("prompt", streaming) == (["local"] if streaming else "local")
+    request.assert_called_once()
+    assert request.call_args.args[0].full_url == "http://localhost:11434/api/generate"
+
+
+def test_ollama_native_schema_options_and_remaining_consumption(monkeypatch, gemini_clock, tmp_path):
+    from src.engine.answer_assessment import assessment_generation_config
+    from src.engine.llm_client import assessment_request, response_deadline
+    monkeypatch.setenv("LLM_PROVIDER", "ollama")
+    path = tmp_path / "trace.jsonl"
+    monkeypatch.setenv("VAT_DIAGNOSTICS", str(path))
+    timeouts = []
+    class Response:
+        def __init__(self):
+            self.body = b'{"response":"{}","done":true,"prompt_eval_count":3100,"eval_count":2}'
+            self.fp = SimpleNamespace(raw=SimpleNamespace(_sock=SimpleNamespace(settimeout=timeouts.append)))
+        def __enter__(self):
+            return self
+        def __exit__(self, *args):
+            pass
+        def read1(self, size):
+            gemini_clock.now += 1
+            body, self.body = self.body, b""
+            return body
+    def transport(req, timeout):
+        gemini_clock.now += 3
+        return Response()
+    config = assessment_generation_config("gemini-2.5-flash")
+    options = {"num_ctx": 8192, "num_predict": 2048, "seed": 42}
+    with patch("urllib.request.urlopen", side_effect=transport) as request:
+        with response_deadline(280), assessment_request():
+            assert generate_llm_response("x" * 9215, timeout=180, options=options, generation_config=config) == "{}"
+    payload = json.loads(request.call_args.args[0].data)
+    assert payload["format"] == config["responseJsonSchema"]
+    assert payload["options"] == dict(options, temperature=0.2)
+    assert options == {"num_ctx": 8192, "num_predict": 2048, "seed": 42}
+    assert not {"generationConfig", "thinkingConfig", "responseMimeType"} & payload.keys()
+    assert request.call_args.kwargs["timeout"] == 180
+    assert timeouts == [177, 176]
+    rows = [json.loads(line) for line in path.read_text().splitlines()]
+    event = next(row for row in rows if row["event"] == "ollama_response")
+    assert event["prompt_chars"] == 9215
+    assert event["prompt_eval_count"] == 3100
+    assert event["num_ctx"] == 8192
+    assert event["prompt_coverage"] == "unknown"
+    assert event["status"] == "success"
+    assert event["prompt_sha256"] == text_sha256("x" * 9215)
+    assert event["output_sha256"] == text_sha256("{}")
+
+
+@pytest.mark.parametrize("failure,reason", [("timeout", "timeout"), ("invalid", "invalid_json"),
+    ("truncated", "truncated"), ("capacity", "context_capacity"), ("schema", "invalid_schema")])
+def test_ollama_assessment_failures_do_not_fallback(monkeypatch, failure, reason):
+    from src.engine.llm_client import AssessmentProviderError, assessment_request
+    monkeypatch.setenv("LLM_PROVIDER", "ollama")
+    monkeypatch.setenv("GEMINI_API_KEY", "unused")
+    response = MagicMock()
+    response.__enter__.return_value = response
+    response.read.return_value = {"invalid": b"invalid", "schema": b"[]", "truncated":
+        b'{"response":"{}","done_reason":"length"}', "capacity":
+        b'{"response":"{}","prompt_eval_count":4096}'}.get(failure, b"{}")
+    with patch("urllib.request.urlopen", return_value=response,
+               side_effect=TimeoutError() if failure == "timeout" else None) as request:
+        with assessment_request(), pytest.raises(AssessmentProviderError) as error:
+            generate_llm_response("prompt", options={"num_ctx": 4096})
+    assert error.value.reason == reason
+    request.assert_called_once()
+
+
+def test_ollama_timeout_caps_enclosing_deadline_during_consumption(monkeypatch, gemini_clock):
+    from src.engine.llm_client import response_deadline
+    monkeypatch.setenv("LLM_PROVIDER", "ollama")
+    timeouts = []
+    class Response:
+        fp = SimpleNamespace(raw=SimpleNamespace(_sock=SimpleNamespace(settimeout=timeouts.append)))
+        def __enter__(self):
+            return self
+        def __exit__(self, *args):
+            pass
+        def read1(self, size):
+            gemini_clock.now += 8
+            return b'{"response":"late","done":true}'
+    with patch("urllib.request.urlopen", return_value=Response()) as request:
+        with response_deadline(500):
+            assert generate_llm_response("prompt", timeout=7) is None
+    assert timeouts == [7]
+    request.assert_called_once()
+
+
+@pytest.mark.parametrize("count", [3072, 3073, 4095])
+def test_ollama_context_reserves_output_headroom(monkeypatch, count):
+    monkeypatch.setenv("LLM_PROVIDER", "ollama")
+    response = MagicMock()
+    response.__enter__.return_value = response
+    response.read.return_value = json.dumps({"response": "possibly clipped", "prompt_eval_count": count}).encode()
+    with patch("urllib.request.urlopen", return_value=response) as request:
+        assert generate_llm_response("prompt", options={"num_ctx": 4096, "num_predict": 1024}) is None
+    request.assert_called_once()
 
 
 def test_check_ollama_available_success():

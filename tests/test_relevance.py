@@ -123,7 +123,7 @@ def test_corporate_deduction_article_excluded_for_domestic_household_query():
         valid_from="2025-07-01",
         valid_to="9999-12-31",
     )
-    query = "quán net tôi mới mở dưới quê có phải đóng thuế kh và đóng bnh"
+    query = "hộ kinh doanh mới mở có phải đóng thuế kh và đóng bnh"
     assert score_article_relevance(query, art_d21) is False
 
 

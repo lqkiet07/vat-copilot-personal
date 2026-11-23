@@ -1,3 +1,4 @@
+from dataclasses import asdict, replace
 import json
 import os
 from unittest.mock import patch
@@ -166,6 +167,67 @@ def test_query_trace_with_context_counts():
     )
     assert trace.context_article_count == 5
     assert trace.citation_in_context_count == 3
+
+
+def saved_insufficient_trace():
+    return QueryTrace(
+        query="Chuyển quyền sử dụng đất có chịu thuế GTGT?",
+        as_of_date="2026-11-19", pipeline="P3_FullSystem",
+        raw_article_count=15, gated_article_count=1, prompt_article_count=1,
+        llm_used=True, llm_citation_count=1,
+        answer_status="INSUFFICIENT_BASIS", generation_disposition="draft_replaced",
+        generation_reason="unsupported_draft", generation_attempted=True,
+        generated_delivered=False,
+    )
+
+
+def test_saved_insufficient_draft_with_valid_fallback_citation(tmp_path, monkeypatch):
+    from scripts.analyze_diagnostics import summarize, format_report
+    trace = saved_insufficient_trace()
+    reason = classify_empty(trace)
+    assert reason == "DRAFT_REPLACED"
+    path = tmp_path / "trace.jsonl"
+    monkeypatch.setenv("VAT_DIAGNOSTICS", str(path))
+    emit_trace(replace(trace, empty_reason=reason))
+    counts = summarize(path)
+    assert counts == {"DRAFT_REPLACED": 1}
+    assert "DRAFT_REPLACED | 1" in format_report(counts)
+    assert json.loads(path.read_text())["answer_status"] == "INSUFFICIENT_BASIS"
+
+
+def test_saved_insufficient_draft_without_citations():
+    trace = replace(saved_insufficient_trace(), llm_citation_count=0,
+                    irac_rule_empty=True, irac_conclusion_empty=True)
+    assert classify_empty(trace) == "DRAFT_REPLACED"
+
+
+def test_evidence_only_insufficient_basis_precedes_citation_and_section_checks():
+    for llm_used in (False, True):
+        trace = replace(saved_insufficient_trace(), generation_disposition="safety_bypass",
+                        generation_reason="review_required_for_generation", llm_used=llm_used,
+                        llm_citation_count=0, irac_rule_empty=True, irac_conclusion_empty=True)
+        assert classify_empty(trace) == "INSUFFICIENT_BASIS"
+        assert classify_empty(replace(trace, raw_article_count=None, gated_article_count=0)) == "INSUFFICIENT_BASIS"
+
+
+def test_supported_answer_and_legacy_deterministic_answer():
+    trace = replace(saved_insufficient_trace(), answer_status="ANSWERED",
+                    generation_disposition="generated_delivered", generated_delivered=True,
+                    assessment_outcome="supported", assessment_coverage=True)
+    assert classify_empty(QueryTrace(**asdict(trace))) == EmptyReason.ANSWERED
+    assert classify_empty(replace(trace, generated_delivered=False, llm_used=False,
+                                  generation_disposition="deterministic_off")) == EmptyReason.ANSWERED
+    assert classify_empty(replace(trace, answer_status="INSUFFICIENT_BASIS")) == "INSUFFICIENT_BASIS"
+
+
+def test_scope_and_known_no_evidence_precede_generation_disposition():
+    trace = saved_insufficient_trace()
+    assert classify_empty(replace(trace, answer_status="OUT_OF_SCOPE")) == EmptyReason.OUT_OF_SCOPE
+    for generated_delivered in (False, True):
+        candidate = replace(trace, generated_delivered=generated_delivered,
+                            answer_status="ANSWERED" if generated_delivered else "INSUFFICIENT_BASIS")
+        assert classify_empty(replace(candidate, raw_article_count=0, gated_article_count=0)) == EmptyReason.RETRIEVAL_MISS
+        assert classify_empty(replace(candidate, gated_article_count=0)) == EmptyReason.GATING_OVERREJECT
 
 
 def test_query_trace_default_context_counts():

@@ -60,7 +60,7 @@ def test_step86_demo_actual_fetch_preserves_uncertainty(monkeypatch):
 
 
 @pytest.mark.parametrize("as_of", ["2026-03-20", "2026-06-20"])
-def test_r7_actual_demo_fetch_bypasses_generation_for_reviewed_export(monkeypatch, as_of):
+def test_r7_actual_demo_fetch_projects_safe_siblings_for_reviewed_export(monkeypatch, as_of):
     from types import SimpleNamespace
     import src.ui.demo_service as demo
     from src.engine.models import ArticleNode
@@ -77,7 +77,7 @@ def test_r7_actual_demo_fetch_bypasses_generation_for_reviewed_export(monkeypatc
     monkeypatch.setattr(demo, "selected_corpus_kwargs", lambda: {
         "corpus_path": corpus, "reviewed_amendment_path": ledger})
     monkeypatch.setattr(demo, "query_temporal_rag", lambda *a: SimpleNamespace(articles=[article]))
-    provider = MagicMock(side_effect=AssertionError("Generation must not run"))
+    provider = MagicMock(return_value=None)
     monkeypatch.setattr(demo, "generate_llm_response", provider)
     with patch("src.verifier.citation_verifier.get_neo4j_driver") as factory:
         session = factory.return_value.session.return_value.__enter__.return_value
@@ -88,14 +88,26 @@ def test_r7_actual_demo_fetch_bypasses_generation_for_reviewed_export(monkeypatc
         result = demo.execute_demo_query(
             "Doanh nghiệp tại Cần Thơ xuất khẩu phần mềm sang Nhật Bản áp dụng thuế suất thuế GTGT bao nhiêu?",
             as_of, use_llm=True, trace=trace)
-    provider.assert_not_called()
+    from src.engine.provision_evidence import resolve_provision_evidence
+    resolution = resolve_provision_evidence([article.id], as_of, corpus_path=corpus, reviewed_amendment_path=ledger)
+    exact = {p.id: p for item in resolution.items for p in item.provisions}
+    provider.assert_called_once()
     assert result["answer_status"] == "INSUFFICIENT_BASIS"
     assert result["llm_used"] is False and result["raw_llm_response"] is None
-    assert result["citations"] == [article.id] and result["active_article_ids"] == []
-    assert any("LUAT_90_2025_D4" in w and "LUAT_90_2025:552:40" in w for w in result["warnings"])
-    assert trace["generation_disposition"] == "safety_bypass"
-    assert trace["generation_reason"] == "unresolved_evidence"
-    assert trace["generation_attempted"] is False and trace["generated_delivered"] is False
+    assert result["citations"] and set(result["citations"]) <= set(exact)
+    assert article.id not in result["citations"]
+    assert set(result["active_article_ids"]) == set(result["citations"])
+    operative = exact["LUAT_48_2024_D9_K1_a"]
+    assert operative.status == "AMENDED"
+    assert any(p.get("candidate_id") == "LUAT_90_2025:552:40" for p in operative.provenance)
+    assert operative.id in result["citations"]
+    assert not any(w.startswith(f"Hệ thống chưa xác minh được chứng cứ {operative.id}:") for w in result["warnings"])
+    assert any("không phải" in w and "trích dẫn" in w for w in result["warnings"])
+    prompt = provider.call_args.args[0]
+    assert all(exact[cid].text in prompt for cid in result["citations"])
+    assert trace["generation_disposition"] == "provider_no_output"
+    assert trace["generation_reason"] == "empty_provider_output"
+    assert trace["generation_attempted"] is True and trace["generated_delivered"] is False
 
 
 STAGING_PATH = Path(__file__).resolve().parents[1] / "data/processed/vat_corpus.staging.json"

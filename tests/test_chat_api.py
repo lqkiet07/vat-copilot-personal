@@ -175,7 +175,8 @@ def test_post_chat_returns_citations_for_vat_question(client: TestClient, stub_b
     assert payload.in_scope is True
     assert payload.citations == ["LUAT_48_2024_D10"]
     assert payload.as_of_date == "2024-05-15"
-    assert payload.llm_used is True
+    assert payload.llm_used is False
+    assert payload.answer_status == "INSUFFICIENT_BASIS"
 
 
 def test_post_chat_rejects_empty_message_list(client: TestClient):

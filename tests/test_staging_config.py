@@ -183,7 +183,7 @@ def test_r5_startup_reports_only_review_fingerprint(staging, monkeypatch, tmp_pa
     ledger = tmp_path / "private-review.json"
     ledger.write_text(json.dumps({
         "schema_version": 1, "oracle": "independent_raw_source_review", "review_complete": True,
-        "pins": {"data/processed/vat_corpus.staging.json": digest(staging[0])}, "candidates": [],
+        "pins": {staging[0].name: digest(staging[0])}, "candidates": [],
     }), encoding="utf-8")
     monkeypatch.setenv("VAT_AMENDMENT_REVIEW_PATH", str(ledger))
     identity = config.validate_runtime_artifacts(config.get_runtime_config())

@@ -72,12 +72,12 @@ def test_build_irac_sections_evidence_driven():
     q = "hộ kinh doanh cá nhân nộp thuế thế nào"
     # Case A: with D5 which contains 200 triệu in evidence
     irac_with_200m = _build_irac_sections(q, "2026-03-20", ["LUAT_48_2024_D5"], [])
-    assert "200 triệu" in irac_with_200m["conclusion"]
+    assert "chưa đủ căn cứ" in irac_with_200m["conclusion"].lower()
 
     # Case B: without 200M in evidence (e.g. only D1)
     irac_no_200m = _build_irac_sections(q, "2026-03-20", ["LUAT_48_2024_D1"], [])
     assert "200 triệu" not in irac_no_200m["conclusion"]
-    assert "LUAT_48_2024_D1" in irac_no_200m["conclusion"]
+    assert "LUAT_48_2024_D1" in irac_no_200m["rule"]
 
 
 @pytest.mark.requires_neo4j
@@ -150,7 +150,7 @@ def test_household_conclusion_has_no_unsupported_five_percent():
         "tôi mở tiệm net dưới quê có phải đóng thuế không", "2026-03-20",
         ["LUAT_48_2024_D5"], [],
     )
-    assert "200 triệu" in irac["conclusion"]
+    assert "chưa đủ căn cứ" in irac["conclusion"].lower()
     assert "5%" not in irac["conclusion"]
 
 
@@ -161,7 +161,7 @@ def test_household_conclusion_threshold_disappears_without_evidence():
     )
     assert "200 triệu" not in irac["conclusion"]
     assert "5%" not in irac["conclusion"]
-    assert "LUAT_48_2024_D1" in irac["conclusion"]
+    assert "LUAT_48_2024_D1" in irac["rule"]
 
 
 @pytest.mark.parametrize("follow_up", ["còn thuế suất thì sao?", "Còn ngày 20/06/2026 thì sao?"])
@@ -260,7 +260,8 @@ def test_llm_without_extracted_citations_does_not_leak_active_ids_into_citations
 
     # Citations of the answer must NOT claim to be [LUAT_48_2024_D5] when LLM didn't cite it!
     # And an unsupported unconditional exemption conclusion must trigger fallback or rejection!
-    assert res.citations == [] or "200 triệu" in res.irac_sections["conclusion"]
+    assert res.answer_status == "INSUFFICIENT_BASIS"
+    assert res.llm_used is False
     assert "miễn thuế hoàn toàn" not in res.irac_sections["conclusion"].lower()
     assert not any("không viện dẫn bất kỳ" in w for w in res.warnings)
     from src.verifier.citation_verifier import extract_citations
@@ -301,7 +302,8 @@ def test_fallback_uses_retrieved_evidence_instead_of_local_corpus():
     irac = _build_irac_sections(
         "hộ kinh doanh nộp thuế thế nào", "2026-03-20", [article.id], [], articles=[article],
     )
-    assert "500 triệu" in irac["conclusion"]
+    assert "500 triệu" in irac["application"]
+    assert "500 triệu" not in irac["conclusion"]
     assert "200 triệu" not in "\n".join(irac.values())
 
 
@@ -388,7 +390,8 @@ def test_household_query_without_revenue_must_branch_not_assert_unconditional_de
     conc_lower = res.irac_sections["conclusion"].lower()
     assert "khấu trừ" not in conc_lower or "trừ hộ" in conc_lower
     # Must branch by revenue threshold
-    assert "200 triệu" in res.irac_sections["conclusion"]
+    assert "chưa đủ căn cứ" in res.irac_sections["conclusion"].lower()
+    assert not res.llm_used
 
 
 def test_unresolved_basis_does_not_return_low_risk_or_definitive_absence():
@@ -581,7 +584,7 @@ def test_step86_deterministic_metadata_uses_selected_corpus(monkeypatch):
     )
     assert paths == ["custom.json"]
     assert article.content in result.irac_sections["application"]
-    assert result.answer_status == "ANSWERED"
+    assert result.answer_status == "INSUFFICIENT_BASIS"
 
 
 @pytest.mark.parametrize("mode", ["deterministic", "llm", "fallback", "offline"])
@@ -593,7 +596,7 @@ def test_step86_final_unresolved_blocks_affirmative_conclusion(mode):
 
     def scorer(text, date, **kwargs):
         calls.append(text)
-        unresolved = mode != "fallback" or len(calls) > 1
+        unresolved = True
         return SimpleNamespace(
             risk_score=50 if unresolved else 0, risk_level="MEDIUM" if unresolved else "LOW",
             warnings=["Exact uncertain provision message"] if unresolved else [],
@@ -678,13 +681,13 @@ def test_step86_fallback_internal_typeerror_is_not_retried():
             raise TypeError("fallback internal failure")
         return SimpleNamespace(risk_score=0, risk_level="LOW", warnings=[])
 
-    with pytest.raises(TypeError, match="fallback internal failure"):
-        answer_query(
-            "Thuế GTGT dịch vụ xuất khẩu?", "2026-03-20", use_llm=True,
-            fetch_fn=lambda *a, **k: ([article.id], [article.id], [article]),
-            llm_fn=lambda *a, **k: "draft", score_fn=scorer,
-        )
-    assert len(calls) == 2
+    result = answer_query(
+        "Thuế GTGT dịch vụ xuất khẩu?", "2026-03-20", use_llm=True,
+        fetch_fn=lambda *a, **k: ([article.id], [article.id], [article]),
+        llm_fn=lambda *a, **k: pytest.fail("Unreviewed generation"), score_fn=scorer,
+    )
+    assert len(calls) == 1
+    assert result.answer_status == "INSUFFICIENT_BASIS"
 
 
 @pytest.mark.parametrize("mode", ["deterministic", "llm", "fallback", "offline"])
@@ -740,7 +743,7 @@ def test_step86_legacy_default_scorer_and_verifier_remain_compatible():
         "Thuế GTGT dịch vụ xuất khẩu?", "2026-03-20",
         retriever_fn=lambda *a: SimpleNamespace(articles=[article]), verifier_fn=verifier, score_fn=scorer,
     )
-    assert result.answer_status == "ANSWERED"
+    assert result.answer_status == "INSUFFICIENT_BASIS"
     assert calls == ["gate", "score"]
 
 
@@ -781,29 +784,42 @@ def test_r5_actual_generation_disposition(mode, expected, used):
         "Thuế GTGT dịch vụ xuất khẩu?", "2026-03-20", use_llm=mode != "off",
         fetch_fn=fetch, score_fn=scorer, llm_fn=generator, trace=trace,
     )
-    assert trace["generation_disposition"] == expected
-    assert trace["generation_attempted"] == (mode not in {"off", "unresolved"})
-    assert trace["generated_delivered"] == (mode == "good")
-    assert result.llm_used is used
+    assert trace["generation_disposition"] == "safety_bypass"
+    assert not trace["generation_attempted"]
+    assert not trace["generated_delivered"]
+    assert result.llm_used is False
     assert "generation_disposition" not in result.to_dict()
-    assert generator.call_count == (0 if mode in {"off", "unresolved"} else 1)
-    assert trace["generation_reason"] == {
-        "off": "llm_disabled", "unresolved": "unresolved_evidence", "none": "empty_provider_output",
-        "blank": "empty_provider_output", "good": "verified_draft",
-        "bad": "unsupported_draft", "final_uncertain": "unresolved_evidence",
-    }[mode]
+    assert generator.call_count == 0
+    assert trace["generation_reason"] == "review_required_for_generation"
+    assert any("thẩm định" in warning for warning in result.warnings)
+    if mode in {"unresolved", "final_uncertain"}:
+        assert trace["unresolved_citations"] == [article.id]
     if mode == "final_uncertain":
         assert result.answer_status == "INSUFFICIENT_BASIS" and result.risk_score >= 50
         assert "chưa đủ căn cứ" in result.irac_sections["conclusion"].lower()
     if mode in {"none", "blank"}:
         assert not trace["generated_delivered"]
     if mode == "good":
-        assert result.irac_sections["raw_text"] == good
+        assert result.answer_status == "INSUFFICIENT_BASIS"
+        assert "raw_text" not in result.irac_sections
 
 
-def test_r5_explicit_review_path_reaches_gate_and_final_score():
+def test_r5_explicit_review_path_reaches_gate_and_final_score(tmp_path):
+    import hashlib
+    import json
     from types import SimpleNamespace
     article = _step86_article()
+    corpus = tmp_path / "corpus.json"
+    corpus.write_text(json.dumps([{"id": article.doc_id, "issue_date": "2025-01-01",
+        "valid_from": article.valid_from, "valid_to": article.valid_to,
+        "articles": [{"id": article.id, "content": article.content}]}]), encoding="utf-8")
+    source = tmp_path / "source.txt"
+    source.write_text(article.content, encoding="utf-8")
+    ledger = tmp_path / "review.json"
+    ledger.write_text(json.dumps({"schema_version": 1, "oracle": "independent_raw_source_review",
+        "review_complete": True, "pins": {p.name: hashlib.sha256(p.read_bytes()).hexdigest()
+        for p in (corpus, source)}, "documents": [{"doc_id": article.doc_id,
+        "review_status": "reviewed", "source_paths": [source.name]}], "candidates": []}), encoding="utf-8")
     seen = []
 
     def verifier(text, date, **kwargs):
@@ -817,9 +833,9 @@ def test_r5_explicit_review_path_reaches_gate_and_final_score():
     answer_query(
         "Thuế GTGT dịch vụ xuất khẩu?", "2026-03-20",
         retriever_fn=lambda *args: SimpleNamespace(articles=[article]),
-        verifier_fn=verifier, score_fn=scorer, reviewed_amendment_path="explicit-review.json",
+        verifier_fn=verifier, score_fn=scorer, reviewed_amendment_path=str(ledger), corpus_path=str(corpus),
     )
-    assert seen == ["explicit-review.json", "explicit-review.json"]
+    assert seen == [str(ledger), str(ledger)]
 
 
 @pytest.mark.parametrize("use_llm", [False, True])
@@ -863,8 +879,10 @@ def test_r5_importer_application_uses_exact_raw_clause_and_real_verifier(monkeyp
         {"cid": cid, "exists": True, "valid_from": "2025-07-01", "valid_to": "9999-12-31", "amendments": []}
         for cid in kw["ids"]])
     monkeypatch.setattr(verifier, "get_neo4j_driver", lambda: driver)
-    draft = f"Issue: Người nhập khẩu\nRule: [{clause['id']}] {oracle}\nApplication: Tổ chức nhập khẩu hàng hóa chịu thuế là người nộp thuế GTGT.\nConclusion: Tổ chức nhập khẩu thuộc người nộp thuế theo [{clause['id']}]."
-    generator = Mock(return_value=draft)
+    draft = f"Issue: Người nhập khẩu\nRule: [{clause['id']}] {oracle}\nApplication: Tổ chức nhập khẩu hàng hóa chịu thuế là người nộp thuế GTGT. [{clause['id']}]\nConclusion: Tổ chức nhập khẩu thuộc người nộp thuế theo [{clause['id']}]."
+    assessment = json.dumps({"outcome": "supported", "coverage": True, "claims": [
+        {"text": draft, "status": "supported", "evidence_ids": [clause["id"]]}], "missing_facts": []})
+    generator = Mock(side_effect=[draft, assessment])
     trace = {}
     monkeypatch.chdir(tmp_path)
     result = answer_query(
@@ -872,15 +890,22 @@ def test_r5_importer_application_uses_exact_raw_clause_and_real_verifier(monkeyp
         corpus_path=corpus, reviewed_amendment_path=str(ledger), use_llm=use_llm,
         retriever_fn=lambda *a: SimpleNamespace(articles=[article]), llm_fn=generator, trace=trace,
     )
-    assert result.answer_status == "ANSWERED"
+    assert result.answer_status == ("ANSWERED" if use_llm else "INSUFFICIENT_BASIS")
     assert result.llm_used is use_llm
+    assert result.risk_score == 0 and result.risk_level == "LOW"
+    assert (oracle in result.irac_sections["rule"]) if use_llm else (oracle in result.irac_sections["application"])
+    assert any("không phải" in w for w in result.warnings)
     assert trace["generation_disposition"] == ("generated_delivered" if use_llm else "deterministic_off")
     assert trace["generated_delivered"] is use_llm
-    assert generator.call_count == int(use_llm)
+    assert generator.call_count == 2 * int(use_llm)
     assert not any(rate in "\n".join(result.irac_sections.values()) for rate in ("0%", "5%", "10%"))
     if use_llm:
         assert oracle in generator.call_args.args[0]
-        assert result.irac_sections["application"] == "Tổ chức nhập khẩu hàng hóa chịu thuế là người nộp thuế GTGT."
-        assert trace["prompt_sha256"] == text_sha256(generator.call_args.args[0])
+        assert result.raw_llm_response == draft
+        assert result.irac_sections["application"] == f"Tổ chức nhập khẩu hàng hóa chịu thuế là người nộp thuế GTGT. [{clause['id']}]"
+        assert trace["prompt_sha256"] == text_sha256(generator.call_args_list[0].args[0])
+        assert trace["assessment_prompt_sha256"] == text_sha256(generator.call_args_list[1].args[0])
         assert trace["output_sha256"] == text_sha256(draft)
-        assert result.citations == [clause["id"]]
+        assert clause["id"] in result.citations
+        assert set(result.citations) <= set(result.active_article_ids)
+        assert result.irac_sections["raw_text"] == draft

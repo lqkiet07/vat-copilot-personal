@@ -421,7 +421,7 @@ def test_legacy_inner_worker_uses_isolated_locked_profile_and_fixed_command(work
         (tmp_path / 'document.docx').write_bytes(docx_bytes())
 
     monkeypatch.setattr(subprocess, 'run', run)
-    script = worker._LEGACY_WORKER.replace('/input/source', legacy_source.as_posix()).replace('/tmp', tmp_path.as_posix())
+    script = worker._LEGACY_WORKER.replace('/tmp', tmp_path.as_posix()).replace('/input/source', legacy_source.as_posix())
     exec(compile(script, '<legacy-worker>', 'exec'), {})
     data = json.loads(capsys.readouterr().out)
     assert base64.b64decode(data['docx_base64'], validate=True) == docx_bytes()

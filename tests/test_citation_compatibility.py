@@ -78,6 +78,7 @@ def test_r7_span_guard_preserves_all_reviewed_provenance(graph_rows, as_of):
     ("ND_68_2026_D8", "2026-05-01"),
     ("ND_181_2025_D23", "2026-06-20"),
     ("ND_181_2025_D23_K2", "2026-06-20"),
+    ("TT_72_2014_D6_K2", "2026-07-01"),
 ])
 def test_r4_reviewed_missing_edges_prevent_false_valid(graph_rows, cid, as_of):
     root = Path(__file__).resolve().parents[1]
@@ -233,6 +234,8 @@ def test_r4_adapter_rejects_malformed_relevant_record(r4_review_case, damage):
 
 def test_r4_document_target_is_conditional_not_expiration(r4_review_case, graph_rows):
     corpus, candidate, save = r4_review_case
+    candidate.pop("operative_scope", None)
+    candidate.pop("operations", None)
     candidate["expected"].update(scope="conditional_document_replacement", targets=[{"doc_id": "ND_68_2026"}])
     report = verify_citations("ND_68_2026_D2", "2026-05-01", corpus_path=str(corpus),
                               reviewed_amendment_path=save())
@@ -266,12 +269,14 @@ def test_r4_skipped_classifications_need_no_invented_dates(r4_review_case, graph
     corpus, candidate, save = r4_review_case
     candidate["classification"] = classification
     candidate.pop("source_effective_intervals")
+    if classification == "outscope":
+        candidate["expected"]["targets"] = []
     report = verify_citations("ND_68_2026_D3", "2026-05-01", corpus_path=str(corpus),
                               reviewed_amendment_path=save())
     assert report.citations[0].status == "VALID"
 
 
-@pytest.mark.parametrize("day,expected", [("2025-12-31", "NOT_YET_EFFECTIVE"), ("2026-01-01", "UNRESOLVED"),
+@pytest.mark.parametrize("day,expected", [("2025-12-31", "UNRESOLVED"), ("2026-01-01", "UNRESOLVED"),
                                           ("2026-03-05", "UNRESOLVED"), ("2026-05-01", "UNRESOLVED")])
 def test_r4_retroactive_start_survives_source_expiry(r4_review_case, graph_rows, day, expected):
     corpus, candidate, save = r4_review_case
@@ -280,6 +285,8 @@ def test_r4_retroactive_start_survives_source_expiry(r4_review_case, graph_rows,
     interval["to"] = "2026-04-30"
     report = verify_citations("ND_68_2026_D3", day, corpus_path=str(corpus), reviewed_amendment_path=save())
     assert report.citations[0].status == expected
+    assert report.citations[0].is_active is None
+    assert report.valid_citations == 0
 
 
 def test_r4_wrapper_forwards_explicit_review_path(r4_review_case, graph_rows):

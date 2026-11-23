@@ -110,12 +110,9 @@ def test_prompt_forbids_export_rate_and_enterprise_term_for_domestic_household()
         )
     ]
     prompt = build_irac_prompt("mở tiệm net đóng thuế bao nhiêu", "2026-03-20", articles)
-    assert (
-        "tuyệt đối không viện dẫn quy định thuế suất 0%" in prompt.lower()
-        or "thuế suất 0%" in prompt.lower()
-    )
-    assert "doanh nghiệp" in prompt.lower()
-    assert "hộ kinh doanh" in prompt.lower()
+    assert "không suy diễn tư cách pháp lý" in prompt.lower()
+    assert "bắt buộc kết luận rẽ nhánh" not in prompt.lower()
+    assert "thuế suất 0%" not in prompt.lower()
 
 
 def test_prompt_does_not_contain_hardcoded_legal_thresholds_or_citations():

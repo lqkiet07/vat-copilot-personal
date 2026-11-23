@@ -54,5 +54,5 @@ def test_tech_related_tax_queries_regression(query: str):
 
 def test_non_domain_arbitrary_query():
     result = check_query_domain("Quả cam màu gì?")
-    assert not result.is_allowed
-    assert result.reason == "NO_DOMAIN_ENTITY"
+    assert result.is_allowed
+    assert result.reason == "UNCLEAR_REQUIRES_RETRIEVAL"

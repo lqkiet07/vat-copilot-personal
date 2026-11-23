@@ -113,7 +113,7 @@ def importer_oracle():
 def contract_example():
     from src.engine.diagnostics import text_sha256
     sections = {"issue": "Người nộp thuế", "rule": f"[{CLAUSE}] {WORDING}",
-                "application": "Tổ chức nhập khẩu hàng hóa chịu thuế là người nộp thuế GTGT.",
+                "application": f"Tổ chức nhập khẩu hàng hóa chịu thuế là người nộp thuế GTGT. [{CLAUSE}]",
                 "conclusion": f"Tổ chức nhập khẩu là người nộp thuế [{CLAUSE}]."}
     raw = "\n".join(sections.values())
     sections["raw_text"] = raw
@@ -154,6 +154,9 @@ def assert_generated_importer(body, trace, provider):
 
 
 def controlled_importer_provider(events, trace):
+    assessment_hash = trace.get("assessment_prompt_sha256")
+    assert not assessment_hash or assessment_hash != trace["prompt_sha256"], "BLOCKED: generation and assessment prompts overlap"
+    events = [event for event in events if not assessment_hash or event.get("prompt_sha256") != assessment_hash]
     providers = [event for event in events if event.get("event") == "provider_generation"]
     assert len(providers) == 1, "BLOCKED: strict Gemini provider evidence missing or ambiguous"
     provider = providers[0]
@@ -462,21 +465,33 @@ def test_offline_r5_real_prompt_provider_and_verifier_contract(monkeypatch, retr
     draft = "\n".join(key.title() + ": " + value for key, value in example["irac_sections"].items() if key != "raw_text")
     response = MagicMock(status=200)
     response.__enter__.return_value = response
-    response.read.return_value = json.dumps({"candidates": [{"content": {"parts": [{"text": draft}]}}]}).encode()
+    response.read1.side_effect = [json.dumps({"candidates": [{"content": {"parts": [{"text": draft}]}}]}).encode(), b""]
     prompts = []
     clock = SimpleNamespace(now=100.0)
     def sleep(delay):
         clock.now += delay
     monkeypatch.setattr("src.engine.llm_client.time", SimpleNamespace(monotonic=lambda: clock.now, sleep=sleep))
+    monkeypatch.setattr("src.api.reviewed_answer.time", SimpleNamespace(monotonic=lambda: clock.now))
     def transport(req, timeout):
         prompt = json.loads(req.data)["contents"][0]["parts"][0]["text"]
         assert oracle["wording"] in prompt
-        assert f"[{CLAUSE}]" in prompt
-        assert f"[{CLAUSE}] {WORDING}" in prompt
         prompts.append(prompt)
-        if len(prompts) <= retries:
-            raise HTTPError("https://offline.invalid", 503, "offline", {}, None)
-        return response
+        if len(prompts) <= retries + 1:
+            assert f"[{CLAUSE}]" in prompt
+            data = json.loads(prompt.split("BEGIN_UNTRUSTED_DATA_JSON\n")[1].split("\nEND_UNTRUSTED_DATA_JSON")[0])
+            assert any(unit["id"] == CLAUSE and unit["text"] == WORDING for unit in data["evidence"])
+            assert "citation_basis" not in data
+            if len(prompts) <= retries:
+                raise HTTPError("https://offline.invalid", 503, "offline", {}, None)
+            return response
+        assert "Independently assess" in prompt
+        assessment = json.dumps({"outcome": "supported", "coverage": True, "claims": [
+            {"text": example["irac_sections"][key], "status": "supported", "evidence_ids": [CLAUSE]}
+            for key in ("application", "conclusion")], "missing_facts": []})
+        assessed = MagicMock(status=200)
+        assessed.__enter__.return_value = assessed
+        assessed.read1.side_effect = [json.dumps({"candidates": [{"content": {"parts": [{"text": assessment}]}}]}).encode(), b""]
+        return assessed
     monkeypatch.setattr("urllib.request.urlopen", transport)
     monkeypatch.setenv("LLM_PROVIDER", "gemini")
     monkeypatch.setenv("GEMINI_API_KEY", "offline-test-key")
@@ -487,9 +502,16 @@ def test_offline_r5_real_prompt_provider_and_verifier_contract(monkeypatch, retr
     result = answer_query(IMPORTER, "2026-03-20", use_llm=True, model="gemini-2.5-flash", trace=trace,
                           corpus_path=str(CORPUS), reviewed_amendment_path=str(REVIEW),
                           retriever_fn=lambda *a: SimpleNamespace(articles=[article]))
-    assert len(prompts) == retries + 1 and len(set(prompts)) == 1
+    assert len(prompts) == retries + 2 and len(set(prompts[:-1])) == 1
+    assert prompts[-1] != prompts[0]
+    generation_events = [event for event in events if event.get("prompt_sha256") == trace["prompt_sha256"]]
     provider = controlled_importer_provider(events, trace)
-    diagnostic = [event for event in events if event["event"] == "gemini_response"][-1]
+    assessment_events = [event for event in events if event.get("prompt_sha256") == trace["assessment_prompt_sha256"]]
+    assert len([e for e in assessment_events if e["event"] == "provider_generation"]) == 1
+    assert len([e for e in assessment_events if e["event"] == "gemini_response"]) == 1
+    assert trace["assessment_call_count"] == 1 and trace["assessment_claim_count"] == 2
+    assert trace["assessment_output_sha256"] != trace["output_sha256"]
+    diagnostic = [event for event in generation_events if event["event"] == "gemini_response"][-1]
     assert diagnostic["provider"] == "gemini" and diagnostic["model"] == "gemini-2.5-flash"
     assert diagnostic["status"] == "success"
     assert diagnostic["prompt_sha256"] == trace["prompt_sha256"] == text_sha256(prompts[0])

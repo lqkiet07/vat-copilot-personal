@@ -13,7 +13,7 @@ ROOT = Path(__file__).resolve().parents[1]
 CORPUS = ROOT / "data/processed/vat_corpus.staging.json"
 LEDGER = ROOT / "tests/fixtures/amendment_review.staging.json"
 SCRATCH = ROOT / ".scratch"
-LEDGER_SHA = "49f34bbb0a13a1c400ef93b6bb6bc33e708713f35ff1c053807a8e270d80326f"
+LEDGER_SHA = "b77a61c1edab66ed75502d6a116d60cbdd03a58575394aec9ec82d1afb11ab21"
 CORPUS_SHA = "eda6af1c9cb9856ab8831e0ed9e07318c729e38c4a93beb19f25f3a1b0e91cb5"
 TARGETS = {"bolt://localhost:17687", "bolt://127.0.0.1:17687", "bolt://[::1]:17687"}
 

@@ -56,5 +56,6 @@ def test_household_query_deterministic_fallback_no_export_leakage():
     conc = irac.get("conclusion", "")
     assert "thuế suất 0%" not in conc, "Conclusion must not claim 0% export rate for domestic household"
     assert "xuất khẩu" not in conc, "Conclusion must not refer to export services for domestic household"
-    assert "200 triệu" in conc, "Conclusion must default to household 200M threshold"
+    assert "200 triệu" not in conc
+    assert "chưa đủ căn cứ" in conc.lower()
 

@@ -232,7 +232,7 @@ def test_every_scanned_keyword_block_has_an_explicit_disposition():
         assert scan['headings'] == [{'block_index': i, 'text': text} for i, text in enumerate(blocks)
                                     if re.match(r'Điều\s+\d+', text)] or doc['doc_id'] == 'QD_482_2026'
         candidates = [c for c in ledger['candidates'] if c['source_doc'] == doc['doc_id']]
-        represented = {c['evidence']['locator']['block_index'] for c in candidates}
+        represented = {c['evidence'].get('review_block_index', c['evidence']['locator'].get('block_index')) for c in candidates}
         for candidate in candidates:
             for evidence in candidate.get('source_block_members', []):
                 assert evidence['classification'] == candidate['classification']
@@ -364,7 +364,7 @@ def raw_document(doc_id):
 def assert_raw_locator(evidence, path, block_index):
     assert evidence['path'] == path.relative_to(ROOT).as_posix()
     assert evidence['sha256'] == digest(path)
-    assert evidence['locator']['block_index'] == block_index
+    assert evidence['locator'].get('block_index', evidence.get('review_block_index')) == block_index
     block = ' '.join(source_blocks(path)[block_index].split())
     assert evidence['excerpt'] == block
     offset = evidence['locator']['normalized_text_start']

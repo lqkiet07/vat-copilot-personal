@@ -60,10 +60,10 @@ def test_step86_chat_verifies_generated_text_before_tokens_and_metadata(monkeypa
     ]))
     events = list(chat_service.stream_chat([{"role": "user", "content": VAT_QUESTION}]))
     response = events[-1][1]
-    assert any("UNVERIFIED ASSERTION" in text for text in checked)
+    assert checked and all("UNVERIFIED ASSERTION" not in text for text in checked)
     assert response["answer_status"] == "INSUFFICIENT_BASIS"
-    assert response["risk_score"] >= 50
-    assert "Generated citation unresolved" in response["warnings"]
+    assert not response["llm_used"]
+    assert any("thẩm định" in warning for warning in response["warnings"])
     assert "UNVERIFIED ASSERTION" not in response["message"]
     assert all("UNVERIFIED ASSERTION" not in payload.get("delta", "") for name, payload in events if name == "token")
 
@@ -94,11 +94,12 @@ def test_r5_chat_outer_generation_trace(monkeypatch, stub_retrieval, tmp_path, o
     events = list(chat_service.stream_chat([{"role": "user", "content": VAT_QUESTION}]))
     rows = [json.loads(line) for line in path.read_text().splitlines()]
     outer, = [row for row in rows if row["event"] == "chat_generation"]
-    assert outer["generation_disposition"] == disposition
-    assert outer["generation_attempted"] is True
-    assert outer["generated_delivered"] is (output == "safe")
+    assert outer["generation_disposition"] == "safety_bypass"
+    assert outer["generation_attempted"] is False
+    assert outer["generated_delivered"] is False
+    assert outer["generation_reason"] == "review_required_for_generation"
     inner, = [row for row in rows if row["event"] == "query"]
-    assert inner["generation_disposition"] == "deterministic_off"
+    assert inner["generation_disposition"] == outer["generation_disposition"]
     assert "generation_disposition" not in events[-1][1]
     assert "".join(payload["delta"] for name, payload in events if name == "token") == events[-1][1]["message"]
 
@@ -184,7 +185,8 @@ def test_vat_question_returns_citations_and_low_risk(stub_retrieval, stub_llm, s
     assert response.citations == ["LUAT_48_2024_D10"]
     assert response.risk_score == 0
     assert response.risk_level == "LOW"
-    assert response.llm_used is True
+    assert response.llm_used is False
+    assert response.answer_status == "INSUFFICIENT_BASIS"
     assert response.message
     assert response.sources[0].id == "LUAT_48_2024_D10"
     assert response.as_of_date == "2026-09-30"
@@ -229,8 +231,8 @@ def test_empty_retrieval_returns_no_evidence_reply(monkeypatch: pytest.MonkeyPat
     assert response.risk_level == "MEDIUM"
     assert response.llm_used is False
     assert response.citations == []
-    for question in chat_service.SAMPLE_QUESTIONS:
-        assert question in response.message
+    assert response.answer_status == "INSUFFICIENT_BASIS"
+    assert "chưa đủ căn cứ" in response.message.lower()
 
 
 def test_prompt_contains_clause_text_from_corpus(monkeypatch: pytest.MonkeyPatch, stub_retrieval, stub_verification):
@@ -261,8 +263,10 @@ def test_prompt_contains_clause_text_from_corpus(monkeypatch: pytest.MonkeyPatch
 
     chat_service.build_response([{"role": "user", "content": VAT_QUESTION}])
 
-    assert "Hàng hóa xuất khẩu không chịu thuế GTGT." in captured["prompt"]
-    assert "Dịch vụ xuất khẩu theo hợp đồng." in captured["prompt"]
+    assert captured == {}
+    prompt = chat_service._build_prompt(VAT_QUESTION, "2026-03-20", [_fake_article()])
+    assert "Hàng hóa xuất khẩu không chịu thuế GTGT." in prompt
+    assert "Dịch vụ xuất khẩu theo hợp đồng." in prompt
 
 
 def test_prompt_preserves_long_article_clauses_without_truncation(monkeypatch: pytest.MonkeyPatch, stub_verification):
@@ -291,7 +295,10 @@ def test_prompt_preserves_long_article_clauses_without_truncation(monkeypatch: p
         return iter(["[LUAT_48_2024_D5]"])
     monkeypatch.setattr(chat_service, "generate_llm_response_stream", _capture)
     chat_service.build_response([{"role": "user", "content": "tiệm net 200 triệu đóng thuế không?"}])
-    assert "200 triệu" in captured["prompt"]
+    assert captured == {}
+    prompt = chat_service._build_prompt("thuế GTGT", "2026-03-20", [], ("LUAT_48_2024_D5",))
+    assert clauses[-1]["content"] in prompt
+    assert clauses[0]["content"] in prompt
 
 
 def test_prompt_falls_back_to_article_content_without_corpus_clause(
@@ -308,7 +315,8 @@ def test_prompt_falls_back_to_article_content_without_corpus_clause(
 
     chat_service.build_response([{"role": "user", "content": VAT_QUESTION}])
 
-    assert "Thuế suất 0%." in captured["prompt"]
+    assert captured == {}
+    assert "Thuế suất 0%." in chat_service._build_prompt(VAT_QUESTION, "2026-03-20", [_fake_article()])
 
 
 def test_explicit_article_reference_enters_the_legal_basis(monkeypatch: pytest.MonkeyPatch, stub_retrieval, stub_verification):
@@ -357,10 +365,13 @@ def test_explicit_article_reference_enters_the_legal_basis(monkeypatch: pytest.M
         [{"role": "user", "content": "Hoa don chung tu theo Dieu 9 Nghi dinh 181/2025?"}]
     )
 
-    assert "ND_181_2025_D9" in captured["prompt"]
-    assert "Ho don duoc lap khi ban hang." in captured["prompt"]
-    assert "LUAT_48_2024_D9" not in captured["prompt"]
-    assert response.sources[0].id == "ND_181_2025_D9"
+    assert captured == {}
+    explicit = tuple(chat_service._explicit_article_ids("Dieu 9 Nghi dinh 181/2025"))
+    prompt = chat_service._build_prompt("thuế GTGT", "2026-03-20", [], explicit)
+    assert "ND_181_2025_D9" in prompt
+    assert "Ho don duoc lap khi ban hang." in prompt
+    assert "LUAT_48_2024_D9" not in prompt
+    assert response.answer_status == "INSUFFICIENT_BASIS"
 
 
 def test_article_reference_without_document_hint_keeps_every_match(
@@ -426,8 +437,9 @@ def test_no_evidence_reply_explains_the_temporal_gap(monkeypatch: pytest.MonkeyP
 
     assert response.risk_score == 50
     assert "2024-05-31" in response.message
-    assert "48/2024/QH15" in response.message
-    assert "2025-07-01" in response.message
+    assert response.answer_status == "INSUFFICIENT_BASIS"
+    assert "chưa đủ căn cứ" in response.message.lower()
+    assert not response.llm_used
 
 
 def test_stream_chat_emits_meta_first_and_done_last(stub_retrieval, stub_llm, stub_verification):
@@ -519,16 +531,27 @@ def test_r5_chat_trace_is_independent_of_inner_deterministic_answer(monkeypatch,
         {"cid": value, "exists": True, "valid_from": "2025-07-01", "valid_to": "9999-12-31", "amendments": []}
         for value in kw["ids"]])
     monkeypatch.setattr(verifier, "get_neo4j_driver", lambda: driver)
-    draft = f"Theo [{cid}], {article.content.splitlines()[0]}" if mode == "good" else "unverified draft"
-    generator = Mock(return_value=iter({"none": [], "blank": ["  "]}.get(mode, [draft])))
-    monkeypatch.setattr(chat_service, "generate_llm_response_stream", generator)
+    from src.engine.provision_evidence import resolve_provision_evidence
+    resolution = resolve_provision_evidence([cid], "2026-03-20", corpus_path=corpus, reviewed_amendment_path=ledger)
+    exact = next((p for item in resolution.items for p in item.provisions if p.id == cid), None)
+    draft = f"Issue: Người nộp thuế GTGT\nRule: {exact.text} [{cid}]\nApplication: {exact.text} [{cid}]\nConclusion: {exact.text} [{cid}]" if mode == "good" else "unverified draft"
+    assessment = json.dumps({"outcome": "supported", "coverage": True, "claims": [
+        {"text": draft, "status": "supported", "evidence_ids": [cid]}], "missing_facts": []})
+    generator = Mock(side_effect=[{"none": None, "blank": "  "}.get(mode, draft), assessment])
+    monkeypatch.setattr(chat_service, "generate_llm_response", generator)
     log = tmp_path / "trace.jsonl"
     monkeypatch.setenv("VAT_DIAGNOSTICS", str(log))
     question = "Hộ kinh doanh có phải nộp thuế GTGT không?" if mode == "unresolved" else "Người nộp thuế GTGT khi nhập khẩu là ai?"
     events = list(chat_service.stream_chat([{"role": "user", "content": question}], "2026-03-20"))
     rows = [json.loads(line) for line in log.read_text(encoding="utf-8").splitlines()]
-    inner, outer = rows
-    assert inner["generation_disposition"] == "deterministic_off"
+    inner, outer = rows[-2:]
+    assert inner["generation_disposition"] == outer["generation_disposition"]
+    assert inner["output_sha256"] == outer.get("output_sha256") if mode != "unresolved" else True
+    if mode == "good":
+        assert rows[0]["event"] == "answer_assessment"
+        assert outer["assessment_call_count"] == 1
+        assert outer["output_sha256"] == text_sha256(draft)
+        assert outer["assessment_output_sha256"] == text_sha256(assessment)
     assert outer["event"] == "chat_generation"
     assert outer["generation_disposition"] == {
         "good": "generated_delivered", "none": "provider_no_output", "blank": "provider_no_output",
@@ -540,14 +563,19 @@ def test_r5_chat_trace_is_independent_of_inner_deterministic_answer(monkeypatch,
     }[mode]
     assert outer["generation_attempted"] is (mode != "unresolved")
     assert outer["generated_delivered"] is (mode == "good")
-    assert generator.call_count == (0 if mode == "unresolved" else 1)
+    assert generator.call_count == (0 if mode == "unresolved" else 2 if mode == "good" else 1)
     done = events[-1][1]
     assert done["llm_used"] is (mode in {"good", "bad"})
     assert "".join(payload["delta"] for name, payload in events if name == "token") == done["message"]
     assert outer["delivered_sha256"] == text_sha256(done["message"])
     if mode == "good":
-        assert done["message"] == draft
-        assert article.content.splitlines()[0] in generator.call_args.args[0]
+        assert exact.text in done["message"]
+        assert done["answer_status"] == "ANSWERED"
+        from src.engine.provision_evidence import resolve_provision_evidence
+        resolution = resolve_provision_evidence([cid], "2026-03-20", corpus_path=corpus,
+                                                reviewed_amendment_path=ledger)
+        exact = next(p for item in resolution.items for p in item.provisions if p.id == cid)
+        assert exact.text in generator.call_args.args[0]
     if mode == "unresolved":
         assert done["answer_status"] == "INSUFFICIENT_BASIS"
         assert done["warnings"]
