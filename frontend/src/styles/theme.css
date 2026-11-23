@@ -22,6 +22,20 @@
   --input: transparent;
   --input-background: #f3f3f5;
   --switch-background: #cbced4;
+  --font-sans: 'Plus Jakarta Sans', ui-sans-serif, system-ui, sans-serif;
+  --font-serif: 'Newsreader', Georgia, serif;
+  --font-mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, monospace;
+  --portal-navy: #1E3A8A;
+  --portal-navy-hover: #1E40AF;
+  --portal-tint: #EFF6FF;
+  --portal-tint-border: #BFDBFE;
+  --portal-surface: #F8FAFC;
+  --portal-surface-alt: #F1F5F9;
+  --portal-border: #CBD5E1;
+  --portal-ink: #0F172A;
+  --portal-ink-muted: #475569;
+  --portal-cite-bg: #FFFBEB;
+  --portal-cite-border: #F59E0B;
   --font-weight-medium: 500;
   --font-weight-normal: 400;
   --ring: #0284C7;
@@ -79,6 +93,9 @@
 }
 
 @theme inline {
+  --font-sans: 'Plus Jakarta Sans', ui-sans-serif, system-ui, sans-serif;
+  --font-serif: 'Newsreader', Georgia, serif;
+  --font-mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, monospace;
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --color-card: var(--card);
@@ -126,6 +143,7 @@
 
   body {
     @apply bg-background text-foreground;
+    font-family: var(--font-sans);
   }
 
   /**
@@ -180,16 +198,85 @@
   }
 }
 
-.font-serif-legal { font-family: 'Newsreader', Georgia, serif; }
-.font-sans-ui { font-family: 'Plus Jakarta Sans', Inter, sans-serif; }
-.font-mono-num { font-family: 'JetBrains Mono', monospace; }
-.scroll-quiet { scrollbar-width: none; }
-.scroll-quiet:hover { scrollbar-width: thin; scrollbar-color: #CBD5E1 transparent; }
-.scroll-quiet::-webkit-scrollbar { width: 0; height: 0; }
-.scroll-quiet:hover::-webkit-scrollbar { width: 6px; }
-.scroll-quiet:hover::-webkit-scrollbar-thumb { background: #CBD5E1; border-radius: 6px; }
-@keyframes cite-glow { 0%,100% { box-shadow: 0 0 0 3px rgba(234,179,8,.25), 0 0 24px rgba(234,179,8,.35); } 50% { box-shadow: 0 0 0 5px rgba(234,179,8,.15), 0 0 32px rgba(234,179,8,.5); } }
-.cite-glow { animation: cite-glow 1.8s ease-in-out 3; }
-@keyframes crit-pulse { 0%,100% { box-shadow: 0 0 0 0 rgba(220,38,38,.35); } 50% { box-shadow: 0 0 0 8px rgba(220,38,38,0); } }
-.crit-pulse { animation: crit-pulse 2s ease-out infinite; }
-@media print { header button, .no-print { display: none !important; } }
+.font-serif-legal {
+  font-family: 'Newsreader', Georgia, serif;
+}
+
+.font-sans-ui {
+  font-family: 'Plus Jakarta Sans', ui-sans-serif, system-ui, sans-serif;
+}
+
+.font-mono-num {
+  font-family: 'JetBrains Mono', ui-monospace, SFMono-Regular, monospace;
+}
+
+.scroll-quiet {
+  scrollbar-width: none;
+}
+
+.scroll-quiet:hover {
+  scrollbar-width: thin;
+  scrollbar-color: #CBD5E1 transparent;
+}
+
+.scroll-quiet::-webkit-scrollbar {
+  width: 0;
+  height: 0;
+}
+
+.scroll-quiet:hover::-webkit-scrollbar {
+  width: 6px;
+}
+
+.scroll-quiet:hover::-webkit-scrollbar-thumb {
+  background: #CBD5E1;
+  border-radius: 6px;
+}
+
+@keyframes cite-glow {
+
+  0%,
+  100% {
+    box-shadow: 0 0 0 3px rgba(245, 158, 11, .28), 0 0 20px rgba(245, 158, 11, .25);
+  }
+
+  50% {
+    box-shadow: 0 0 0 5px rgba(245, 158, 11, .18), 0 0 28px rgba(245, 158, 11, .42);
+  }
+}
+
+.cite-glow {
+  animation: cite-glow 1.8s ease-in-out 3;
+}
+
+@keyframes crit-pulse {
+
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 rgba(220, 38, 38, .35);
+  }
+
+  50% {
+    box-shadow: 0 0 0 8px rgba(220, 38, 38, 0);
+  }
+}
+
+.crit-pulse {
+  animation: crit-pulse 2s ease-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+
+  .cite-glow,
+  .crit-pulse {
+    animation: none !important;
+  }
+}
+
+@media print {
+
+  header button,
+  .no-print {
+    display: none !important;
+  }
+}

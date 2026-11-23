@@ -1,5 +1,5 @@
-export type Point = { l: string; text: string };
-export type Clause = { n: number; text: string; points?: Point[] };
+export type Point = { id?: string; l: string; code?: string; text: string };
+export type Clause = { id?: string; n: number; label?: string; code?: string; text: string; points?: Point[] };
 export type Article = {
   id: string;
   no: number;

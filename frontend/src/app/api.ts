@@ -51,17 +51,18 @@ export function parseCitationId(cid: string): Citation {
     };
   }
 
-  const match = cid.match(/^([A-Z0-9_]+)_D(\d+[a-z]?)(?:_K(\d+[a-z]?)(?:_([a-zđ]))?)?$/i);
+  const match = cid.match(/^([A-Z0-9_]+)_D(\d+[a-z]?)(?:_K(\d+[a-z]?)(?:_([a-zđ]|d_1))?)?$/i);
   if (match) {
     const docKey = match[1].toUpperCase();
     const articleNum = match[2].toLowerCase();
     const clauseNum = match[3]?.toLowerCase();
-    const pointLetter = match[4]?.toLowerCase();
+    const rawPoint = match[4]?.toLowerCase();
+    const pointDisplay = rawPoint === "d_1" ? "đ" : rawPoint;
 
     const docMeta = Object.hasOwn(DOCUMENT_LABELS, docKey) ? DOCUMENT_LABELS[docKey] : null;
     if (docMeta) {
-      const prefix = pointLetter
-        ? `Điểm ${pointLetter} Khoản ${clauseNum} `
+      const prefix = pointDisplay
+        ? `Điểm ${pointDisplay} Khoản ${clauseNum} `
         : clauseNum
           ? `Khoản ${clauseNum} `
           : "";
@@ -74,7 +75,7 @@ export function parseCitationId(cid: string): Citation {
       const doc = docMeta.libraryDocId;
       const art = doc ? `${doc}-d${articleNum}` : null;
 
-      const id = `${docKey}_D${articleNum}${clauseNum ? `_K${clauseNum}` : ""}${pointLetter ? `_${pointLetter}` : ""}`;
+      const id = `${docKey}_D${articleNum}${clauseNum ? `_K${clauseNum}` : ""}${rawPoint ? `_${rawPoint}` : ""}`;
       return { id, label, doc, art };
     }
   }
@@ -114,20 +115,35 @@ function extractOrderNumber(raw: string | undefined, pattern: RegExp, fallback: 
 
 function mapApiArticle(raw: ApiArticle, idx: number): Article {
   const no = extractOrderNumber(raw.id, /_D(\d+)/i, extractOrderNumber(raw.code, /(\d+)/, idx + 1));
-  const clauses: Clause[] = (raw.clauses || []).map((cl, cIdx) => ({
-    n: extractOrderNumber(cl.id, /_K(\d+)/i, extractOrderNumber(cl.code, /(\d+)/, cIdx + 1)),
-    text: cl.content || "",
-    points: cl.points?.map((pt, pIdx) => {
-      const letterMatch = pt.code?.match(/\b([a-zđ])$/i) || pt.id?.match(/_([a-zđ])$/i);
-      return {
-        l: letterMatch ? letterMatch[1].toLowerCase() : String(pIdx + 1),
-        text: pt.content || "",
-      };
-    }),
-  }));
+  const clauses: Clause[] = (raw.clauses || []).map((cl, cIdx) => {
+    const idMatch = cl.id?.match(/_K(\d+[a-z]?)$/i);
+    const codeMatch = cl.code?.match(/(\d+[a-z]?)$/i);
+    const label = idMatch?.[1]?.toLowerCase() || codeMatch?.[1]?.toLowerCase();
+    const n = extractOrderNumber(cl.id, /_K(\d+)/i, extractOrderNumber(cl.code, /(\d+)/, cIdx + 1));
+
+    return {
+      id: cl.id,
+      code: cl.code,
+      label: label || String(n),
+      n,
+      text: cl.content || "",
+      points: cl.points?.map((pt, pIdx) => {
+        // Staging corpus encodes "Điểm đ" as *_d_1 with code="Diem d"; preserve distinct label to prevent key collisions.
+        const isDWithStroke = /_d_1$/i.test(pt.id || "");
+        const letterMatch = pt.id?.match(/_([a-zđ])(?:_\d+)?$/i) || pt.code?.match(/\b([a-zđ])$/i);
+        const l = isDWithStroke ? "đ" : letterMatch ? letterMatch[1].toLowerCase() : String(pIdx + 1);
+        return {
+          id: pt.id,
+          code: pt.code,
+          l,
+          text: pt.content || "",
+        };
+      }),
+    };
+  });
   const fallbackText = raw.content || raw.lead || "";
   if (clauses.length === 0 && fallbackText) {
-    clauses.push({ n: 1, text: fallbackText });
+    clauses.push({ n: 1, label: "1", text: fallbackText });
   }
   return {
     id: raw.id,
@@ -163,14 +179,14 @@ export function apiDocToLawDoc(doc: ApiDocumentDetail): LawDoc {
   };
 }
 
-export async function fetchDocuments(): Promise<ApiDocumentSummary[]> {
-  const res = await fetch("/api/documents");
+export async function fetchDocuments(signal?: AbortSignal): Promise<ApiDocumentSummary[]> {
+  const res = await fetch("/api/documents", signal ? { signal } : undefined);
   if (!res.ok) throw new Error(`HTTP ${res.status}`);
   return res.json();
 }
 
-export async function fetchDocumentDetail(docId: string): Promise<LawDoc> {
-  const res = await fetch(`/api/documents/${encodeURIComponent(docId)}`);
+export async function fetchDocumentDetail(docId: string, signal?: AbortSignal): Promise<LawDoc> {
+  const res = await fetch(`/api/documents/${encodeURIComponent(docId)}`, signal ? { signal } : undefined);
   if (!res.ok) throw new Error(`HTTP ${res.status}`);
   return apiDocToLawDoc(await res.json());
 }
@@ -182,8 +198,8 @@ export type ApiHealth = {
   artifacts?: Record<string, unknown>;
 };
 
-export async function fetchHealth(): Promise<ApiHealth> {
-  const res = await fetch("/api/health");
+export async function fetchHealth(signal?: AbortSignal): Promise<ApiHealth> {
+  const res = await fetch("/api/health", signal ? { signal } : undefined);
   if (!res.ok) throw new Error(`HTTP ${res.status}`);
   return res.json();
 }
@@ -202,7 +218,8 @@ export async function queryLegalApi(
   pipeline: "P3" | "P2" | "P1",
   useLlm: boolean = false,
   history: Array<{ role: string; content: string }> = [],
-  model?: string
+  model?: string,
+  signal?: AbortSignal
 ): Promise<Result> {
   const pipelineMap: Record<string, string> = {
     P3: "P3_FullSystem",
@@ -226,6 +243,7 @@ export async function queryLegalApi(
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(payload),
+      ...(signal ? { signal } : {}),
     });
 
     if (!res.ok) {
@@ -355,7 +373,7 @@ export async function queryLegalApi(
       trap,
     };
   } catch (err) {
-    if (err instanceof HttpApiError) {
+    if (err instanceof HttpApiError || (err instanceof Error && err.name === "AbortError")) {
       throw err;
     }
     throw new Error("Không thể kết nối máy chủ thẩm định pháp lý (Backend offline).");
