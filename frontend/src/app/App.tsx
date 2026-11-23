@@ -8,8 +8,18 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 import { Popover, PopoverContent, PopoverTrigger } from "@/app/components/ui/popover";
 import emblem from "@/imports/tai-xuong.png";
 import drum from "@/imports/img_6-hinh-nen-powerpoint-trong-dong.jpg";
-import { DOCS, SCENARIOS, type Result, type Citation } from "./data";
-import { queryLegalApi, findCitationBody, citationBodyMessage, parseCitationId } from "./api";
+import { type LawDoc, DOCS, SCENARIOS, type Result, type Citation } from "./data";
+import {
+  apiDocToLawDoc,
+  type ApiDocumentSummary,
+  citationBodyMessage,
+  DOCUMENT_LABELS,
+  fetchDocumentDetail,
+  fetchDocuments,
+  findCitationBody,
+  parseCitationId,
+  queryLegalApi,
+} from "./api";
 import { DATA_FREEZE_DATE, getEffectiveDate } from "./config";
 
 type Pipeline = "P3" | "P2" | "P1";
@@ -86,13 +96,56 @@ export function App() {
   const [activeLibraryDoc, setActiveLibraryDoc] = useState("l48");
   const [librarySearch, setLibrarySearch] = useState("");
   const [libraryArticle, setLibraryArticle] = useState<string | null>(null);
+  const [liveSummaries, setLiveSummaries] = useState<ApiDocumentSummary[] | null>(null);
+  const [liveDocDetails, setLiveDocDetails] = useState<Record<string, LawDoc>>({});
+
+  useEffect(() => {
+    let active = true;
+    fetchDocuments()
+      .then((list) => {
+        if (active && Array.isArray(list) && list.length > 0) {
+          setLiveSummaries(list);
+          setActiveLibraryDoc((prev) =>
+            list.some((s) => s.id === prev)
+              ? prev
+              : list.find((s) => DOCUMENT_LABELS[s.id]?.libraryDocId === prev)?.id || list[0].id
+          );
+        }
+      })
+      .catch(() => {
+        // Keep static demo DOCS fallback when backend is offline.
+      });
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!libraryOpen || !liveSummaries) return;
+    if (!liveSummaries.some((s) => s.id === activeLibraryDoc) || liveDocDetails[activeLibraryDoc]) return;
+    let active = true;
+    fetchDocumentDetail(activeLibraryDoc)
+      .then((doc) => {
+        if (active) {
+          setLiveDocDetails((prev) => ({ ...prev, [activeLibraryDoc]: doc }));
+        }
+      })
+      .catch(() => {
+        /* ignore offline or 404 */
+      });
+    return () => {
+      active = false;
+    };
+  }, [libraryOpen, activeLibraryDoc, liveSummaries, liveDocDetails]);
 
   useEffect(() => {
     if (libraryOpen && libraryArticle) {
       document.getElementById(`lib-art-${libraryArticle}`)?.scrollIntoView({ behavior: "smooth", block: "center" });
-      setLibraryArticle(null);
+      if (!liveSummaries || liveDocDetails[activeLibraryDoc] || !liveSummaries.some((s) => s.id === activeLibraryDoc)) {
+        setLibraryArticle(null);
+      }
     }
-  }, [libraryOpen, libraryArticle, activeLibraryDoc]);
+  }, [libraryOpen, libraryArticle, activeLibraryDoc, liveDocDetails, liveSummaries]);
 
   const [relatedOpen, setRelatedOpen] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
@@ -139,6 +192,21 @@ export function App() {
   const latestCitations: Citation[] = useMemo(() => {
     return latestResult?.citations || [];
   }, [latestResult]);
+
+  useEffect(() => {
+    if (!relatedOpen || !liveSummaries || latestCitations.length === 0) return;
+    const summaryIds = new Set(liveSummaries.map((s) => s.id));
+    for (const c of latestCitations) {
+      const cidDoc = c.id?.match(/^([A-Z0-9_]+)_D\d/i)?.[1]?.toUpperCase();
+      if (cidDoc && summaryIds.has(cidDoc) && !liveDocDetails[cidDoc]) {
+        fetchDocumentDetail(cidDoc)
+          .then((doc) => setLiveDocDetails((prev) => ({ ...prev, [cidDoc]: doc })))
+          .catch(() => {
+            /* ignore */
+          });
+      }
+    }
+  }, [relatedOpen, latestCitations, liveSummaries, liveDocDetails]);
 
   function newChat() {
     const id = `c_${Date.now()}`;
@@ -253,16 +321,38 @@ export function App() {
     }
   }
 
+  const docKind = (id: string): "luat" | "nghidinh" | "thongtu" | "other" => {
+    if (id.startsWith("LUAT_") || id === "l48" || id === "l13") return "luat";
+    if (id.startsWith("ND_") || id === "nd181" || id === "nd359" || id === "nd144") return "nghidinh";
+    if (id.startsWith("TT_") || id === "tt69") return "thongtu";
+    return "other";
+  };
+
+  const libraryDocs = useMemo<LawDoc[]>(() => {
+    if (!liveSummaries || liveSummaries.length === 0) return [...DOCS];
+    return liveSummaries.map((s) => liveDocDetails[s.id] || apiDocToLawDoc({ ...s, chapters: [], articles: [] }));
+  }, [liveSummaries, liveDocDetails]);
+
+  const categoryCounts = useMemo(() => {
+    const counts = { all: libraryDocs.length, luat: 0, nghidinh: 0, thongtu: 0 };
+    for (const d of libraryDocs) {
+      const kind = docKind(d.id);
+      if (kind !== "other") counts[kind] += 1;
+    }
+    return counts;
+  }, [libraryDocs]);
+
+  const citationSearchDocs = useMemo<LawDoc[]>(() => {
+    return [...Object.values(liveDocDetails), ...DOCS];
+  }, [liveDocDetails]);
+
   // Filter library docs by category and search
   const categorizedDocs = useMemo(() => {
-    return DOCS.filter((d) => {
-      const isLuat = d.id === "l48" || d.id === "l13";
-      const isNghiDinh = d.id === "nd181" || d.id === "nd144";
-      const isThongTu = d.id === "tt69";
-
-      if (libraryCategory === "luat" && !isLuat) return false;
-      if (libraryCategory === "nghidinh" && !isNghiDinh) return false;
-      if (libraryCategory === "thongtu" && !isThongTu) return false;
+    return libraryDocs.filter((d) => {
+      const kind = docKind(d.id);
+      if (libraryCategory === "luat" && kind !== "luat") return false;
+      if (libraryCategory === "nghidinh" && kind !== "nghidinh") return false;
+      if (libraryCategory === "thongtu" && kind !== "thongtu") return false;
 
       if (!librarySearch.trim()) return true;
       const term = librarySearch.toLowerCase();
@@ -277,11 +367,11 @@ export function App() {
         )
       );
     });
-  }, [libraryCategory, librarySearch]);
+  }, [libraryDocs, libraryCategory, librarySearch]);
 
   const activeDocData = useMemo(() => {
-    return DOCS.find((d) => d.id === activeLibraryDoc) || null;
-  }, [activeLibraryDoc]);
+    return libraryDocs.find((d) => d.id === activeLibraryDoc) || null;
+  }, [libraryDocs, activeLibraryDoc]);
 
   return (
     <div className="relative flex h-screen w-screen overflow-hidden bg-[#FFFFFF] font-sans text-[#1F1F1F] antialiased">
@@ -353,7 +443,7 @@ export function App() {
               {sidebarOpen && (
                 <div className="flex flex-1 items-center justify-between">
                   <span className="font-medium text-[#1E293B]">Thư viện văn bản</span>
-                  <span className="rounded-full bg-[#E0E7FF] px-2 py-0.5 text-[10px] font-bold text-[#1E3A8A]">5 VB</span>
+                  <span className="rounded-full bg-[#E0E7FF] px-2 py-0.5 text-[10px] font-bold text-[#1E3A8A]">{libraryDocs.length} VB</span>
                 </div>
               )}
             </button>
@@ -766,7 +856,7 @@ export function App() {
               libraryCategory === "all" ? "bg-[#EFF6FF] text-[#1E3A8A] border-b-2 border-[#1E3A8A]" : "text-[#64748B] hover:bg-gray-50"
             }`}
           >
-            Tất cả (5)
+            Tất cả ({categoryCounts.all})
           </button>
           <button
             onClick={() => setLibraryCategory("luat")}
@@ -774,7 +864,7 @@ export function App() {
               libraryCategory === "luat" ? "bg-[#EFF6FF] text-[#1E3A8A] border-b-2 border-[#1E3A8A]" : "text-[#64748B] hover:bg-gray-50"
             }`}
           >
-            🏛️ Luật (2)
+            🏛️ Luật ({categoryCounts.luat})
           </button>
           <button
             onClick={() => setLibraryCategory("nghidinh")}
@@ -782,7 +872,7 @@ export function App() {
               libraryCategory === "nghidinh" ? "bg-[#EFF6FF] text-[#1E3A8A] border-b-2 border-[#1E3A8A]" : "text-[#64748B] hover:bg-gray-50"
             }`}
           >
-            📜 Nghị định (2)
+            📜 Nghị định ({categoryCounts.nghidinh})
           </button>
           <button
             onClick={() => setLibraryCategory("thongtu")}
@@ -790,7 +880,7 @@ export function App() {
               libraryCategory === "thongtu" ? "bg-[#EFF6FF] text-[#1E3A8A] border-b-2 border-[#1E3A8A]" : "text-[#64748B] hover:bg-gray-50"
             }`}
           >
-            📑 Thông tư (1)
+            📑 Thông tư ({categoryCounts.thongtu})
           </button>
         </div>
 
@@ -850,6 +940,13 @@ export function App() {
                 </div>
               </div>
 
+              {activeDocData.chapters.length === 0 && liveSummaries?.some((s) => s.id === activeDocData.id) && !liveDocDetails[activeDocData.id] ? (
+                <div className="flex items-center justify-center gap-2 rounded-2xl border border-[#CBD5E1] bg-white p-6 text-[12.5px] text-[#475569]">
+                  <Loader2 className="h-4 w-4 animate-spin text-[#1E3A8A]" />
+                  <span>Đang tải toàn văn điều khoản từ máy chủ...</span>
+                </div>
+              ) : null}
+
               {activeDocData.chapters.map((ch, idx) => (
                 <div key={idx} className="space-y-3">
                   <div className="font-bold text-[12px] uppercase text-[#64748B] border-b border-[#CBD5E1]/50 pb-1">
@@ -869,6 +966,16 @@ export function App() {
                           <div key={c.n}>
                             <span className="font-semibold text-[#0F172A]">{c.n}. </span>
                             <span>{c.text}</span>
+                            {c.points && c.points.length > 0 && (
+                              <div className="mt-1 space-y-1 pl-4 text-[12px] text-[#475569]">
+                                {c.points.map((pt) => (
+                                  <div key={pt.l}>
+                                    <span className="font-semibold text-[#1E3A8A]">{pt.l}) </span>
+                                    <span>{pt.text}</span>
+                                  </div>
+                                ))}
+                              </div>
+                            )}
                           </div>
                         ))}
                       </div>
@@ -921,12 +1028,16 @@ export function App() {
               </div>
 
               {latestCitations.map((c, i) => {
-                const match = findCitationBody(c, DOCS);
+                const match = findCitationBody(c, citationSearchDocs);
                 const targetArticle = match ? match.article : null;
+                const resolvedLibDocId = match
+                  ? (libraryDocs.find((d) => d.id === match.document.id || DOCUMENT_LABELS[d.id]?.libraryDocId === match.document.id)?.id || match.document.id)
+                  : null;
+                const isLiveMatch = Boolean(match && liveDocDetails[match.document.id]);
 
                 return (
                   <div
-                    key={c.id || `${c.art || c.doc || "cite"}-${i}`}
+                    key={c.id || `${c.art || c.label}-${i}`}
                     className="rounded-2xl border border-[#CBD5E1] bg-white p-4 shadow-xs"
                   >
                     <div className="flex items-center justify-between gap-2 border-b border-[#F1F5F9] pb-2">
@@ -934,7 +1045,7 @@ export function App() {
                       {match ? (
                         <button
                           onClick={() => {
-                            setActiveLibraryDoc(match.document.id);
+                            if (resolvedLibDocId) setActiveLibraryDoc(resolvedLibDocId);
                             setLibraryOpen(true);
                             setLibraryCategory("all");
                             setLibrarySearch("");
@@ -942,7 +1053,7 @@ export function App() {
                           }}
                           className="flex items-center gap-1 text-[11px] font-semibold text-[#2563EB] hover:underline"
                         >
-                          <span>Xem bản trích demo</span>
+                          <span>{isLiveMatch ? "Xem trong thư viện" : "Xem bản trích demo"}</span>
                           <ExternalLink className="h-3 w-3" />
                         </button>
                       ) : (
@@ -1087,6 +1198,23 @@ function Answer({
           <span className="rounded-full bg-[#EFF6FF] px-2 py-0.5 text-[10.5px] font-semibold text-[#1E3A8A] border border-[#BFDBFE]">
             {msg.pipeline}
           </span>
+          {r.answer_status && !r.is_greeting && (
+            <span
+              className={`rounded-full px-2 py-0.5 text-[10.5px] font-semibold border ${
+                r.answer_status === "ANSWERED"
+                  ? "bg-emerald-50 text-emerald-700 border-emerald-200"
+                  : r.answer_status === "INSUFFICIENT_BASIS"
+                  ? "bg-amber-50 text-amber-800 border-amber-200"
+                  : "bg-orange-50 text-orange-800 border-orange-200"
+              }`}
+            >
+              {r.answer_status === "ANSWERED"
+                ? "Đã trả lời"
+                : r.answer_status === "INSUFFICIENT_BASIS"
+                ? "Chưa đủ căn cứ"
+                : "Ngoài phạm vi"}
+            </span>
+          )}
         </div>
 
         <div className="flex items-center gap-1.5 rounded-full bg-[#F8FAFC] px-3 py-1 text-[11px] font-semibold text-[#475569] border border-[#E2E8F0]">

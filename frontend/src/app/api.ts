@@ -1,5 +1,40 @@
-import { type Result, type Citation, type AuditItem, type LawDoc, type Article, DOCUMENT_LABELS, type DocumentLabel } from "./data";
+import {
+  type Result,
+  type Citation,
+  type AuditItem,
+  type LawDoc,
+  type Article,
+  type Clause,
+  DOCUMENT_LABELS,
+  type DocumentLabel,
+} from "./data";
 export { DOCUMENT_LABELS, type DocumentLabel };
+
+export type ApiDocumentSummary = {
+  id: string;
+  code: string;
+  title: string;
+  valid_from: string;
+  valid_to: string;
+};
+
+type ApiPoint = { id?: string; code?: string; content?: string };
+type ApiClause = { id?: string; code?: string; content?: string; points?: ApiPoint[] };
+type ApiArticle = {
+  id: string;
+  code?: string;
+  title?: string;
+  content?: string;
+  lead?: string;
+  clauses?: ApiClause[];
+};
+export type ApiDocumentDetail = ApiDocumentSummary & {
+  status?: string;
+  chapters?: Array<{ title?: string; articles?: ApiArticle[] }>;
+  articles?: ApiArticle[];
+};
+
+class HttpApiError extends Error {}
 
 export function parseCitationId(cid: string): Citation {
   if (!cid || typeof cid !== "string") {
@@ -51,17 +86,93 @@ export function findCitationBody(
   citation: Citation,
   docs: readonly LawDoc[]
 ): { document: LawDoc; article: Article } | null {
-  if (!citation.doc || !citation.art) return null;
-  const document = docs.find((d) => d.id === citation.doc);
+  const cidMatch = citation.id?.match(/^([A-Z0-9_]+)_D(\d+[a-z]?)(?:_|$)/i);
+  const canonicalDocId = cidMatch ? cidMatch[1].toUpperCase() : null;
+  const canonicalArtId = cidMatch ? `${canonicalDocId}_D${cidMatch[2].toLowerCase()}` : null;
+  if (!citation.art && !canonicalArtId) return null;
+  const document = docs.find(
+    (d) => (citation.doc && d.id === citation.doc) || (canonicalDocId && d.id === canonicalDocId)
+  );
   if (!document) return null;
   for (const ch of document.chapters) {
     for (const a of ch.articles) {
-      if (a.id === citation.art) {
+      if (
+        (citation.art && a.id === citation.art) ||
+        (canonicalArtId && a.id.toLowerCase() === canonicalArtId.toLowerCase())
+      ) {
         return { document, article: a };
       }
     }
   }
   return null;
+}
+
+function extractOrderNumber(raw: string | undefined, pattern: RegExp, fallback: number): number {
+  const matched = raw?.match(pattern);
+  return matched ? parseInt(matched[1], 10) : fallback;
+}
+
+function mapApiArticle(raw: ApiArticle, idx: number): Article {
+  const no = extractOrderNumber(raw.id, /_D(\d+)/i, extractOrderNumber(raw.code, /(\d+)/, idx + 1));
+  const clauses: Clause[] = (raw.clauses || []).map((cl, cIdx) => ({
+    n: extractOrderNumber(cl.id, /_K(\d+)/i, extractOrderNumber(cl.code, /(\d+)/, cIdx + 1)),
+    text: cl.content || "",
+    points: cl.points?.map((pt, pIdx) => {
+      const letterMatch = pt.code?.match(/\b([a-zđ])$/i) || pt.id?.match(/_([a-zđ])$/i);
+      return {
+        l: letterMatch ? letterMatch[1].toLowerCase() : String(pIdx + 1),
+        text: pt.content || "",
+      };
+    }),
+  }));
+  const fallbackText = raw.content || raw.lead || "";
+  if (clauses.length === 0 && fallbackText) {
+    clauses.push({ n: 1, text: fallbackText });
+  }
+  return {
+    id: raw.id,
+    no,
+    title: raw.title || raw.code || `Điều ${no}`,
+    clauses,
+  };
+}
+
+export function apiDocToLawDoc(doc: ApiDocumentDetail): LawDoc {
+  const meta = Object.hasOwn(DOCUMENT_LABELS, doc.id) ? DOCUMENT_LABELS[doc.id] : null;
+  const nonEmptyChapters = (doc.chapters || []).filter((ch) => (ch.articles || []).length > 0);
+  const chapters = nonEmptyChapters.length > 0
+    ? nonEmptyChapters.map((ch, idx) => ({
+        title: ch.title || `Phần ${idx + 1}`,
+        articles: (ch.articles || []).map(mapApiArticle),
+      }))
+    : [{
+        title: "Nội dung văn bản",
+        articles: (doc.articles || []).map(mapApiArticle),
+      }];
+  const isLimited = doc.status === "EXPIRED" || (Boolean(doc.valid_to) && doc.valid_to !== "9999-12-31");
+  return {
+    id: doc.id,
+    tab: meta?.label || doc.code || doc.id,
+    full: doc.title ? `${doc.code} — ${doc.title}` : doc.code || doc.id,
+    badge: {
+      text: isLimited ? `Hiệu lực đến ${doc.valid_to}` : "Đang áp dụng",
+      tone: isLimited ? "amber" : "green",
+    },
+    effective: doc.valid_from || "",
+    chapters,
+  };
+}
+
+export async function fetchDocuments(): Promise<ApiDocumentSummary[]> {
+  const res = await fetch("/api/documents");
+  if (!res.ok) throw new Error(`HTTP ${res.status}`);
+  return res.json();
+}
+
+export async function fetchDocumentDetail(docId: string): Promise<LawDoc> {
+  const res = await fetch(`/api/documents/${encodeURIComponent(docId)}`);
+  if (!res.ok) throw new Error(`HTTP ${res.status}`);
+  return apiDocToLawDoc(await res.json());
 }
 
 export function citationBodyMessage(citation: Citation): string {
@@ -100,7 +211,16 @@ export async function queryLegalApi(
     });
 
     if (!res.ok) {
-      throw new Error("Không thể kết nối máy chủ thẩm định pháp lý (Backend offline).");
+      const errData = await res.json().catch(() => null);
+      const detail = typeof errData?.detail === "string" ? errData.detail : "";
+      if (res.status >= 500) {
+        throw new HttpApiError(
+          `Không thể kết nối máy chủ thẩm định pháp lý (HTTP ${res.status}${detail ? `: ${detail}` : ""}).`
+        );
+      }
+      throw new HttpApiError(
+        `Yêu cầu không hợp lệ (HTTP ${res.status}${detail ? `: ${detail}` : ""}).`
+      );
     }
 
     const data = await res.json();
@@ -109,6 +229,7 @@ export async function queryLegalApi(
     if (data.is_out_of_domain) {
       return {
         score: 0,
+        answer_status: data.answer_status || "OUT_OF_SCOPE",
         issue: data.irac_sections?.issue || `Kiểm tra phạm vi áp dụng: "${query}"`,
         rule: data.irac_sections?.rule || "Không có quy phạm pháp luật thuế GTGT điều chỉnh nội dung này.",
         citations: [],
@@ -204,6 +325,7 @@ export async function queryLegalApi(
 
     return {
       score: data.risk_score ?? 0,
+      answer_status: data.answer_status || "ANSWERED",
       issue: data.irac_sections?.issue || `Xác định quy định pháp lý cho: "${query}"`,
       rule: data.irac_sections?.rule || "Chưa xác định được điều khoản viện dẫn cụ thể.",
       citations,
@@ -215,6 +337,9 @@ export async function queryLegalApi(
       trap,
     };
   } catch (err) {
+    if (err instanceof HttpApiError) {
+      throw err;
+    }
     throw new Error("Không thể kết nối máy chủ thẩm định pháp lý (Backend offline).");
   }
 }

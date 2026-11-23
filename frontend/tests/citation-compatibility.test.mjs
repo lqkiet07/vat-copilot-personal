@@ -13,7 +13,7 @@ async function load(relative) {
   });
   return import("data:text/javascript;base64," + Buffer.from(bundle.outputFiles[0].text).toString("base64"));
 }
-const { parseCitationId, DOCUMENT_LABELS, findCitationBody, queryLegalApi, citationBodyMessage } = await load("../src/app/api.ts");
+const { parseCitationId, DOCUMENT_LABELS, findCitationBody, queryLegalApi, citationBodyMessage, apiDocToLawDoc } = await load("../src/app/api.ts");
 const { DOCS, resolve } = await load("../src/app/data.ts");
 const appSource = fs.readFileSync(path.resolve(dirname, "../src/app/App.tsx"), "utf8");
 const inventory = JSON.parse(fs.readFileSync(path.resolve(dirname, "../../data/source_inventory.json"), "utf8"));
@@ -134,5 +134,72 @@ test("Step8.2 in-file demo citations carry canonical IDs", () => {
       assert.deepEqual(parseCitationId(c.id).art, c.art);
       assert.ok(DOCUMENT_LABELS[c.id.split("_D")[0]]);
     }
+  }
+});
+
+test("Task6 live document mapping, answer_status, and HTTP error messages work cleanly", async () => {
+  const mapped = apiDocToLawDoc({
+    id: "ND_68_2026",
+    code: "68/2026/NĐ-CP",
+    title: "Nghị định về hộ kinh doanh",
+    valid_from: "2026-03-05",
+    valid_to: "9999-12-31",
+    status: "ACTIVE",
+    chapters: [],
+    articles: [
+      {
+        id: "ND_68_2026_D12",
+        code: "Dieu 12",
+        title: "Xử lý số thuế nộp thừa",
+        clauses: [
+          {
+            id: "ND_68_2026_D12_K1",
+            code: "Khoan 1",
+            content: "Hộ kinh doanh được xử lý số thuế nộp thừa.",
+            points: [{ id: "ND_68_2026_D12_K1_a", code: "Diem a", content: "Bù trừ hoặc hoàn trả." }],
+          },
+        ],
+      },
+    ],
+  });
+  assert.equal(mapped.id, "ND_68_2026");
+  assert.equal(mapped.badge.tone, "green");
+  assert.equal(mapped.chapters[0].articles[0].clauses[0].points?.[0].l, "a");
+
+  const hit = findCitationBody(parseCitationId("ND_68_2026_D12_K1"), [mapped]);
+  assert.equal(hit?.article.id, "ND_68_2026_D12");
+  assert.equal(findCitationBody(parseCitationId("ND_68_2026"), [mapped]), null);
+
+  const original = globalThis.fetch;
+  try {
+    globalThis.fetch = async () => ({
+      ok: false,
+      status: 400,
+      json: async () => ({ detail: "Staging supports P3 only" }),
+    });
+    await assert.rejects(() => queryLegalApi("thuế", "2026-11-06", "P1"), /HTTP 400: Staging supports P3 only/);
+
+    globalThis.fetch = async () => ({
+      ok: false,
+      status: 503,
+      json: async () => ({ detail: "Neo4j timeout" }),
+    });
+    await assert.rejects(() => queryLegalApi("thuế", "2026-11-06", "P3"), /Không thể kết nối.*HTTP 503: Neo4j timeout/);
+
+    globalThis.fetch = async () => ({
+      ok: true,
+      json: async () => ({
+        citations: ["ND_68_2026_D12_K1"],
+        risk_score: 65,
+        risk_level: "HIGH",
+        answer_status: "INSUFFICIENT_BASIS",
+        warnings: [],
+        irac_sections: { issue: "I", rule: "R", application: "A", conclusion: "C" },
+      }),
+    });
+    const res = await queryLegalApi("thuế", "2026-11-06", "P3");
+    assert.equal(res.answer_status, "INSUFFICIENT_BASIS");
+  } finally {
+    globalThis.fetch = original;
   }
 });

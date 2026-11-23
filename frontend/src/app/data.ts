@@ -256,6 +256,7 @@ export const DOCUMENT_LABELS: Record<string, DocumentLabel> = {
 };
 export type Result = {
   score: number;
+  answer_status?: "ANSWERED" | "INSUFFICIENT_BASIS" | "OUT_OF_SCOPE";
   issue: string;
   rule: string;
   citations: Citation[];

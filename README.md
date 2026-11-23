@@ -1,119 +1,111 @@
 # Temporal KG-RAG for Verifiable Legal Reasoning over Vietnamese VAT Regulations
 
-A verifiable Vietnamese VAT legal QA system: a two-level Neo4j knowledge graph
-(Document → Article → Clause → Point), hybrid retrieval (Lucene full-text + 1024-dim
-vectors, RRF k=60) with temporal validity filtering, a deterministic 5-state
-Citation Verifier, and a 0–100 Risk Score.
+A verifiable Vietnamese VAT legal QA system combining a Neo4j temporal knowledge graph (`Document -> Article -> Clause -> Point`), hybrid retrieval (Lucene full-text + 1024-dim `bge-m3` vectors fused via RRF `k=60`), Clause/Point BM25+coverage reranking, deterministic provision-level temporal resolution against operative amendments, token-bounded evidence packing, two-stage LLM generation + structured Claim Assessment, and a 0–100 Citation Verifier.
 
-The web app has **two views**:
+## Architecture Overview
 
-- **VAT Copilot** (default) — a chat assistant that answers Vietnamese VAT questions
-  with streamed answers, highlighted citations, a risk score, and a link to the full
-  legal text of every cited article.
-- **Trung tâm Thẩm định** — the original split-view workbench: legal corpus on the left,
-  verified analysis on the right, plus the P1/P2/P3 ablation switch and printable
-  consultation minutes.
+- **Backend (`src/api/`, `src/engine/`, `src/graph/`, `src/verifier/`)**:
+  - Temporal Provision Evidence Resolver (`src/engine/provision_evidence.py`) computing active, amended, repeatable/inserted, blocked, or unresolved provisions at any `as_of_date` (`YYYY-MM-DD`) bound to explicit amendment review ledgers (`tests/fixtures/amendment_review.staging.json` for staging).
+  - Hybrid Retrieval & Clause/Point Selection (`src/engine/hybrid_retriever.py`, `src/engine/retrieval_service.py`, `src/engine/provision_selector.py`) preserving RRF `top_k=15` article recall while ranking clauses/points into provider token budgets (`src/engine/evidence_pack.py`).
+  - Two-stage Reviewed Answer Pipeline (`src/api/reviewed_answer.py`, `src/engine/answer_assessment.py`) returning verified `ANSWERED`, `INSUFFICIENT_BASIS`, or `OUT_OF_SCOPE` outcomes with exact blocker provenance.
+- **Frontend (`frontend/src/app/`)**:
+  - React 18 + Vite + TailwindCSS portal connected to `POST /api/query`, `GET /api/documents`, and `GET /api/documents/{doc_id}` (with offline 5-document demo fallback).
 
-## Tech stack
-- Backend: Python 3.11+, FastAPI, Neo4j 5.26 (Docker), Streamlit
-- LLM: Ollama local (`qwen2.5:7b`), with a deterministic fallback when it is offline
-- Frontend: React 18, Vite, TailwindCSS, react-markdown
-- Tests: pytest (299 tests)
+## Corpus Profiles
 
-## Quick start
+- **Canonical (5 core VAT documents, default port `7687`)**: `LUAT_48_2024`, `ND_181_2025`, `TT_69_2025`, `ND_359_2025`, `ND_144_2026`.
+- **Staging (33 VAT-ecosystem documents, `VAT_ENV=staging`, isolated Neo4j port `17687`)**: uses `data/processed/vat_corpus.staging.json`, `article_embeddings.staging.json`, `embedding_meta.staging.json` (494 `bge-m3` vectors), and `tests/fixtures/amendment_review.staging.json`.
 
-### 1. Neo4j
+## Tech Stack
+
+- Backend: Python 3.11+, FastAPI, Neo4j 5.26 (Docker)
+- LLM Providers: Gemini (`GEMINI_API_KEY`, default `gemini-2.5-flash`) or local Ollama (`qwen2.5:7b` + `bge-m3` embeddings on `http://localhost:11434`)
+- Frontend: React 18, Vite 6, TailwindCSS 4 (`frontend/src/app/`)
+- Tests: pytest (backend offline/Neo4j), Node test runner + esbuild (frontend)
+
+## Quick Start
+
+### 1. Neo4j & Seed
 ```bash
 docker compose up -d
-# Browser: http://localhost:7474 — neo4j / vat-temporal-2026
+python scripts/seed_neo4j.py
 ```
 
-### 2. Python dependencies
+### 2. Python Dependencies
 ```bash
 python -m venv .venv
 .venv\Scripts\activate
 pip install -r requirements.txt
 ```
 
-### 3. Seed the knowledge graph
+### 3. Local Models (Optional if using Gemini API)
 ```bash
-python scripts/seed_neo4j.py
-```
-Idempotent (`MERGE`); re-running does not duplicate data.
-
-### 4. Local LLM (needed for the VAT Copilot chat answers)
-```bash
+ollama pull bge-m3
 ollama pull qwen2.5:7b
-# Ollama must be running on http://localhost:11434
 ```
-Without Ollama the chat still works: it falls back to a deterministic answer that lists
-the applicable legal basis instead of a generated explanation.
 
-### 5. Backend (port 8000)
+### 4. Backend & Frontend
 ```bash
 uvicorn src.api.main:app --port 8000 --reload
 # Swagger: http://localhost:8000/docs
-```
 
-### 6. Frontend (port 5173)
-```bash
 cd frontend
 npm install
 npm run dev
 ```
 
-### 7. Streamlit prototype (optional)
-```bash
-streamlit run app_demo.py
+## Verification Commands
+
+### Backend Offline Test Suite
+```powershell
+$env:OPENBLAS_NUM_THREADS='1'; $env:OMP_NUM_THREADS='1'; $env:NEO4J_TEST_PASSWORD=''; $env:PYTHON_DOTENV_DISABLED='1'
+pytest tests/ -q --tb=short
 ```
 
-### 8. Tests
-```bash
-pytest tests/ -q
+### Frontend Build & Compatibility Tests
+```powershell
+cd frontend
+npm run build
+node --test tests/citation-compatibility.test.mjs
 ```
-Khi chạy với Neo4j: `299 passed`. Khi chạy offline (không có Neo4j): `213 passed, 76 skipped, 0 failed` (nhờ marker `requires_neo4j`).
 
-## VAT Copilot (chatbot)
+### Staging Preflight Check (requires isolated `vat-neo4j-test:17687`, `bge-m3`, `GEMINI_API_KEY`)
+```bash
+python scripts/live_qa_validation.py --preflight
+```
 
-| Capability | Behaviour |
-|---|---|
-| Scope guard | Answers Vietnamese VAT law only; out-of-scope questions are refused with three sample VAT questions |
-| Temporal reasoning | The reference date is read from the question (`tháng 5/2024`, `ngày 15/05/2024`) or taken from the date chip; default is the data freeze date `2026-09-30` |
-| Grounded answers | The prompt carries the clause text of every retrieved article; the model may only cite the supplied basis |
-| Citation verification | Every citation is checked against the graph (VALID / AMENDED / NOT_YET_EFFECTIVE / EXPIRED / NOT_FOUND) and scored 0–100 |
-| Transparency | Citations and key figures are highlighted inline; clicking a citation opens the full legal text |
-| Multi-turn | Follow-up questions keep the conversation context; a short follow-up is merged with the previous turn for retrieval |
-| History | Sessions are stored in the browser (`localStorage`), up to 20 conversations |
-
-Chat endpoints (used by the frontend):
+## Key API Endpoints
 
 | Endpoint | Purpose |
 |---|---|
-| `POST /api/chat` | One turn, complete answer with citations and risk score |
-| `POST /api/chat/stream` | Same turn streamed as SSE: `meta` → `token` → `done` |
+| `GET /api/health` | Neo4j connectivity, runtime profile (`canonical`/`staging`), artifact digests |
+| `GET /api/documents` | List document summaries in active corpus |
+| `GET /api/documents/{doc_id}` | Full article/clause tree for a document |
+| `POST /api/query` | Execute temporal legal QA with `answer_status`, citations, warnings, and IRAC sections |
+| `POST /api/chat` / `POST /api/chat/stream` | Multi-turn reviewed chat (buffered / SSE) |
 
-## Environment variables
+## Environment Variables
+
 | Variable | Default | Description |
 |---|---|---|
-| `NEO4J_URI` | `bolt://localhost:7687` | Neo4j Bolt endpoint |
-| `NEO4J_USER` | `neo4j` | Neo4j username |
-| `NEO4J_PASSWORD` | `vat-temporal-2026` | Local demo password; change before deployment |
-| `EMBEDDING_PROVIDER` | `deterministic` | Embedding provider: `deterministic` (testing/offline), `ollama` (production `bge-m3`), `auto` |
+| `VAT_ENV` | `canonical` | Runtime profile: `canonical` or `staging` |
+| `NEO4J_URI` | `bolt://localhost:7687` | Neo4j Bolt URI (staging requires `17687`) |
+| `NEO4J_USER` / `NEO4J_PASSWORD` | `neo4j` / — | Neo4j credentials |
+| `LLM_PROVIDER` | auto | `gemini`, `ollama`, or `openai` |
+| `GEMINI_API_KEY` | — | API key when using Gemini provider |
+| `EMBEDDING_PROVIDER` | `deterministic` | `deterministic`, `ollama` (`bge-m3`), or `auto` |
+| `CLOUD_LLM_CONTEXT_LIMIT` | `24576` | Cloud provider prompt context budget (`4096..131072`) |
+| `OLLAMA_NUM_CTX` | `8192` | Local Ollama context window |
 
-## Project structure
+## Project Structure
 ```
-src/api/        FastAPI routes, Pydantic models, chat service
-src/engine/     hybrid/temporal retrieval, LLM client
+src/api/        FastAPI routes, query/chat services, reviewed answer pipeline
+src/engine/     Hybrid/temporal retrieval, provision resolver, selector, evidence packing, LLM client
 src/graph/      Neo4j schema, importer, connection
-src/parser/     corpus builder, relation extractor
-src/verifier/   citation verifier, risk score
-src/ui/         demo service, corpus viewer
-frontend/       React + Vite UI (chat view + split-view dashboard)
-data/           raw vbpl.vn HTML, processed corpus, embeddings, benchmark
-scripts/        scrape, build corpus, embeddings, seed, benchmark
-tests/          pytest suite
+src/parser/     Corpus builder, relation extractor
+src/verifier/   Citation verifier, guardrails, risk scoring
+src/ui/         Corpus tree & index loaders, demo query service
+frontend/       React + Vite application (src/app/) and frontend tests
+scripts/        Seeding, staging QA preflight/validation runner, amendment ledger helpers
+tests/          Pytest test suites and staging fixtures
 ```
-
-## Data
-Legal corpus sourced from [vbpl.vn](https://vbpl.vn): Law 48/2024/QH15,
-Decree 181/2025, Circular 69/2025, Decree 359/2025, Decree 144/2026.
