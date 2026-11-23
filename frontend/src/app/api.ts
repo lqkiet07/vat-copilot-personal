@@ -34,7 +34,7 @@ export type ApiDocumentDetail = ApiDocumentSummary & {
   articles?: ApiArticle[];
 };
 
-class HttpApiError extends Error {}
+class HttpApiError extends Error { }
 
 export function parseCitationId(cid: string): Citation {
   if (!cid || typeof cid !== "string") {
@@ -63,8 +63,8 @@ export function parseCitationId(cid: string): Citation {
       const prefix = pointLetter
         ? `Điểm ${pointLetter} Khoản ${clauseNum} `
         : clauseNum
-        ? `Khoản ${clauseNum} `
-        : "";
+          ? `Khoản ${clauseNum} `
+          : "";
 
       const docShortName = docMeta.libraryDocId === "l48"
         ? "Luật 48/2024"
@@ -142,13 +142,13 @@ export function apiDocToLawDoc(doc: ApiDocumentDetail): LawDoc {
   const nonEmptyChapters = (doc.chapters || []).filter((ch) => (ch.articles || []).length > 0);
   const chapters = nonEmptyChapters.length > 0
     ? nonEmptyChapters.map((ch, idx) => ({
-        title: ch.title || `Phần ${idx + 1}`,
-        articles: (ch.articles || []).map(mapApiArticle),
-      }))
+      title: ch.title || `Phần ${idx + 1}`,
+      articles: (ch.articles || []).map(mapApiArticle),
+    }))
     : [{
-        title: "Nội dung văn bản",
-        articles: (doc.articles || []).map(mapApiArticle),
-      }];
+      title: "Nội dung văn bản",
+      articles: (doc.articles || []).map(mapApiArticle),
+    }];
   const isLimited = doc.status === "EXPIRED" || (Boolean(doc.valid_to) && doc.valid_to !== "9999-12-31");
   return {
     id: doc.id,
@@ -175,6 +175,19 @@ export async function fetchDocumentDetail(docId: string): Promise<LawDoc> {
   return apiDocToLawDoc(await res.json());
 }
 
+export type ApiHealth = {
+  status: string;
+  neo4j_connected: boolean;
+  environment?: string;
+  artifacts?: Record<string, unknown>;
+};
+
+export async function fetchHealth(): Promise<ApiHealth> {
+  const res = await fetch("/api/health");
+  if (!res.ok) throw new Error(`HTTP ${res.status}`);
+  return res.json();
+}
+
 export function citationBodyMessage(citation: Citation): string {
   const parsed = parseCitationId(citation.id);
   const documentId = parsed.id.split("_D")[0];
@@ -188,7 +201,8 @@ export async function queryLegalApi(
   asOfDate: string,
   pipeline: "P3" | "P2" | "P1",
   useLlm: boolean = false,
-  history: Array<{ role: string; content: string }> = []
+  history: Array<{ role: string; content: string }> = [],
+  model?: string
 ): Promise<Result> {
   const pipelineMap: Record<string, string> = {
     P3: "P3_FullSystem",
@@ -197,17 +211,21 @@ export async function queryLegalApi(
   };
 
   try {
+    const payload: Record<string, unknown> = {
+      query,
+      as_of_date: asOfDate,
+      pipeline: pipelineMap[pipeline] || "P3_FullSystem",
+      use_llm: useLlm,
+      history,
+    };
+    if (model) {
+      payload.model = model;
+    }
+
     const res = await fetch("/api/query", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        query,
-        as_of_date: asOfDate,
-        pipeline: pipelineMap[pipeline] || "P3_FullSystem",
-        use_llm: useLlm,
-        model: "qwen2.5:7b",
-        history,
-      }),
+      body: JSON.stringify(payload),
     });
 
     if (!res.ok) {
@@ -235,7 +253,7 @@ export async function queryLegalApi(
         citations: [],
         application: [
           data.irac_sections?.application ||
-            "Câu hỏi của bạn không thuộc phạm vi điều chỉnh của Hệ thống Pháp lý Thuế Giá trị gia tăng (GTGT).",
+          "Câu hỏi của bạn không thuộc phạm vi điều chỉnh của Hệ thống Pháp lý Thuế Giá trị gia tăng (GTGT).",
         ],
         conclusion:
           data.irac_sections?.conclusion ||

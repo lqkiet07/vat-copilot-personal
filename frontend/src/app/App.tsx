@@ -16,11 +16,12 @@ import {
   DOCUMENT_LABELS,
   fetchDocumentDetail,
   fetchDocuments,
+  fetchHealth,
   findCitationBody,
   parseCitationId,
   queryLegalApi,
 } from "./api";
-import { DATA_FREEZE_DATE, getEffectiveDate } from "./config";
+import { DATA_FREEZE_DATE, getEffectiveDate, STAGING_DATA_FREEZE_DATE } from "./config";
 
 type Pipeline = "P3" | "P2" | "P1";
 type Msg = { id: number; q: string; date: string; pipeline: Pipeline; result: Result | null };
@@ -98,9 +99,24 @@ export function App() {
   const [libraryArticle, setLibraryArticle] = useState<string | null>(null);
   const [liveSummaries, setLiveSummaries] = useState<ApiDocumentSummary[] | null>(null);
   const [liveDocDetails, setLiveDocDetails] = useState<Record<string, LawDoc>>({});
+  const [runtimeEnv, setRuntimeEnv] = useState<"canonical" | "staging">("canonical");
+
+  const isStaging = runtimeEnv === "staging";
+  const activeFreezeDate = isStaging ? STAGING_DATA_FREEZE_DATE : DATA_FREEZE_DATE;
 
   useEffect(() => {
     let active = true;
+    fetchHealth()
+      .then((health) => {
+        if (active && health.environment === "staging") {
+          setRuntimeEnv("staging");
+          // Staging rejects P1/P2 with HTTP 400; lock UI selection without altering persisted settings.
+          setPipeline("P3");
+        }
+      })
+      .catch(() => {
+        /* stay in canonical offline fallback */
+      });
     fetchDocuments()
       .then((list) => {
         if (active && Array.isArray(list) && list.length > 0) {
@@ -281,7 +297,7 @@ export function App() {
         { role: "user", content: m.q },
         { role: "assistant", content: m.result!.conclusion }
       ]);
-    const effectiveDate = getEffectiveDate(d);
+    const effectiveDate = getEffectiveDate(d, activeFreezeDate);
     const apiPromise = queryLegalApi(q, effectiveDate, pipeline, settings.useLlm, historyPayload)
       .then((res) => ({ res, error: null }), (error: unknown) => ({ res: null, error }));
     for (let s = 0; s < STEPS.length - 1; s++) {
@@ -379,9 +395,8 @@ export function App() {
           1. LEFT SIDEBAR (PUBLIC SERVICE LEGAL ASSISTANT)
          ========================================================================= */}
       <aside
-        className={`relative z-30 flex h-full shrink-0 flex-col border-r border-[#E5E7EB] bg-[#F8FAFC] transition-all duration-300 ease-in-out ${
-          sidebarOpen ? "w-[280px]" : "w-[68px]"
-        }`}
+        className={`relative z-30 flex h-full shrink-0 flex-col border-r border-[#E5E7EB] bg-[#F8FAFC] transition-all duration-300 ease-in-out ${sidebarOpen ? "w-[280px]" : "w-[68px]"
+          }`}
       >
         {/* Top Header: National Emblem Logo + Web Title */}
         <div className="flex h-14 items-center justify-between border-b border-[#F1F5F9] px-3">
@@ -417,9 +432,8 @@ export function App() {
         <div className="px-3 py-2.5">
           <button
             onClick={newChat}
-            className={`group flex items-center rounded-full bg-[#1E3A8A] text-white font-medium shadow-xs transition hover:bg-[#1E40AF] active:scale-98 ${
-              sidebarOpen ? "w-full gap-2.5 px-4 py-2.5 text-[13.5px]" : "h-10 w-10 justify-center p-0"
-            }`}
+            className={`group flex items-center rounded-full bg-[#1E3A8A] text-white font-medium shadow-xs transition hover:bg-[#1E40AF] active:scale-98 ${sidebarOpen ? "w-full gap-2.5 px-4 py-2.5 text-[13.5px]" : "h-10 w-10 justify-center p-0"
+              }`}
             title="Tạo cuộc hội thoại mới"
           >
             <SquarePen className="h-4 w-4 shrink-0 transition group-hover:scale-110" />
@@ -434,9 +448,8 @@ export function App() {
             {/* THƯ VIỆN TOÀN BỘ VĂN BẢN (CHIA THEO MỤC) */}
             <button
               onClick={() => setLibraryOpen(true)}
-              className={`flex w-full items-center rounded-xl py-2 text-[#334155] transition hover:bg-[#E2E8F0] ${
-                sidebarOpen ? "gap-3 px-3" : "justify-center px-0"
-              }`}
+              className={`flex w-full items-center rounded-xl py-2 text-[#334155] transition hover:bg-[#E2E8F0] ${sidebarOpen ? "gap-3 px-3" : "justify-center px-0"
+                }`}
               title="Thư viện toàn bộ văn bản pháp luật GTGT"
             >
               <BookOpen className="h-4 w-4 text-[#1E3A8A] shrink-0" />
@@ -465,11 +478,10 @@ export function App() {
                     <div
                       key={c.id}
                       onClick={() => selectConv(c.id)}
-                      className={`group relative flex cursor-pointer items-center justify-between rounded-xl px-2.5 py-1.5 text-[12.5px] transition ${
-                        isActive
+                      className={`group relative flex cursor-pointer items-center justify-between rounded-xl px-2.5 py-1.5 text-[12.5px] transition ${isActive
                           ? "bg-[#E2E8F0] font-semibold text-[#1E293B]"
                           : "text-[#475569] hover:bg-[#F1F5F9]"
-                      }`}
+                        }`}
                     >
                       <div className="flex min-w-0 items-center gap-2">
                         <MessageSquare className={`h-3.5 w-3.5 shrink-0 ${isActive ? "text-[#1E3A8A]" : "text-[#94A3B8]"}`} />
@@ -496,9 +508,8 @@ export function App() {
         <div className="border-t border-[#E2E8F0] p-2 bg-[#F1F5F9]/50">
           <button
             onClick={() => setSettingsOpen(true)}
-            className={`flex w-full items-center rounded-xl py-2 text-[#475569] transition hover:bg-[#E2E8F0] hover:text-[#1E3A8A] ${
-              sidebarOpen ? "gap-2.5 px-3 text-[13px] font-medium" : "justify-center px-0"
-            }`}
+            className={`flex w-full items-center rounded-xl py-2 text-[#475569] transition hover:bg-[#E2E8F0] hover:text-[#1E3A8A] ${sidebarOpen ? "gap-2.5 px-3 text-[13px] font-medium" : "justify-center px-0"
+              }`}
             title="Cài đặt hệ thống (Mô hình, Mốc thời gian, LLM)"
           >
             <Settings className="h-4 w-4 shrink-0 text-[#1E3A8A]" />
@@ -549,7 +560,9 @@ export function App() {
             </div>
 
             <span className="hidden md:inline-flex rounded-full bg-[#EFF6FF] px-2.5 py-0.5 text-[10.5px] font-semibold text-[#1E3A8A] border border-[#BFDBFE]">
-              Cơ sở tri thức: Đóng băng 30/09/2026
+              {isStaging
+                ? `Staging (${libraryDocs.length} VB · ${fmtDate(activeFreezeDate)})`
+                : `Cơ sở tri thức: Đóng băng ${fmtDate(activeFreezeDate)}`}
             </span>
           </div>
 
@@ -557,13 +570,12 @@ export function App() {
             {/* Nút: Văn bản liên quan (Chỉ mở các tài liệu có liên kết đến câu hỏi AI vừa trả lời) */}
             <button
               onClick={() => setRelatedOpen(true)}
-              className={`flex items-center gap-1.5 rounded-full px-3.5 py-1.5 text-[12px] font-medium transition ${
-                relatedOpen
+              className={`flex items-center gap-1.5 rounded-full px-3.5 py-1.5 text-[12px] font-medium transition ${relatedOpen
                   ? "bg-[#1E3A8A] text-white shadow-xs"
                   : latestCitations.length > 0
-                  ? "border border-[#BFDBFE] bg-[#EFF6FF] text-[#1E3A8A] hover:bg-[#DBEAFE]"
-                  : "border border-[#E2E8F0] bg-white text-[#64748B] hover:bg-[#F8FAFC]"
-              }`}
+                    ? "border border-[#BFDBFE] bg-[#EFF6FF] text-[#1E3A8A] hover:bg-[#DBEAFE]"
+                    : "border border-[#E2E8F0] bg-white text-[#64748B] hover:bg-[#F8FAFC]"
+                }`}
               title="Mở danh sách văn bản và điều khoản pháp luật được trích dẫn trong câu trả lời hiện tại"
             >
               <FileSearch className="h-3.5 w-3.5" />
@@ -574,10 +586,10 @@ export function App() {
           </div>
         </header>
 
-        {date > DATA_FREEZE_DATE && (
+        {date > activeFreezeDate && (
           <div className="relative z-20 flex items-center justify-center gap-2 border-b border-amber-200 bg-amber-50 px-4 py-2 text-[12px] text-amber-800">
             <AlertTriangle className="h-4 w-4 shrink-0 text-amber-600" />
-            <span>Mốc thời gian vượt quá ngày đóng băng dữ liệu (30/09/2026). Hệ thống sẽ thẩm định theo quy định có hiệu lực tính đến 30/09/2026.</span>
+            <span>Mốc thời gian vượt quá ngày đóng băng dữ liệu ({fmtDate(activeFreezeDate)}). Hệ thống sẽ thẩm định theo quy định có hiệu lực tính đến {fmtDate(activeFreezeDate)}.</span>
           </div>
         )}
 
@@ -657,18 +669,27 @@ export function App() {
                             <div className="px-2 py-1.5 text-[11px] font-bold uppercase tracking-wider text-[#64748B]">
                               Chọn Pipeline suy luận
                             </div>
-                            {PIPELINES.map((p) => (
-                              <button
-                                key={p.key}
-                                onClick={() => { setPipeline(p.key); setPipelineMenuOpen(false); }}
-                                className={`flex w-full flex-col rounded-xl px-3 py-2 text-left transition ${
-                                  pipeline === p.key ? "bg-[#EFF6FF] text-[#1E3A8A]" : "hover:bg-[#F8FAFC] text-[#0F172A]"
-                                }`}
-                              >
-                                <span className="text-[12.5px] font-bold">{p.label}</span>
-                                <span className="text-[11px] text-[#64748B]">{p.desc}</span>
-                              </button>
-                            ))}
+                            {PIPELINES.map((p) => {
+                              const disabled = isStaging && p.key !== "P3";
+                              return (
+                                <button
+                                  key={p.key}
+                                  disabled={disabled}
+                                  onClick={() => { if (!disabled) { setPipeline(p.key); setPipelineMenuOpen(false); } }}
+                                  className={`flex w-full flex-col rounded-xl px-3 py-2 text-left transition ${disabled
+                                      ? "cursor-not-allowed opacity-45 text-[#94A3B8]"
+                                      : pipeline === p.key
+                                        ? "bg-[#EFF6FF] text-[#1E3A8A]"
+                                        : "hover:bg-[#F8FAFC] text-[#0F172A]"
+                                    }`}
+                                >
+                                  <span className="text-[12.5px] font-bold">
+                                    {p.label}{disabled ? " (chỉ canonical)" : ""}
+                                  </span>
+                                  <span className="text-[11px] text-[#64748B]">{p.desc}</span>
+                                </button>
+                              );
+                            })}
                           </PopoverContent>
                         </Popover>
                       </div>
@@ -746,9 +767,8 @@ export function App() {
                           {STEPS.map((l, i) => (
                             <li
                               key={l}
-                              className={`flex items-center gap-2.5 transition ${
-                                i <= step ? "text-[#0F172A]" : "text-[#94A3B8]"
-                              }`}
+                              className={`flex items-center gap-2.5 transition ${i <= step ? "text-[#0F172A]" : "text-[#94A3B8]"
+                                }`}
                             >
                               {i < step ? (
                                 <CheckCircle2 className="h-4 w-4 text-[#059669] shrink-0" />
@@ -807,8 +827,8 @@ export function App() {
                   className="rounded-full border border-[#CBD5E1] bg-white px-2.5 py-1 text-[11px] font-semibold text-[#1E3A8A] outline-none cursor-pointer shadow-2xs"
                 >
                   <option value="P3">P3 Full</option>
-                  <option value="P2">P2 Graph</option>
-                  <option value="P1">P1 Flat</option>
+                  <option value="P2" disabled={isStaging}>P2 Graph{isStaging ? " (chỉ canonical)" : ""}</option>
+                  <option value="P1" disabled={isStaging}>P1 Flat{isStaging ? " (chỉ canonical)" : ""}</option>
                 </select>
 
                 <button
@@ -828,9 +848,8 @@ export function App() {
           DRAWER 1: THƯ VIỆN TOÀN BỘ VĂN BẢN (CHIA THEO MỤC: LUẬT, NGHỊ ĐỊNH, THÔNG TƯ)
          ========================================================================= */}
       <aside
-        className={`relative z-40 flex h-full shrink-0 flex-col border-l border-[#CBD5E1] bg-[#F8FAFC] shadow-2xl transition-all duration-300 ease-in-out ${
-          libraryOpen ? "w-[480px]" : "w-0 overflow-hidden border-none"
-        }`}
+        className={`relative z-40 flex h-full shrink-0 flex-col border-l border-[#CBD5E1] bg-[#F8FAFC] shadow-2xl transition-all duration-300 ease-in-out ${libraryOpen ? "w-[480px]" : "w-0 overflow-hidden border-none"
+          }`}
       >
         <div className="flex h-14 items-center justify-between border-b border-[#CBD5E1] bg-white px-4">
           <div className="flex items-center gap-2">
@@ -852,33 +871,29 @@ export function App() {
         <div className="flex border-b border-[#CBD5E1] bg-white px-3 pt-2 gap-1 text-[12px]">
           <button
             onClick={() => setLibraryCategory("all")}
-            className={`px-3 py-1.5 font-semibold rounded-t-lg transition ${
-              libraryCategory === "all" ? "bg-[#EFF6FF] text-[#1E3A8A] border-b-2 border-[#1E3A8A]" : "text-[#64748B] hover:bg-gray-50"
-            }`}
+            className={`px-3 py-1.5 font-semibold rounded-t-lg transition ${libraryCategory === "all" ? "bg-[#EFF6FF] text-[#1E3A8A] border-b-2 border-[#1E3A8A]" : "text-[#64748B] hover:bg-gray-50"
+              }`}
           >
             Tất cả ({categoryCounts.all})
           </button>
           <button
             onClick={() => setLibraryCategory("luat")}
-            className={`px-3 py-1.5 font-semibold rounded-t-lg transition ${
-              libraryCategory === "luat" ? "bg-[#EFF6FF] text-[#1E3A8A] border-b-2 border-[#1E3A8A]" : "text-[#64748B] hover:bg-gray-50"
-            }`}
+            className={`px-3 py-1.5 font-semibold rounded-t-lg transition ${libraryCategory === "luat" ? "bg-[#EFF6FF] text-[#1E3A8A] border-b-2 border-[#1E3A8A]" : "text-[#64748B] hover:bg-gray-50"
+              }`}
           >
             🏛️ Luật ({categoryCounts.luat})
           </button>
           <button
             onClick={() => setLibraryCategory("nghidinh")}
-            className={`px-3 py-1.5 font-semibold rounded-t-lg transition ${
-              libraryCategory === "nghidinh" ? "bg-[#EFF6FF] text-[#1E3A8A] border-b-2 border-[#1E3A8A]" : "text-[#64748B] hover:bg-gray-50"
-            }`}
+            className={`px-3 py-1.5 font-semibold rounded-t-lg transition ${libraryCategory === "nghidinh" ? "bg-[#EFF6FF] text-[#1E3A8A] border-b-2 border-[#1E3A8A]" : "text-[#64748B] hover:bg-gray-50"
+              }`}
           >
             📜 Nghị định ({categoryCounts.nghidinh})
           </button>
           <button
             onClick={() => setLibraryCategory("thongtu")}
-            className={`px-3 py-1.5 font-semibold rounded-t-lg transition ${
-              libraryCategory === "thongtu" ? "bg-[#EFF6FF] text-[#1E3A8A] border-b-2 border-[#1E3A8A]" : "text-[#64748B] hover:bg-gray-50"
-            }`}
+            className={`px-3 py-1.5 font-semibold rounded-t-lg transition ${libraryCategory === "thongtu" ? "bg-[#EFF6FF] text-[#1E3A8A] border-b-2 border-[#1E3A8A]" : "text-[#64748B] hover:bg-gray-50"
+              }`}
           >
             📑 Thông tư ({categoryCounts.thongtu})
           </button>
@@ -904,11 +919,10 @@ export function App() {
             <button
               key={d.id}
               onClick={() => setActiveLibraryDoc(d.id)}
-              className={`shrink-0 rounded-full px-3 py-1 font-semibold transition ${
-                activeLibraryDoc === d.id
+              className={`shrink-0 rounded-full px-3 py-1 font-semibold transition ${activeLibraryDoc === d.id
                   ? "bg-[#1E3A8A] text-white shadow-xs"
                   : "bg-[#F1F5F9] text-[#475569] hover:bg-[#E2E8F0]"
-              }`}
+                }`}
             >
               {d.tab}
             </button>
@@ -932,9 +946,8 @@ export function App() {
                 <div className="font-bold text-[#1E3A8A]">{activeDocData.full}</div>
                 <div className="mt-1 flex items-center gap-2">
                   <span className="font-semibold text-[#475569]">Hiệu lực: {activeDocData.effective}</span>
-                  <span className={`rounded px-1.5 py-0.2 text-[10px] font-bold ${
-                    activeDocData.badge.tone === "green" ? "bg-green-100 text-green-800" : "bg-gray-200 text-gray-700"
-                  }`}>
+                  <span className={`rounded px-1.5 py-0.2 text-[10px] font-bold ${activeDocData.badge.tone === "green" ? "bg-green-100 text-green-800" : "bg-gray-200 text-gray-700"
+                    }`}>
                     {activeDocData.badge.text}
                   </span>
                 </div>
@@ -992,9 +1005,8 @@ export function App() {
           DRAWER 2: VĂN BẢN LIÊN QUAN TRỰC TIẾP ĐẾN CÂU HỎI VỪA TRẢ LỜI
          ========================================================================= */}
       <aside
-        className={`relative z-40 flex h-full shrink-0 flex-col border-l border-[#CBD5E1] bg-[#F8FAFC] shadow-2xl transition-all duration-300 ease-in-out ${
-          relatedOpen ? "w-[440px]" : "w-0 overflow-hidden border-none"
-        }`}
+        className={`relative z-40 flex h-full shrink-0 flex-col border-l border-[#CBD5E1] bg-[#F8FAFC] shadow-2xl transition-all duration-300 ease-in-out ${relatedOpen ? "w-[440px]" : "w-0 overflow-hidden border-none"
+          }`}
       >
         <div className="flex h-14 items-center justify-between border-b border-[#CBD5E1] bg-white px-4">
           <div className="flex items-center gap-2">
@@ -1107,20 +1119,23 @@ export function App() {
             <div>
               <label className="font-bold text-[#0F172A] block mb-1">1. Mô hình suy luận (Pipeline AI)</label>
               <select
-                value={settings.pipeline}
+                value={isStaging ? "P3" : settings.pipeline}
+                disabled={isStaging}
                 onChange={(e) => {
                   const p = e.target.value as Pipeline;
                   setSettings({ ...settings, pipeline: p });
                   setPipeline(p);
                 }}
-                className="w-full rounded-xl border border-[#CBD5E1] bg-[#F8FAFC] p-2.5 font-medium text-[13px] outline-none focus:border-[#1E3A8A]"
+                className="w-full rounded-xl border border-[#CBD5E1] bg-[#F8FAFC] p-2.5 font-medium text-[13px] outline-none focus:border-[#1E3A8A] disabled:opacity-60"
               >
                 <option value="P3">P3: Đầy đủ (Temporal GraphRAG + Rule Engine + RAG) [Khuyên dùng]</option>
-                <option value="P2">P2: Rule Engine + Neo4j Graph</option>
-                <option value="P1">P1: Vector Search RAG (Dễ dính bẫy niên đại)</option>
+                <option value="P2" disabled={isStaging}>P2: Rule Engine + Neo4j Graph{isStaging ? " (chỉ canonical)" : ""}</option>
+                <option value="P1" disabled={isStaging}>P1: Vector Search RAG (Dễ dính bẫy niên đại){isStaging ? " (chỉ canonical)" : ""}</option>
               </select>
               <p className="mt-1 text-[11px] text-[#64748B]">
-                Pipeline P3 tự động xử lý điểm cắt thời gian 01/07/2025 giữa Luật 13/2008 và Luật 48/2024.
+                {isStaging
+                  ? "Chế độ Staging chỉ hỗ trợ Pipeline P3."
+                  : "Pipeline P3 tự động xử lý điểm cắt thời gian 01/07/2025 giữa Luật 13/2008 và Luật 48/2024."}
               </p>
             </div>
 
@@ -1200,19 +1215,18 @@ function Answer({
           </span>
           {r.answer_status && !r.is_greeting && (
             <span
-              className={`rounded-full px-2 py-0.5 text-[10.5px] font-semibold border ${
-                r.answer_status === "ANSWERED"
+              className={`rounded-full px-2 py-0.5 text-[10.5px] font-semibold border ${r.answer_status === "ANSWERED"
                   ? "bg-emerald-50 text-emerald-700 border-emerald-200"
                   : r.answer_status === "INSUFFICIENT_BASIS"
-                  ? "bg-amber-50 text-amber-800 border-amber-200"
-                  : "bg-orange-50 text-orange-800 border-orange-200"
-              }`}
+                    ? "bg-amber-50 text-amber-800 border-amber-200"
+                    : "bg-orange-50 text-orange-800 border-orange-200"
+                }`}
             >
               {r.answer_status === "ANSWERED"
                 ? "Đã trả lời"
                 : r.answer_status === "INSUFFICIENT_BASIS"
-                ? "Chưa đủ căn cứ"
-                : "Ngoài phạm vi"}
+                  ? "Chưa đủ căn cứ"
+                  : "Ngoài phạm vi"}
             </span>
           )}
         </div>

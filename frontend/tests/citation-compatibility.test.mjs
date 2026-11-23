@@ -13,7 +13,8 @@ async function load(relative) {
   });
   return import("data:text/javascript;base64," + Buffer.from(bundle.outputFiles[0].text).toString("base64"));
 }
-const { parseCitationId, DOCUMENT_LABELS, findCitationBody, queryLegalApi, citationBodyMessage, apiDocToLawDoc } = await load("../src/app/api.ts");
+const { parseCitationId, DOCUMENT_LABELS, findCitationBody, queryLegalApi, citationBodyMessage, apiDocToLawDoc, fetchHealth } = await load("../src/app/api.ts");
+const { DATA_FREEZE_DATE, STAGING_DATA_FREEZE_DATE, getEffectiveDate } = await load("../src/app/config.ts");
 const { DOCS, resolve } = await load("../src/app/data.ts");
 const appSource = fs.readFileSync(path.resolve(dirname, "../src/app/App.tsx"), "utf8");
 const inventory = JSON.parse(fs.readFileSync(path.resolve(dirname, "../../data/source_inventory.json"), "utf8"));
@@ -199,6 +200,36 @@ test("Task6 live document mapping, answer_status, and HTTP error messages work c
     });
     const res = await queryLegalApi("thuế", "2026-11-06", "P3");
     assert.equal(res.answer_status, "INSUFFICIENT_BASIS");
+  } finally {
+    globalThis.fetch = original;
+  }
+});
+
+test("Defense polish: freeze date follows runtime profile and query omits hardcoded model when unset", async () => {
+  assert.equal(DATA_FREEZE_DATE, "2026-09-30");
+  assert.equal(STAGING_DATA_FREEZE_DATE, "2026-11-23");
+  assert.equal(getEffectiveDate("2026-11-19"), "2026-09-30");
+  assert.equal(getEffectiveDate("2026-11-19", STAGING_DATA_FREEZE_DATE), "2026-11-19");
+  assert.equal(getEffectiveDate("2026-12-31", STAGING_DATA_FREEZE_DATE), "2026-11-23");
+
+  const original = globalThis.fetch;
+  const bodies = [];
+  try {
+    globalThis.fetch = async (url, opts) => {
+      if (url === "/api/health") {
+        return { ok: true, json: async () => ({ status: "healthy", neo4j_connected: true, environment: "staging" }) };
+      }
+      bodies.push(JSON.parse(opts.body));
+      return { ok: true, json: async () => ({ citations: [], risk_score: 0, answer_status: "ANSWERED", warnings: [], irac_sections: {} }) };
+    };
+    const health = await fetchHealth();
+    assert.equal(health.environment, "staging");
+
+    await queryLegalApi("thuế", "2026-11-19", "P3", true, []);
+    assert.equal("model" in bodies[0], false);
+
+    await queryLegalApi("thuế", "2026-11-19", "P3", true, [], "gemini-2.5-flash");
+    assert.equal(bodies[1].model, "gemini-2.5-flash");
   } finally {
     globalThis.fetch = original;
   }
