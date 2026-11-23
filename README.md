@@ -25,57 +25,64 @@ A verifiable Vietnamese VAT legal QA system combining a Neo4j temporal knowledge
 
 ## Quick Start
 
-### Quick Start — 33-Document Staging Graph (Recommended)
-Run these commands right after `git clone` to seed and start the full 33-document VAT system (`5,083` nodes, `494` vectors on isolated port `17687`):
+**Prerequisites:** Docker Desktop, Python 3.11+, Node.js 20+, and Ollama (`bge-m3` required for 1024-dim vector retrieval; `qwen2.5:7b` optional for running local LLM without Gemini API).
 
-```powershell
-# 1. Start isolated staging Neo4j container (port 17687) & pull required Ollama models
-docker compose -f docker-compose.staging.yml up -d
-ollama pull bge-m3
-# Optional for local offline LLM instead of Gemini:
-ollama pull qwen2.5:7b
+### Recommended: Full 33-Document System (Staging Graph, Port `17687`)
+Run these steps right after `git clone` to seed the 33-document Neo4j graph (`5,083` nodes, `494` vectors) and start the web app:
 
-# 2. Install Python dependencies
-python -m venv .venv
-.venv\Scripts\activate
-pip install -r requirements.txt
+1. **Start isolated staging Neo4j (`127.0.0.1:17687`) & pull Ollama embedding/LLM models** (wait ~15s for Neo4j to become ready):
+   ```bash
+   docker compose -f docker-compose.staging.yml up -d
+   ollama pull bge-m3
+   # Optional: local offline LLM instead of Gemini API
+   ollama pull qwen2.5:7b
+   ```
 
-# 3. Configure staging env (set GEMINI_API_KEY or change LLM_PROVIDER=ollama in .env)
-Copy-Item .env.staging.example .env
+2. **Install Python dependencies**:
+   ```powershell
+   python -m venv .venv
+   .venv\Scripts\activate
+   pip install -r requirements.txt
+   ```
+   *(On macOS/Linux: `source .venv/bin/activate`.)*
 
-# 4. Seed the 33-document staging graph & vectors
-$env:NEO4J_URI='bolt://127.0.0.1:17687'
-$env:NEO4J_PASSWORD='vat-temporal-2026'
-python scripts/seed_neo4j.py --corpus data/processed/vat_corpus.staging.json --embeddings data/processed/article_embeddings.staging.json --meta data/processed/embedding_meta.staging.json
+3. **Create `.env` from the staging template**:
+   - Windows PowerShell: `Copy-Item .env.staging.example .env`
+   - macOS/Linux Bash: `cp .env.staging.example .env`
 
-# 5. Start backend & frontend (UI auto-detects staging via /api/health, locks P3, loads 33 docs)
-uvicorn src.api.main:app --port 8000 --reload
-cd frontend; npm install; npm run dev
-```
+   Edit `.env` to set your `GEMINI_API_KEY` (default `LLM_PROVIDER=gemini`), or set `LLM_PROVIDER=ollama` to run fully offline with `qwen2.5:7b`.
 
-### Canonical Profile (5 Core Documents, Port 7687)
+4. **Seed the 33-document staging graph & vectors** (one-time per machine; idempotent `MERGE`):
+   - Windows PowerShell:
+     ```powershell
+     $env:NEO4J_URI='bolt://127.0.0.1:17687'
+     $env:NEO4J_PASSWORD='vat-temporal-2026'
+     python scripts/seed_neo4j.py --corpus data/processed/vat_corpus.staging.json --embeddings data/processed/article_embeddings.staging.json --meta data/processed/embedding_meta.staging.json
+     ```
+   - macOS/Linux Bash:
+     ```bash
+     NEO4J_URI=bolt://127.0.0.1:17687 NEO4J_PASSWORD=vat-temporal-2026 python scripts/seed_neo4j.py --corpus data/processed/vat_corpus.staging.json --embeddings data/processed/article_embeddings.staging.json --meta data/processed/embedding_meta.staging.json
+     ```
+
+5. **Start Backend & Frontend in two separate terminals**:
+   - **Terminal 1 — Backend API (`http://localhost:8000`):**
+     ```bash
+     uvicorn src.api.main:app --port 8000 --env-file .env --reload
+     ```
+     Verify `http://localhost:8000/api/health` shows `"environment": "staging"` and `"neo4j_connected": true` (Swagger UI: `http://localhost:8000/docs`).
+   - **Terminal 2 — Frontend Web App (`http://localhost:5173`):**
+     ```bash
+     cd frontend
+     npm install
+     npm run dev
+     ```
+     Open `http://localhost:5173` — the UI automatically detects `staging` via `/api/health`, shows `Staging (33 VB · 23/11/2026)`, locks `P3`, and loads all 33 documents in the legal library.
+
+### Alternative: Canonical Profile (5 Core Documents, Port `7687`)
 ```bash
 docker compose up -d
-python scripts/seed_neo4j.py --corpus data/processed/vat_corpus.json --embeddings data/processed/article_embeddings.json --meta data/processed/embedding_meta.json
-```
-
-### Python Dependencies & Local Models (Manual)
-```bash
-python -m venv .venv
-.venv\Scripts\activate
-pip install -r requirements.txt
-ollama pull bge-m3
-ollama pull qwen2.5:7b
-```
-
-### Backend & Frontend
-```bash
+python scripts/seed_neo4j.py
 uvicorn src.api.main:app --port 8000 --reload
-# Swagger: http://localhost:8000/docs
-
-cd frontend
-npm install
-npm run dev
 ```
 
 ## Verification Commands
