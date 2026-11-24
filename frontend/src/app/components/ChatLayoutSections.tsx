@@ -210,9 +210,11 @@ export function UserPromptBubble({ q, date, pipeline }: { q: string; date: strin
 /** Progress feedback card shown while querying the backend with cancel action and local elapsed timer. */
 export function ReasoningProgressCard({
   step,
+  stageMessages,
   onAbort,
 }: {
   step: number;
+  stageMessages?: Record<number, string>;
   onAbort: () => void;
 }) {
   // Isolate the 1s tick inside this card so the outer chat tree stays static while loading.
@@ -255,7 +257,7 @@ export function ReasoningProgressCard({
             ) : (
               <span className="h-4 w-4 shrink-0 rounded-full border border-[#CBD5E1]" />
             )}
-            <span>{l}</span>
+            <span>{stageMessages?.[i] || l}</span>
           </li>
         ))}
       </ul>

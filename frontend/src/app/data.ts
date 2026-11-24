@@ -266,6 +266,9 @@ export type Result = {
   trap?: string;
   is_out_of_domain?: boolean;
   is_greeting?: boolean;
+  missing_facts?: string[];
+  rewritten_query?: string | null;
+  amended_citation_ids?: string[];
 };
 
 export const SCENARIOS = [

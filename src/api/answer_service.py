@@ -43,6 +43,7 @@ class AnswerResult:
     resolved_evidence: Any = None
     missing_facts: list[str] = field(default_factory=list)
     rewritten_query: str | None = None
+    amended_citation_ids: list[str] = field(default_factory=list)
 
     def to_dict(self) -> dict:
         return {
@@ -62,7 +63,17 @@ class AnswerResult:
             "is_greeting": self.is_greeting,
             "missing_facts": self.missing_facts,
             "rewritten_query": self.rewritten_query,
+            "amended_citation_ids": self.amended_citation_ids,
         }
+
+
+def _emit_progress(progress_cb: Any, step: int, stage: str, message: str) -> None:
+    if not callable(progress_cb):
+        return
+    try:
+        progress_cb({"step": step, "stage": stage, "message": message})
+    except Exception:
+        pass
 
 
 def _extract_citation_evidence(
@@ -336,6 +347,7 @@ def answer_query(
     *,
     corpus_path: str = "data/processed/vat_corpus.json",
     reviewed_amendment_path: str | None = None,
+    progress_cb: Any = None,
 ) -> AnswerResult:
     """Canonical orchestration for VAT QA with retrieval gating, IRAC synthesis and verification."""
     if reviewed_amendment_path is None:
@@ -512,6 +524,12 @@ def answer_query(
                 reason_override=EmptyReason.OUT_OF_SCOPE,
             )
         effective_query = understanding.legal_query
+        if understanding.source == "llm":
+            _emit_progress(progress_cb, 0, "understand", f"Đã chuẩn hóa câu hỏi: «{effective_query}»")
+        else:
+            _emit_progress(progress_cb, 0, "understand", "Đã xác định câu hỏi pháp lý và mốc thời gian thẩm định.")
+    else:
+        _emit_progress(progress_cb, 0, "understand", "Đã xác định câu hỏi pháp lý và mốc thời gian thẩm định.")
 
     if reviewed_amendment_path is not None and pipeline not in {"P1_FlatRAG", "P2", "P2_TemporalGraphRAG"}:
         from src.api.reviewed_answer import reviewed_answer
@@ -519,6 +537,7 @@ def answer_query(
             question, effective_query, as_of_date, pipeline, use_llm, model, history, trace_data,
             fetch_fn, retriever_fn or query_temporal_rag, verifier_fn, score_fn or verify_and_score,
             llm_fn or generate_llm_response, corpus_path, reviewed_amendment_path,
+            progress_cb=progress_cb,
         ))
 
     # 2. Retrieval and gating

@@ -62,6 +62,7 @@ class QueryResponse(BaseModel):
     answer_status: str = Field(default="ANSWERED", description="Response status (ANSWERED, OUT_OF_SCOPE, INSUFFICIENT_BASIS)")
     missing_facts: list[str] = Field(default_factory=list, description="Clarifying user facts requested for conditional answers")
     rewritten_query: str | None = Field(default=None, description="Normalized legal query produced by query understanding")
+    amended_citation_ids: list[str] = Field(default_factory=list, description="Cited provision IDs updated by operative amendments")
 
 
 class DocumentSummary(BaseModel):

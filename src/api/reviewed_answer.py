@@ -211,8 +211,9 @@ def _articles_match_resolution(raw_articles, resolution):
 
 
 def reviewed_answer(question, query, day, pipeline, use_llm, model, history, trace,
-                    fetch_fn, retriever, verifier, scorer, llm, corpus_path, review_path):
-    from src.api.answer_service import AnswerResult
+                    fetch_fn, retriever, verifier, scorer, llm, corpus_path, review_path,
+                    progress_cb=None):
+    from src.api.answer_service import AnswerResult, _emit_progress
     if fetch_fn is None:
         result = retrieve_and_gate(query, day, pipeline=pipeline, retriever_fn=retriever,
                                    verifier_fn=verifier, corpus_path=corpus_path, reviewed_amendment_path=review_path)
@@ -235,6 +236,12 @@ def reviewed_answer(question, query, day, pipeline, use_llm, model, history, tra
                 from src.engine.answer_assessment import merge_blockers
                 resolution = replace(resolution, blocked=merge_blockers(previous.blocked, resolution.blocked))
         trace.update(gated_article_count=len(articles))
+    _emit_progress(
+        progress_cb,
+        1,
+        "retrieve",
+        f"Đồ thị Neo4j: tìm thấy {len(articles)} khoản/điểm còn hiệu lực tại {day}.",
+    )
     trace.update(all_blockers=resolution.blocked)
     from src.ui.corpus_viewer import load_corpus_index
     metadata = load_corpus_index(corpus_path)
@@ -271,6 +278,12 @@ def reviewed_answer(question, query, day, pipeline, use_llm, model, history, tra
             packing_failure = pack.reason
             trace.update(generation_reason=pack.reason, generation_disposition="safety_bypass",
                          generation_attempted=False, generated_delivered=False)
+    _emit_progress(
+        progress_cb,
+        2,
+        "rerank",
+        f"Reranker & xác minh hiệu lực: giữ lại {len(articles)} căn cứ trọng tâm.",
+    )
     sections = evidence_sections(question, day, articles, resolution, metadata)
     if packing_failure:
         sections["conclusion"] += " Không thể đóng gói đầy đủ căn cứ bắt buộc trong giới hạn context; chưa gọi mô hình."
@@ -280,6 +293,12 @@ def reviewed_answer(question, query, day, pipeline, use_llm, model, history, tra
     if missing_requested and not packing_failure:
         trace.update(generation_reason="unresolved_evidence")
     if use_llm and articles and not missing_requested:
+        _emit_progress(
+            progress_cb,
+            3,
+            "generate",
+            "Đang tổng hợp lập luận IRAC và kiểm định trích dẫn...",
+        )
         generated, report, raw_response = _generate(query, day, articles, resolution, llm, scorer,
                                                     model, history, (corpus_path, review_path), trace)
         sections = generated or sections
@@ -312,12 +331,19 @@ def reviewed_answer(question, query, day, pipeline, use_llm, model, history, tra
         or trace.get("understanding_missing_facts")
         or []
     )
+    final_citations = extract_citations("\n".join(sections.values()))
+    final_cite_set = set(final_citations)
+    amended_citation_ids = sorted({
+        a.id for a in articles
+        if getattr(a, "status", "") == "AMENDED" and a.id in final_cite_set
+    })
     return AnswerResult(
-        query=question, as_of_date=day, pipeline=pipeline, citations=extract_citations("\n".join(sections.values())),
+        query=question, as_of_date=day, pipeline=pipeline, citations=final_citations,
         active_article_ids=[a.id for a in articles], risk_score=getattr(report, "risk_score", 50),
         risk_level=getattr(report, "risk_level", "MEDIUM"), warnings=warnings, irac_sections=sections,
         llm_used=bool(raw_response and raw_response.strip()), raw_llm_response=raw_response,
         answer_status="ANSWERED" if delivered_ok else "INSUFFICIENT_BASIS",
         articles=articles, resolved_evidence=resolution,
         missing_facts=missing_facts, rewritten_query=trace.get("rewritten_query"),
+        amended_citation_ids=amended_citation_ids,
     )

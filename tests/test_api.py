@@ -324,3 +324,44 @@ def test_neo4j_driver_singleton():
     finally:
         conn._driver = original_driver
 
+
+def test_post_query_stream_emits_stage_and_result_events(client: TestClient, monkeypatch):
+    def fake_execute(**kwargs):
+        cb = kwargs.get("progress_cb")
+        if cb:
+            cb({"step": 0, "stage": "understand", "message": "Đã chuẩn hóa câu hỏi."})
+            cb({"step": 1, "stage": "retrieve", "message": "Tìm thấy 3 khoản."})
+        return {
+            "query": kwargs["query"],
+            "as_of_date": kwargs["as_of_date"],
+            "pipeline": kwargs["pipeline"],
+            "citations": ["ND_68_2026_D3_K1"],
+            "active_article_ids": ["ND_68_2026_D3_K1"],
+            "risk_score": 10,
+            "risk_level": "LOW",
+            "warnings": [],
+            "irac_sections": {"issue": "I", "rule": "R", "application": "A", "conclusion": "C"},
+            "llm_used": True,
+            "raw_llm_response": None,
+            "is_out_of_domain": False,
+            "is_greeting": False,
+            "answer_status": "ANSWERED",
+            "missing_facts": ["Doanh thu hằng năm?"],
+            "rewritten_query": "Hộ kinh doanh dịch vụ internet",
+            "amended_citation_ids": ["ND_68_2026_D3_K1"],
+        }
+
+    monkeypatch.setattr("src.api.routes.execute_demo_query", fake_execute)
+    response = client.post(
+        "/api/query/stream",
+        json={"query": "tiệm net", "as_of_date": "2026-03-20", "pipeline": "P3", "use_llm": True},
+    )
+    assert response.status_code == 200
+    assert "text/event-stream" in response.headers.get("content-type", "")
+    text = response.text
+    assert "event: stage" in text
+    assert "event: result" in text
+    assert "Doanh thu hằng năm?" in text
+    assert "ND_68_2026_D3_K1" in text
+
+

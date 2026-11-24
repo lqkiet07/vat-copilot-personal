@@ -76,8 +76,10 @@ def execute_demo_query(
     model: str = "qwen2.5:7b",
     history: list[dict] | None = None,
     trace: dict | None = None,
+    progress_cb=None,
 ) -> dict:
     """Execute a query against specified pipeline and return IRAC analysis with risk score."""
+    kwargs = {"progress_cb": progress_cb} if progress_cb is not None else {}
     res = answer_query(
         question=query,
         as_of_date=as_of_date,
@@ -89,6 +91,7 @@ def execute_demo_query(
         fetch_fn=_fetch_pipeline_articles,
         llm_fn=generate_llm_response,
         **(selected_corpus_kwargs() if pipeline in {"P3", "P3_FullSystem"} else {}),
+        **kwargs,
     )
     return res.to_dict()
 

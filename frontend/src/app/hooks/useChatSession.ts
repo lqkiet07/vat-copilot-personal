@@ -1,6 +1,6 @@
 import type React from "react";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { queryLegalApi } from "../api";
+import { queryLegalApiStream } from "../api";
 import { getEffectiveDate } from "../config";
 import type { Result } from "../data";
 import type { Pipeline } from "../components/SettingsDialog";
@@ -49,6 +49,7 @@ export function useChatSession({
   });
   const [loading, setLoading] = useState(false);
   const [step, setStep] = useState(0);
+  const [stageMessages, setStageMessages] = useState<Record<number, string>>({});
 
   const activeIdRef = useRef(activeId);
   const focusTimerRef = useRef<number | null>(null);
@@ -158,6 +159,7 @@ export function useChatSession({
       onQueryChange("");
       setLoading(true);
       setStep(0);
+      setStageMessages({});
 
       setConvs((prev) => {
         const title = q.slice(0, 36) + (q.length > 36 ? "..." : "");
@@ -186,31 +188,21 @@ export function useChatSession({
       const controller = new AbortController();
       abortControllerRef.current = { msgId: id, originId, query: q, controller };
 
-      const apiPromise = queryLegalApi(
-        q,
-        effectiveDate,
-        pipeline,
-        useLlm,
-        historyPayload,
-        undefined,
-        controller.signal
-      ).then(
-        (res) => ({ res, error: null }),
-        (error: unknown) => ({ res: null, error })
-      );
-
-      for (let s = 0; s < REASONING_STEPS.length - 1; s++) {
-        if (controller.signal.aborted) break;
-        setStep(s);
-        await new Promise((r) => setTimeout(r, 220));
-      }
-
       try {
-        const outcome = await apiPromise;
-        if (outcome.error) throw outcome.error;
-        const res = outcome.res!;
+        const res = await queryLegalApiStream(
+          q,
+          effectiveDate,
+          pipeline,
+          useLlm,
+          historyPayload,
+          undefined,
+          controller.signal,
+          (stageEv) => {
+            setStep((prev) => Math.max(prev, stageEv.step));
+            setStageMessages((prev) => ({ ...prev, [stageEv.step]: stageEv.message }));
+          }
+        );
         setStep(REASONING_STEPS.length - 1);
-        await new Promise((r) => setTimeout(r, 120));
 
         const finalMsgs = nextMsgs.map((m) => (m.id === id ? { ...m, result: res } : m));
         if (activeIdRef.current === originId) {
@@ -264,6 +256,7 @@ export function useChatSession({
     messages,
     loading,
     step,
+    stageMessages,
     newChat,
     selectConv,
     deleteConv,

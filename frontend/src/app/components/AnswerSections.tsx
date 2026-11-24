@@ -12,11 +12,13 @@ export function AnswerHeader({
   date,
   answerStatus,
   isGreeting,
+  amendedCount = 0,
 }: {
   pipeline: Pipeline;
   date: string;
   answerStatus?: Result["answer_status"];
   isGreeting?: boolean;
+  amendedCount?: number;
 }) {
   return (
     <div className="flex flex-wrap items-center justify-between gap-2 border-b border-[#F1F5F9] pb-3.5">
@@ -45,6 +47,14 @@ export function AnswerHeader({
                 : "Ngoài phạm vi"}
           </span>
         )}
+        {amendedCount > 0 && !isGreeting && (
+          <span
+            className="rounded-full border border-indigo-200 bg-indigo-50 px-2 py-0.5 text-[10.5px] font-semibold text-indigo-800"
+            title="Có trích dẫn điều khoản đã được văn bản khác sửa đổi, bổ sung có hiệu lực tại mốc thẩm định"
+          >
+            Có điều khoản sửa đổi ({amendedCount})
+          </span>
+        )}
       </div>
 
       <div className="flex items-center gap-1.5 rounded-full border border-[#E2E8F0] bg-[#F8FAFC] px-3 py-1 text-[11px] font-semibold text-[#475569]">
@@ -62,12 +72,14 @@ export function AnswerConclusionBox({
   result,
   isErrorCard,
   onCitationClick,
+  onSelectMissingFact,
   onRetry,
   onEditQuery,
 }: {
   result: Result;
   isErrorCard: boolean;
   onCitationClick?: (citation: Citation) => void;
+  onSelectMissingFact?: (fact: string) => void;
   onRetry: () => void;
   onEditQuery: () => void;
 }) {
@@ -117,6 +129,26 @@ export function AnswerConclusionBox({
               ))}
             </ul>
           )}
+        </div>
+      )}
+
+      {!result.is_out_of_domain && !result.is_greeting && result.missing_facts && result.missing_facts.length > 0 && (
+        <div className="mt-3 rounded-xl border border-amber-200 bg-amber-50/70 p-3">
+          <div className="text-[11.5px] font-bold text-amber-900">
+            Cần bổ sung dữ kiện để kết luận chính xác hơn:
+          </div>
+          <div className="mt-2 flex flex-wrap gap-1.5">
+            {result.missing_facts.map((fact, idx) => (
+              <button
+                key={idx}
+                type="button"
+                onClick={() => onSelectMissingFact?.(fact)}
+                className="rounded-full border border-amber-300 bg-white px-2.5 py-1 text-left text-[11.5px] font-medium text-amber-900 transition-colors hover:bg-amber-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500/40"
+              >
+                + {fact}
+              </button>
+            ))}
+          </div>
         </div>
       )}
 

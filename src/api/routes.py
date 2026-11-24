@@ -1,6 +1,8 @@
 """API routes for VAT Legal Temporal GraphRAG."""
 import json
 from collections.abc import Iterator
+import queue
+import threading
 
 from fastapi import APIRouter, HTTPException, Request
 from src.config import get_runtime_config, selected_corpus_kwargs
@@ -84,6 +86,51 @@ def post_query(req: QueryRequest) -> QueryResponse:
         return QueryResponse(**result)
     except Exception as exc:
         raise HTTPException(status_code=503, detail=f"Service unavailable: {exc}")
+
+
+@router.post("/query/stream")
+def post_query_stream(req: QueryRequest) -> StreamingResponse:
+    """Stream real-time pipeline stage progress and final validated QueryResponse via SSE."""
+    if get_runtime_config().environment == "staging" and req.pipeline not in {"P3", "P3_FullSystem"}:
+        raise HTTPException(status_code=400, detail="Staging supports P3 only")
+
+    event_queue: queue.Queue[tuple[str, dict] | None] = queue.Queue()
+
+    def on_progress(payload: dict) -> None:
+        event_queue.put(("stage", payload))
+
+    def worker() -> None:
+        try:
+            result = execute_demo_query(
+                query=req.query,
+                as_of_date=req.as_of_date,
+                pipeline=req.pipeline,
+                use_llm=req.use_llm,
+                model=req.model,
+                history=req.history,
+                progress_cb=on_progress,
+            )
+            event_queue.put(("result", QueryResponse(**result).model_dump()))
+        except Exception as exc:
+            event_queue.put(("error", {"message": f"Service unavailable: {exc}"}))
+        finally:
+            event_queue.put(None)
+
+    threading.Thread(target=worker, name="query-sse-worker", daemon=True).start()
+
+    def event_stream() -> Iterator[str]:
+        while True:
+            item = event_queue.get()
+            if item is None:
+                break
+            name, payload = item
+            yield _sse_frame(name, payload)
+
+    return StreamingResponse(
+        event_stream(),
+        media_type="text/event-stream",
+        headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"},
+    )
 
 
 def _sse_frame(name: str, payload: dict) -> str:

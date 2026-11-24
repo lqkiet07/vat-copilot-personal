@@ -212,6 +212,141 @@ export function citationBodyMessage(citation: Citation): string {
     : "Chưa nhận diện được mã trích dẫn; chưa có nội dung điều khoản trong thư viện hiện tại.";
 }
 
+export type QueryStageEvent = {
+  step: number;
+  stage: string;
+  message: string;
+};
+
+/** Map raw FastAPI QueryResponse JSON payload into the UI Result structure. */
+export function mapApiQueryResponseToResult(
+  data: Record<string, any>,
+  query: string,
+  asOfDate: string
+): Result {
+  // 1. Out of domain query handling
+  if (data.is_out_of_domain) {
+    return {
+      score: 0,
+      answer_status: data.answer_status || "OUT_OF_SCOPE",
+      issue: data.irac_sections?.issue || `Kiểm tra phạm vi áp dụng: "${query}"`,
+      rule: data.irac_sections?.rule || "Không có quy phạm pháp luật thuế GTGT điều chỉnh nội dung này.",
+      citations: [],
+      application: [
+        data.irac_sections?.application ||
+          "Câu hỏi của bạn không thuộc phạm vi điều chỉnh của Hệ thống Pháp lý Thuế Giá trị gia tăng (GTGT).",
+      ],
+      conclusion:
+        data.irac_sections?.conclusion ||
+        "Câu hỏi của bạn không thuộc phạm vi điều chỉnh của Hệ thống Pháp lý Thuế Giá trị gia tăng (GTGT). Vui lòng đặt câu hỏi liên quan đến chính sách thuế, thuế suất hoặc quy định hóa đơn chứng từ.",
+      audit: [
+        {
+          tone: "warn",
+          text: "Phát hiện câu hỏi nằm ngoài phạm vi nghiệp vụ Pháp lý Thuế GTGT.",
+        },
+        {
+          tone: "ok",
+          text: "Màng lọc Domain Guardrail đã kích hoạt để bảo vệ tính chính xác của cơ sở tri thức.",
+        },
+      ],
+      is_out_of_domain: true,
+    };
+  }
+
+  // 2. Conversational greeting handling
+  if (data.is_greeting) {
+    return {
+      score: 0,
+      issue: "Hỏi đáp & Hướng dẫn sử dụng Hệ thống Thẩm định Pháp lý Thuế GTGT",
+      rule: "Hướng dẫn sử dụng; chưa thực hiện tra cứu hoặc xác minh căn cứ pháp lý.",
+      citations: [],
+      application: [
+        "Xin chào Quý khách / Quý Doanh nghiệp! Tôi là Trợ lý Pháp lý ảo về Thuế Giá trị gia tăng (GTGT) Việt Nam, được vận hành bởi Đồ thị Tri thức Thời gian (Temporal GraphRAG).",
+        "Hệ thống có thể hỗ trợ bạn trực tiếp:",
+        "• Thẩm định thuế suất GTGT cho từng trường hợp gia công, xuất khẩu, thương mại dịch vụ.",
+        "• Tra cứu tính hiệu lực thời gian của các điều luật tại bất kỳ mốc sự việc nào (tự động phát hiện bẫy niên đại).",
+        "• Đối chiếu quy trình xử lý và lập hóa đơn điều chỉnh theo các nghị định mới nhất.",
+      ],
+      conclusion: "Mời bạn nhập câu hỏi cụ thể về tình huống thuế GTGT hoặc chọn các kịch bản gợi ý bên dưới để bắt đầu thẩm định.",
+      audit: [
+        { tone: "warn", text: "Phản hồi chào hỏi, chưa tra cứu hoặc xác minh căn cứ pháp lý." },
+      ],
+      is_greeting: true,
+    };
+  }
+
+  // 3. Normal in-domain tax query
+  const rawCitations: string[] = data.citations || [];
+  const seenLabels = new Set<string>();
+  const citations = rawCitations
+    .map(parseCitationId)
+    .filter((c) => {
+      if (!c.label || seenLabels.has(c.label)) return false;
+      seenLabels.add(c.label);
+      return true;
+    });
+
+  const appText = data.irac_sections?.application || "";
+  const application = appText
+    ? appText.split(/\n+/).filter((s: string) => s.trim().length > 0)
+    : [];
+
+  const audit: AuditItem[] = [];
+  const hasNoCitationWarning = Array.isArray(data.warnings) && data.warnings.some((w: string) =>
+    w.toLowerCase().includes("không viện dẫn bất kỳ căn cứ")
+  );
+
+  if (Array.isArray(data.warnings) && data.warnings.length > 0) {
+    for (const w of data.warnings) {
+      audit.push({
+        tone: data.risk_score >= 60 ? "bad" : "warn",
+        text: w,
+      });
+    }
+  }
+
+  if (citations.length > 0 && !hasNoCitationWarning) {
+    audit.push({
+      tone: "ok",
+      text: `Đã nhận ${citations.length} mã trích dẫn từ API cho mốc ${asOfDate}; việc hiển thị chưa xác minh hiệu lực hoặc nội dung.`,
+    });
+  } else if (citations.length === 0) {
+    audit.push({
+      tone: "warn",
+      text: `Chưa xác định được điều khoản pháp luật thuế GTGT điều chỉnh trực tiếp tại mốc ${asOfDate}.`,
+    });
+  }
+
+  let trap: string | undefined = undefined;
+  if (data.risk_score >= 60 || data.risk_level === "CRITICAL" || data.risk_level === "HIGH") {
+    trap = "API trả về lưu ý cần rà soát; hãy đối chiếu nội dung và hiệu lực căn cứ tại mốc đã chọn.";
+  }
+
+  const missingFacts = Array.isArray(data.missing_facts)
+    ? data.missing_facts.filter((item: unknown): item is string => typeof item === "string" && item.trim().length > 0)
+    : [];
+  const amendedIds = Array.isArray(data.amended_citation_ids)
+    ? data.amended_citation_ids.filter((item: unknown): item is string => typeof item === "string" && item.trim().length > 0)
+    : [];
+
+  return {
+    score: data.risk_score ?? 0,
+    answer_status: data.answer_status || "ANSWERED",
+    issue: data.irac_sections?.issue || `Xác định quy định pháp lý cho: "${query}"`,
+    rule: data.irac_sections?.rule || "Chưa xác định được điều khoản viện dẫn cụ thể.",
+    citations,
+    application: application.length > 0 ? application : [appText || "Không có nội dung phân tích chi tiết từ mô hình."],
+    conclusion:
+      data.irac_sections?.conclusion ||
+      "Hệ thống đã thẩm định nhưng chưa tổng hợp được kết luận theo cấu trúc IRAC. Vui lòng thử lại hoặc tắt chế độ LLM.",
+    audit,
+    trap,
+    missing_facts: missingFacts,
+    rewritten_query: typeof data.rewritten_query === "string" ? data.rewritten_query : null,
+    amended_citation_ids: amendedIds,
+  };
+}
+
 export async function queryLegalApi(
   query: string,
   asOfDate: string,
@@ -260,118 +395,101 @@ export async function queryLegalApi(
     }
 
     const data = await res.json();
+    return mapApiQueryResponseToResult(data, query, asOfDate);
+  } catch (err) {
+    if (err instanceof HttpApiError || (err instanceof Error && err.name === "AbortError")) {
+      throw err;
+    }
+    throw new Error("Không thể kết nối máy chủ thẩm định pháp lý (Backend offline).");
+  }
+}
 
-    // 1. Out of domain query handling
-    if (data.is_out_of_domain) {
-      return {
-        score: 0,
-        answer_status: data.answer_status || "OUT_OF_SCOPE",
-        issue: data.irac_sections?.issue || `Kiểm tra phạm vi áp dụng: "${query}"`,
-        rule: data.irac_sections?.rule || "Không có quy phạm pháp luật thuế GTGT điều chỉnh nội dung này.",
-        citations: [],
-        application: [
-          data.irac_sections?.application ||
-          "Câu hỏi của bạn không thuộc phạm vi điều chỉnh của Hệ thống Pháp lý Thuế Giá trị gia tăng (GTGT).",
-        ],
-        conclusion:
-          data.irac_sections?.conclusion ||
-          "Câu hỏi của bạn không thuộc phạm vi điều chỉnh của Hệ thống Pháp lý Thuế Giá trị gia tăng (GTGT). Vui lòng đặt câu hỏi liên quan đến chính sách thuế, thuế suất hoặc quy định hóa đơn chứng từ.",
-        audit: [
-          {
-            tone: "warn",
-            text: "Phát hiện câu hỏi nằm ngoài phạm vi nghiệp vụ Pháp lý Thuế GTGT.",
-          },
-          {
-            tone: "ok",
-            text: "Màng lọc Domain Guardrail đã kích hoạt để bảo vệ tính chính xác của cơ sở tri thức.",
-          },
-        ],
-        is_out_of_domain: true,
-      };
+/** Stream live stage events from /api/query/stream with transparent fallback to /api/query. */
+export async function queryLegalApiStream(
+  query: string,
+  asOfDate: string,
+  pipeline: "P3" | "P2" | "P1",
+  useLlm: boolean = false,
+  history: Array<{ role: string; content: string }> = [],
+  model?: string,
+  signal?: AbortSignal,
+  onStage?: (event: QueryStageEvent) => void
+): Promise<Result> {
+  const pipelineMap: Record<string, string> = {
+    P3: "P3_FullSystem",
+    P2: "P2_TemporalGraphRAG",
+    P1: "P1_FlatRAG",
+  };
+
+  try {
+    const payload: Record<string, unknown> = {
+      query,
+      as_of_date: asOfDate,
+      pipeline: pipelineMap[pipeline] || "P3_FullSystem",
+      use_llm: useLlm,
+      history,
+    };
+    if (model) payload.model = model;
+
+    const res = await fetch("/api/query/stream", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+      ...(signal ? { signal } : {}),
+    });
+
+    if (res.status === 404 || res.status === 405) {
+      return queryLegalApi(query, asOfDate, pipeline, useLlm, history, model, signal);
     }
 
-    // 2. Conversational greeting handling
-    if (data.is_greeting) {
-      return {
-        score: 0,
-        issue: "Hỏi đáp & Hướng dẫn sử dụng Hệ thống Thẩm định Pháp lý Thuế GTGT",
-        rule: "Hướng dẫn sử dụng; chưa thực hiện tra cứu hoặc xác minh căn cứ pháp lý.",
-        citations: [],
-        application: [
-          "Xin chào Quý khách / Quý Doanh nghiệp! Tôi là Trợ lý Pháp lý ảo về Thuế Giá trị gia tăng (GTGT) Việt Nam, được vận hành bởi Đồ thị Tri thức Thời gian (Temporal GraphRAG).",
-          "Hệ thống có thể hỗ trợ bạn trực tiếp:",
-          "• Thẩm định thuế suất GTGT cho từng trường hợp gia công, xuất khẩu, thương mại dịch vụ.",
-          "• Tra cứu tính hiệu lực thời gian của các điều luật tại bất kỳ mốc sự việc nào (tự động phát hiện bẫy niên đại).",
-          "• Đối chiếu quy trình xử lý và lập hóa đơn điều chỉnh theo các nghị định mới nhất.",
-        ],
-        conclusion: "Mời bạn nhập câu hỏi cụ thể về tình huống thuế GTGT hoặc chọn các kịch bản gợi ý bên dưới để bắt đầu thẩm định.",
-        audit: [
-          { tone: "warn", text: "Phản hồi chào hỏi, chưa tra cứu hoặc xác minh căn cứ pháp lý." },
-        ],
-        is_greeting: true,
-      };
+    if (!res.ok) {
+      const errData = await res.json().catch(() => null);
+      const detail = typeof errData?.detail === "string" ? errData.detail : "";
+      throw new HttpApiError(
+        res.status >= 500
+          ? `Không thể kết nối máy chủ thẩm định pháp lý (HTTP ${res.status}${detail ? `: ${detail}` : ""}).`
+          : `Yêu cầu không hợp lệ (HTTP ${res.status}${detail ? `: ${detail}` : ""}).`
+      );
     }
 
-    // 3. Normal in-domain tax query
-    const rawCitations: string[] = data.citations || [];
-    const seenLabels = new Set<string>();
-    const citations = rawCitations
-      .map(parseCitationId)
-      .filter((c) => {
-        if (!c.label || seenLabels.has(c.label)) return false;
-        seenLabels.add(c.label);
-        return true;
-      });
+    const reader = res.body?.getReader();
+    if (!reader) {
+      return queryLegalApi(query, asOfDate, pipeline, useLlm, history, model, signal);
+    }
 
-    const appText = data.irac_sections?.application || "";
-    const application = appText
-      ? appText.split(/\n+/).filter((s: string) => s.trim().length > 0)
-      : [];
+    const decoder = new TextDecoder();
+    let buffer = "";
+    let finalResult: Result | null = null;
 
-    const audit: AuditItem[] = [];
-    const hasNoCitationWarning = Array.isArray(data.warnings) && data.warnings.some((w: string) =>
-      w.toLowerCase().includes("không viện dẫn bất kỳ căn cứ")
-    );
+    while (true) {
+      const { value, done } = await reader.read();
+      if (done) break;
+      buffer += decoder.decode(value, { stream: true });
+      const blocks = buffer.split("\n\n");
+      buffer = blocks.pop() ?? "";
 
-    if (Array.isArray(data.warnings) && data.warnings.length > 0) {
-      for (const w of data.warnings) {
-        audit.push({
-          tone: data.risk_score >= 60 ? "bad" : "warn",
-          text: w,
-        });
+      for (const block of blocks) {
+        const lines = block.split("\n");
+        let eventName = "message";
+        const dataLines: string[] = [];
+        for (const line of lines) {
+          if (line.startsWith("event:")) eventName = line.slice(6).trim();
+          else if (line.startsWith("data:")) dataLines.push(line.slice(5).trim());
+        }
+        if (dataLines.length === 0) continue;
+        const parsed = JSON.parse(dataLines.join("\n"));
+        if (eventName === "stage" && onStage) {
+          onStage(parsed as QueryStageEvent);
+        } else if (eventName === "result") {
+          finalResult = mapApiQueryResponseToResult(parsed, query, asOfDate);
+        } else if (eventName === "error") {
+          throw new HttpApiError(String(parsed?.message || "Lỗi xử lý từ máy chủ thẩm định."));
+        }
       }
     }
 
-    if (citations.length > 0 && !hasNoCitationWarning) {
-      audit.push({
-        tone: "ok",
-        text: `Đã nhận ${citations.length} mã trích dẫn từ API cho mốc ${asOfDate}; việc hiển thị chưa xác minh hiệu lực hoặc nội dung.`,
-      });
-    } else if (citations.length === 0) {
-      audit.push({
-        tone: "warn",
-        text: `Chưa xác định được điều khoản pháp luật thuế GTGT điều chỉnh trực tiếp tại mốc ${asOfDate}.`,
-      });
-    }
-
-    let trap: string | undefined = undefined;
-    if (data.risk_score >= 60 || data.risk_level === "CRITICAL" || data.risk_level === "HIGH") {
-      trap = "API trả về lưu ý cần rà soát; hãy đối chiếu nội dung và hiệu lực căn cứ tại mốc đã chọn.";
-    }
-
-    return {
-      score: data.risk_score ?? 0,
-      answer_status: data.answer_status || "ANSWERED",
-      issue: data.irac_sections?.issue || `Xác định quy định pháp lý cho: "${query}"`,
-      rule: data.irac_sections?.rule || "Chưa xác định được điều khoản viện dẫn cụ thể.",
-      citations,
-      application: application.length > 0 ? application : [appText || "Không có nội dung phân tích chi tiết từ mô hình."],
-      conclusion:
-        data.irac_sections?.conclusion ||
-        "Hệ thống đã thẩm định nhưng chưa tổng hợp được kết luận theo cấu trúc IRAC. Vui lòng thử lại hoặc tắt chế độ LLM.",
-      audit,
-      trap,
-    };
+    if (finalResult) return finalResult;
+    throw new HttpApiError("Luồng phản hồi SSE kết thúc trước khi nhận kết quả.");
   } catch (err) {
     if (err instanceof HttpApiError || (err instanceof Error && err.name === "AbortError")) {
       throw err;

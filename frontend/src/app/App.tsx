@@ -107,6 +107,7 @@ export function App() {
     messages,
     loading,
     step,
+    stageMessages,
     newChat,
     selectConv,
     deleteConv,
@@ -354,10 +355,18 @@ export function App() {
                           setQuery(m.q);
                           taRef.current?.focus();
                         }}
+                        onSelectMissingFact={(fact) => {
+                          setQuery((prev) => {
+                            const prefix = prev.trim() ? `${prev.trim()} ` : "";
+                            return `${prefix}Bổ sung thông tin (${fact}): `;
+                          });
+                          taRef.current?.focus();
+                        }}
                       />
                     ) : (
                       <ReasoningProgressCard
                         step={step}
+                        stageMessages={stageMessages}
                         onAbort={abortQuery}
                       />
                     )}
@@ -502,9 +511,10 @@ type AnswerProps = {
   onOpenRelated: () => void;
   onRetry: () => void;
   onEditQuery: () => void;
+  onSelectMissingFact: (fact: string) => void;
 };
 
-function Answer({ msg, onClickCitation, onOpenRelated, onRetry, onEditQuery }: AnswerProps) {
+function Answer({ msg, onClickCitation, onOpenRelated, onRetry, onEditQuery, onSelectMissingFact }: AnswerProps) {
   const r = msg.result!;
   const [copied, setCopied] = useState(false);
   const [showTrace, setShowTrace] = useState(false);
@@ -540,12 +550,14 @@ function Answer({ msg, onClickCitation, onOpenRelated, onRetry, onEditQuery }: A
         date={msg.date}
         answerStatus={r.answer_status}
         isGreeting={r.is_greeting}
+        amendedCount={r.amended_citation_ids?.length || 0}
       />
 
       <AnswerConclusionBox
         result={r}
         isErrorCard={isErrorCard}
         onCitationClick={onClickCitation}
+        onSelectMissingFact={onSelectMissingFact}
         onRetry={onRetry}
         onEditQuery={onEditQuery}
       />

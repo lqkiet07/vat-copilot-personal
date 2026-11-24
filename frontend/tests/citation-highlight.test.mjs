@@ -19,7 +19,7 @@ async function load(relative) {
   return import("data:text/javascript;base64," + Buffer.from(bundle.outputFiles[0].text).toString("base64"));
 }
 
-const { apiDocToLawDoc, parseCitationId } = await load("../src/app/api.ts");
+const { apiDocToLawDoc, mapApiQueryResponseToResult, parseCitationId } = await load("../src/app/api.ts");
 const {
   parseCitationTarget,
   doesClauseMatchCitation,
@@ -205,6 +205,32 @@ test("formatTechnicalDiagnosticText translates English diagnostics and replaces 
   assert.match(spaced, /Điều 4 Nghị định 181\/2025\/NĐ-CP/);
   assert.match(spaced, /Văn bản hợp nhất chỉ mang tính tham khảo/i);
   assert.doesNotMatch(spaced, /ND 181 2025 D4/);
+});
+
+test("mapApiQueryResponseToResult preserves missing_facts, rewritten_query, and amended_citation_ids", () => {
+  const mapped = mapApiQueryResponseToResult(
+    {
+      citations: ["ND_68_2026_D3_K1"],
+      risk_score: 12,
+      risk_level: "LOW",
+      warnings: [],
+      irac_sections: {
+        issue: "Vấn đề",
+        rule: "[ND_68_2026_D3_K1]",
+        application: "Phân tích",
+        conclusion: "Kết luận",
+      },
+      answer_status: "ANSWERED",
+      missing_facts: ["Doanh thu hằng năm?"],
+      rewritten_query: "Hộ kinh doanh dịch vụ internet",
+      amended_citation_ids: ["ND_68_2026_D3_K1"],
+    },
+    "tiệm net",
+    "2026-03-20"
+  );
+  assert.deepEqual(mapped.missing_facts, ["Doanh thu hằng năm?"]);
+  assert.equal(mapped.rewritten_query, "Hộ kinh doanh dịch vụ internet");
+  assert.deepEqual(mapped.amended_citation_ids, ["ND_68_2026_D3_K1"]);
 });
 
 
