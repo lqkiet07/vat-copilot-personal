@@ -87,6 +87,35 @@ def test_rerank_provisions_keeps_min_k_when_all_below_threshold():
     assert [p.id for p in ranked] == ["LUAT_48_2024_D2_K1"]
 
 
+def test_rerank_provisions_pads_up_to_min_k_when_only_one_clears_threshold():
+    provisions = [
+        _art("LUAT_48_2024_D18_K2", "Hiệu lực", "Từ 01/07/2025"),
+        _art("LUAT_48_2024_D5_K25", "Không chịu thuế", "Hộ kinh doanh doanh thu 200 triệu"),
+        _art("LUAT_48_2024_D9_K2", "Thuế suất", "Phân bón áp dụng thuế suất 5%"),
+        _art("ND_181_2025_D10_K1", "Casino", "Trò chơi điện tử có thưởng"),
+    ]
+    scores = {
+        "Hiệu lực: Từ 01/07/2025": 0.82,
+        "Không chịu thuế: Hộ kinh doanh doanh thu 200 triệu": 0.12,
+        "Thuế suất: Phân bón áp dụng thuế suất 5%": 0.09,
+        "Casino: Trò chơi điện tử có thưởng": 0.01,
+    }
+
+    ranked = rerank_provisions(
+        "doanh thu hộ kinh doanh từ 01/07/2025",
+        provisions,
+        min_score=0.15,
+        min_k=3,
+        top_n=5,
+        scorer=lambda pairs: [scores[doc_text] for _, doc_text in pairs],
+    )
+    assert [p.id for p in ranked] == [
+        "LUAT_48_2024_D18_K2",
+        "LUAT_48_2024_D5_K25",
+        "LUAT_48_2024_D9_K2",
+    ]
+
+
 def test_rerank_provisions_fails_open_on_scorer_exception():
     provisions = [
         _art("LUAT_48_2024_D4_K1", "A", "Item 1"),

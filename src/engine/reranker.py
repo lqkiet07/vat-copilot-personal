@@ -172,8 +172,10 @@ def rerank_provisions(
 
     ranked = sorted(zip(candidates, scores), key=lambda pair: pair[1], reverse=True)
     filtered = [art for art, score in ranked if score >= threshold]
-    if not filtered and not explicit and ranked:
-        filtered = [art for art, _ in ranked[:max(1, min_k)]]
+    floor_k = max(1, min_k)
+    if not explicit and len(filtered) < floor_k and ranked:
+        # Preserve at least min_k top-ranked provisions so a single date/header clause cannot starve retrieval.
+        filtered = [art for art, _ in ranked[:floor_k]]
 
     kept = _apply_article_quota(filtered, quota)[:remaining_slots]
     return explicit + kept

@@ -20,7 +20,7 @@ from src.graph.importer import import_clause_embeddings
 from src.graph.schema import init_schema
 
 DEFAULT_STAGING_CORPUS = "data/processed/vat_corpus.staging.json"
-DEFAULT_CLAUSE_CACHE = "data/processed/clause_embeddings.staging.json"
+DEFAULT_CLAUSE_CACHE = ".cache/clause_embeddings.staging.json"
 _MAX_EMBED_CHARS = 2000
 
 

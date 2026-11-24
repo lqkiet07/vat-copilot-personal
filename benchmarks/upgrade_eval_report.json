@@ -1,0 +1,714 @@
+{
+  "retrieval_ablation": {
+    "summary": {
+      "baseline": {
+        "total_in_scope": 22,
+        "top5_hit_rate": 0.9545,
+        "forbidden_noise_rate": 0.0,
+        "mean_latency_ms": 4976.9
+      },
+      "upgraded": {
+        "total_in_scope": 22,
+        "top5_hit_rate": 0.9091,
+        "forbidden_noise_rate": 0.0,
+        "mean_latency_ms": 6396.7
+      }
+    },
+    "cases": [
+      {
+        "id": "UPG_01",
+        "category": "colloquial_everyday",
+        "baseline_top5": [
+          "VBHN_25_2026_D11",
+          "ND_68_2026_D11",
+          "VBHN_25_2026_D3",
+          "ND_359_2025_D1",
+          "ND_252_2026_D15"
+        ],
+        "baseline_hit_top5": true,
+        "baseline_noise": false,
+        "baseline_ms": 6714.0,
+        "upgraded_top5": [
+          "VBHN_25_2026_D3",
+          "LUAT_108_2025_D13",
+          "ND_252_2026_D42"
+        ],
+        "upgraded_hit_top5": true,
+        "upgraded_noise": false,
+        "upgraded_ms": 26437.9
+      },
+      {
+        "id": "UPG_02",
+        "category": "colloquial_everyday",
+        "baseline_top5": [
+          "VBHN_25_2026_D3",
+          "ND_68_2026_D3",
+          "LUAT_48_2024_D12",
+          "VBHN_25_2026_D4",
+          "ND_68_2026_D4"
+        ],
+        "baseline_hit_top5": true,
+        "baseline_noise": false,
+        "baseline_ms": 4951.4,
+        "upgraded_top5": [
+          "VBHN_25_2026_D3",
+          "VBHN_25_2026_D4",
+          "VBHN_25_2026_D10"
+        ],
+        "upgraded_hit_top5": true,
+        "upgraded_noise": false,
+        "upgraded_ms": 5202.4
+      },
+      {
+        "id": "UPG_03",
+        "category": "colloquial_everyday",
+        "baseline_top5": [
+          "ND_252_2026_D43",
+          "LUAT_108_2025_D32",
+          "LUAT_108_2025_D13",
+          "LUAT_90_2025_D5",
+          "VBHN_25_2026_D3"
+        ],
+        "baseline_hit_top5": true,
+        "baseline_noise": false,
+        "baseline_ms": 4845.3,
+        "upgraded_top5": [
+          "LUAT_108_2025_D13",
+          "VBHN_25_2026_D10",
+          "LUAT_48_2024_D9"
+        ],
+        "upgraded_hit_top5": true,
+        "upgraded_noise": false,
+        "upgraded_ms": 5310.3
+      },
+      {
+        "id": "UPG_04",
+        "category": "colloquial_everyday",
+        "baseline_top5": [
+          "VBHN_25_2026_D4",
+          "ND_68_2026_D4",
+          "ND_181_2025_D24",
+          "ND_181_2025_D7",
+          "VBHN_25_2026_D3"
+        ],
+        "baseline_hit_top5": true,
+        "baseline_noise": false,
+        "baseline_ms": 4928.4,
+        "upgraded_top5": [
+          "VBHN_25_2026_D3",
+          "ND_181_2025_D7",
+          "ND_68_2026_D3"
+        ],
+        "upgraded_hit_top5": true,
+        "upgraded_noise": false,
+        "upgraded_ms": 5329.3
+      },
+      {
+        "id": "UPG_05",
+        "category": "colloquial_everyday",
+        "baseline_top5": [
+          "VBHN_25_2026_D8",
+          "ND_68_2026_D8",
+          "VBHN_25_2026_D11",
+          "VBHN_25_2026_D3",
+          "VBHN_25_2026_D9"
+        ],
+        "baseline_hit_top5": true,
+        "baseline_noise": false,
+        "baseline_ms": 4932.6,
+        "upgraded_top5": [
+          "ND_68_2026_D8",
+          "VBHN_25_2026_D8",
+          "ND_174_2025_D1"
+        ],
+        "upgraded_hit_top5": true,
+        "upgraded_noise": false,
+        "upgraded_ms": 5317.1
+      },
+      {
+        "id": "UPG_06",
+        "category": "temporal_amendment",
+        "baseline_top5": [
+          "ND_181_2025_D21",
+          "LUAT_48_2024_D5",
+          "LUAT_48_2024_D18",
+          "ND_181_2025_D4",
+          "ND_181_2025_D23"
+        ],
+        "baseline_hit_top5": true,
+        "baseline_noise": false,
+        "baseline_ms": 4865.5,
+        "upgraded_top5": [
+          "LUAT_48_2024_D18",
+          "ND_181_2025_D4",
+          "LUAT_48_2024_D5"
+        ],
+        "upgraded_hit_top5": true,
+        "upgraded_noise": false,
+        "upgraded_ms": 5328.9
+      },
+      {
+        "id": "UPG_07",
+        "category": "temporal_amendment",
+        "baseline_top5": [
+          "VBHN_25_2026_D3",
+          "ND_68_2026_D3",
+          "LUAT_48_2024_D18",
+          "ND_144_2026_D3",
+          "TT_18_2026_D8"
+        ],
+        "baseline_hit_top5": true,
+        "baseline_noise": false,
+        "baseline_ms": 4875.2,
+        "upgraded_top5": [
+          "ND_141_2026_D1",
+          "VBHN_25_2026_D3",
+          "LUAT_48_2024_D18",
+          "ND_141_2026_D4",
+          "ND_68_2026_D3"
+        ],
+        "upgraded_hit_top5": true,
+        "upgraded_noise": false,
+        "upgraded_ms": 5362.4
+      },
+      {
+        "id": "UPG_08",
+        "category": "temporal_amendment",
+        "baseline_top5": [
+          "ND_181_2025_D39",
+          "TT_69_2025_D10",
+          "ND_181_2025_D38",
+          "ND_174_2025_D2",
+          "LUAT_48_2024_D9"
+        ],
+        "baseline_hit_top5": true,
+        "baseline_noise": false,
+        "baseline_ms": 4889.4,
+        "upgraded_top5": [
+          "ND_181_2025_D39",
+          "TT_69_2025_D1",
+          "ND_174_2025_D2"
+        ],
+        "upgraded_hit_top5": false,
+        "upgraded_noise": false,
+        "upgraded_ms": 5360.0
+      },
+      {
+        "id": "UPG_09",
+        "category": "temporal_amendment",
+        "baseline_top5": [
+          "ND_174_2025_D2",
+          "ND_174_2025_D1",
+          "TT_32_2026_D7",
+          "TT_32_2026_D3",
+          "TT_32_2026_D4"
+        ],
+        "baseline_hit_top5": true,
+        "baseline_noise": false,
+        "baseline_ms": 4872.7,
+        "upgraded_top5": [
+          "ND_174_2025_D2",
+          "TT_32_2026_D7",
+          "ND_141_2026_D3"
+        ],
+        "upgraded_hit_top5": true,
+        "upgraded_noise": false,
+        "upgraded_ms": 5303.1
+      },
+      {
+        "id": "UPG_10",
+        "category": "temporal_amendment",
+        "baseline_top5": [
+          "TT_101_2025_D1",
+          "ND_359_2025_D1",
+          "ND_144_2026_D5",
+          "TT_89_2026_D1",
+          "TT_77_2025_D1"
+        ],
+        "baseline_hit_top5": true,
+        "baseline_noise": false,
+        "baseline_ms": 4902.0,
+        "upgraded_top5": [
+          "ND_359_2025_D1",
+          "TT_101_2025_D1",
+          "TT_77_2025_D1",
+          "TT_84_2026_D4",
+          "TT_77_2025_D3"
+        ],
+        "upgraded_hit_top5": true,
+        "upgraded_noise": false,
+        "upgraded_ms": 5402.3
+      },
+      {
+        "id": "UPG_11",
+        "category": "conditional_needs_facts",
+        "baseline_top5": [
+          "VBHN_25_2026_D3",
+          "LUAT_48_2024_D14",
+          "LUAT_48_2024_D9",
+          "ND_181_2025_D23",
+          "LUAT_108_2025_D13"
+        ],
+        "baseline_hit_top5": true,
+        "baseline_noise": false,
+        "baseline_ms": 5068.7,
+        "upgraded_top5": [
+          "VBHN_25_2026_D3",
+          "VBHN_25_2026_D4",
+          "LUAT_48_2024_D14"
+        ],
+        "upgraded_hit_top5": true,
+        "upgraded_noise": false,
+        "upgraded_ms": 5322.1
+      },
+      {
+        "id": "UPG_12",
+        "category": "conditional_needs_facts",
+        "baseline_top5": [
+          "ND_181_2025_D23",
+          "ND_181_2025_D4",
+          "TT_89_2026_D27",
+          "NQ_05_2025_D5",
+          "LUAT_48_2024_D14"
+        ],
+        "baseline_hit_top5": true,
+        "baseline_noise": false,
+        "baseline_ms": 4847.3,
+        "upgraded_top5": [
+          "ND_181_2025_D23",
+          "LUAT_48_2024_D14",
+          "ND_144_2026_D4"
+        ],
+        "upgraded_hit_top5": true,
+        "upgraded_noise": false,
+        "upgraded_ms": 5290.2
+      },
+      {
+        "id": "UPG_13",
+        "category": "conditional_needs_facts",
+        "baseline_top5": [
+          "LUAT_48_2024_D5",
+          "ND_181_2025_D4",
+          "ND_181_2025_D19",
+          "ND_359_2025_D1",
+          "LUAT_48_2024_D9"
+        ],
+        "baseline_hit_top5": true,
+        "baseline_noise": false,
+        "baseline_ms": 4803.6,
+        "upgraded_top5": [
+          "ND_181_2025_D4",
+          "ND_359_2025_D1",
+          "LUAT_48_2024_D5",
+          "LUAT_48_2024_D9",
+          "VBHN_25_2026_D3"
+        ],
+        "upgraded_hit_top5": true,
+        "upgraded_noise": false,
+        "upgraded_ms": 5249.8
+      },
+      {
+        "id": "UPG_14",
+        "category": "conditional_needs_facts",
+        "baseline_top5": [
+          "ND_252_2026_D45",
+          "LUAT_48_2024_D4",
+          "ND_181_2025_D28",
+          "ND_252_2026_D43",
+          "ND_252_2026_D46"
+        ],
+        "baseline_hit_top5": true,
+        "baseline_noise": false,
+        "baseline_ms": 4931.1,
+        "upgraded_top5": [
+          "VBHN_25_2026_D11",
+          "ND_68_2026_D11",
+          "ND_252_2026_D42",
+          "TT_89_2026_D33",
+          "LUAT_108_2025_D13"
+        ],
+        "upgraded_hit_top5": true,
+        "upgraded_noise": false,
+        "upgraded_ms": 5386.8
+      },
+      {
+        "id": "UPG_15",
+        "category": "conditional_needs_facts",
+        "baseline_top5": [
+          "LUAT_48_2024_D9",
+          "ND_181_2025_D4",
+          "LUAT_48_2024_D5",
+          "ND_181_2025_D17",
+          "ND_68_2026_D13"
+        ],
+        "baseline_hit_top5": true,
+        "baseline_noise": false,
+        "baseline_ms": 4831.7,
+        "upgraded_top5": [
+          "LUAT_48_2024_D9",
+          "ND_181_2025_D17",
+          "TT_89_2026_D15"
+        ],
+        "upgraded_hit_top5": true,
+        "upgraded_noise": false,
+        "upgraded_ms": 5304.4
+      },
+      {
+        "id": "UPG_16",
+        "category": "multi_turn_followup",
+        "baseline_top5": [
+          "VBHN_25_2026_D3",
+          "ND_141_2026_D1",
+          "ND_68_2026_D3",
+          "ND_68_2026_D9",
+          "VBHN_25_2026_D9"
+        ],
+        "baseline_hit_top5": true,
+        "baseline_noise": false,
+        "baseline_ms": 4885.7,
+        "upgraded_top5": [
+          "VBHN_25_2026_D3",
+          "ND_68_2026_D3",
+          "ND_68_2026_D12",
+          "VBHN_25_2026_D10",
+          "ND_68_2026_D8"
+        ],
+        "upgraded_hit_top5": true,
+        "upgraded_noise": false,
+        "upgraded_ms": 5782.1
+      },
+      {
+        "id": "UPG_17",
+        "category": "multi_turn_followup",
+        "baseline_top5": [
+          "ND_181_2025_D27",
+          "ND_144_2026_D4",
+          "ND_181_2025_D28",
+          "LUAT_48_2024_D16",
+          "ND_181_2025_D26"
+        ],
+        "baseline_hit_top5": true,
+        "baseline_noise": false,
+        "baseline_ms": 4947.2,
+        "upgraded_top5": [
+          "ND_181_2025_D26",
+          "ND_144_2026_D4",
+          "ND_181_2025_D27"
+        ],
+        "upgraded_hit_top5": true,
+        "upgraded_noise": false,
+        "upgraded_ms": 7253.4
+      },
+      {
+        "id": "UPG_18",
+        "category": "multi_turn_followup",
+        "baseline_top5": [
+          "ND_68_2026_D3",
+          "VBHN_25_2026_D3",
+          "LUAT_48_2024_D12",
+          "ND_68_2026_D10",
+          "ND_141_2026_D1"
+        ],
+        "baseline_hit_top5": true,
+        "baseline_noise": false,
+        "baseline_ms": 4868.0,
+        "upgraded_top5": [
+          "VBHN_25_2026_D3",
+          "ND_68_2026_D3",
+          "LUAT_48_2024_D12"
+        ],
+        "upgraded_hit_top5": true,
+        "upgraded_noise": false,
+        "upgraded_ms": 5709.3
+      },
+      {
+        "id": "UPG_19",
+        "category": "multi_turn_followup",
+        "baseline_top5": [
+          "ND_181_2025_D25",
+          "ND_181_2025_D27",
+          "LUAT_48_2024_D16",
+          "LUAT_48_2024_D13",
+          "ND_181_2025_D21"
+        ],
+        "baseline_hit_top5": true,
+        "baseline_noise": false,
+        "baseline_ms": 4910.5,
+        "upgraded_top5": [
+          "ND_181_2025_D27",
+          "ND_181_2025_D28",
+          "ND_181_2025_D25"
+        ],
+        "upgraded_hit_top5": true,
+        "upgraded_noise": false,
+        "upgraded_ms": 5256.8
+      },
+      {
+        "id": "UPG_20",
+        "category": "multi_turn_followup",
+        "baseline_top5": [
+          "ND_181_2025_D21",
+          "ND_141_2026_D4",
+          "ND_252_2026_D11",
+          "TT_72_2014_D13",
+          "ND_181_2025_D1"
+        ],
+        "baseline_hit_top5": false,
+        "baseline_noise": false,
+        "baseline_ms": 4901.5,
+        "upgraded_top5": [
+          "TT_89_2026_D32",
+          "ND_181_2025_D21",
+          "LUAT_48_2024_D11",
+          "ND_181_2025_D20"
+        ],
+        "upgraded_hit_top5": false,
+        "upgraded_noise": false,
+        "upgraded_ms": 5330.9
+      },
+      {
+        "id": "UPG_24",
+        "category": "out_of_scope_and_boundary",
+        "baseline_top5": [
+          "ND_181_2025_D8",
+          "ND_181_2025_D4",
+          "LUAT_48_2024_D5",
+          "TT_32_2026_D3",
+          "LUAT_90_2025_D6"
+        ],
+        "baseline_hit_top5": true,
+        "baseline_noise": false,
+        "baseline_ms": 4884.8,
+        "upgraded_top5": [
+          "TT_32_2026_D3",
+          "ND_181_2025_D8",
+          "TT_89_2026_D22",
+          "ND_181_2025_D16"
+        ],
+        "upgraded_hit_top5": true,
+        "upgraded_noise": false,
+        "upgraded_ms": 5270.0
+      },
+      {
+        "id": "UPG_25",
+        "category": "out_of_scope_and_boundary",
+        "baseline_top5": [
+          "LUAT_48_2024_D9",
+          "LUAT_48_2024_D7",
+          "TT_69_2025_D5",
+          "TT_69_2025_D9",
+          "ND_181_2025_D24"
+        ],
+        "baseline_hit_top5": true,
+        "baseline_noise": false,
+        "baseline_ms": 4835.0,
+        "upgraded_top5": [
+          "LUAT_48_2024_D9",
+          "ND_174_2025_D1",
+          "VBHN_25_2026_D3"
+        ],
+        "upgraded_hit_top5": true,
+        "upgraded_noise": false,
+        "upgraded_ms": 5217.6
+      }
+    ]
+  },
+  "e2e_evaluation": {
+    "summary": {
+      "total_cases": 10,
+      "scope_accuracy": 0.9,
+      "status_accuracy": 0.9,
+      "citation_hit_rate": 1.0,
+      "forbidden_noise_rate": 0.0,
+      "conditional_missing_facts_rate": 0.0,
+      "mean_latency_ms": 14029.0
+    },
+    "cases": [
+      {
+        "id": "UPG_01",
+        "category": "colloquial_everyday",
+        "answer_status": "INSUFFICIENT_BASIS",
+        "citations": [
+          "ND_181_2025_D4_K16",
+          "LUAT_108_2025_D13_K1_a",
+          "ND_68_2026_D8_K4_b"
+        ],
+        "missing_facts": [],
+        "rewritten_query": "tôi mở tiệm net ở dưới quê có cần đóng thuế GTGT không?",
+        "latency_ms": 39888.7,
+        "scope_ok": true,
+        "status_ok": true,
+        "citation_ok": true,
+        "has_noise": false,
+        "has_missing_facts": false
+      },
+      {
+        "id": "UPG_06",
+        "category": "temporal_amendment",
+        "answer_status": "INSUFFICIENT_BASIS",
+        "citations": [
+          "LUAT_48_2024_D18_K2",
+          "LUAT_48_2024_D5_K28",
+          "ND_181_2025_D4_K16",
+          "LUAT_48_2024_D5_K27",
+          "ND_181_2025_D23_K12"
+        ],
+        "missing_facts": [],
+        "rewritten_query": "Hộ kinh doanh có doanh thu 150 triệu đồng một năm vào tháng 10/2025 có thuộc đối tượng không chịu thuế GTGT không?",
+        "latency_ms": 13014.1,
+        "scope_ok": true,
+        "status_ok": true,
+        "citation_ok": true,
+        "has_noise": false,
+        "has_missing_facts": false
+      },
+      {
+        "id": "UPG_11",
+        "category": "conditional_needs_facts",
+        "answer_status": "INSUFFICIENT_BASIS",
+        "citations": [
+          "ND_181_2025_D4_K16",
+          "LUAT_48_2024_D5_K27",
+          "LUAT_48_2024_D9_K4"
+        ],
+        "missing_facts": [],
+        "rewritten_query": "Mở quán ăn uống bình dân có phải đóng thuế GTGT không?",
+        "latency_ms": 19670.3,
+        "scope_ok": true,
+        "status_ok": true,
+        "citation_ok": true,
+        "has_noise": false,
+        "has_missing_facts": false
+      },
+      {
+        "id": "UPG_16",
+        "category": "multi_turn_followup",
+        "answer_status": "INSUFFICIENT_BASIS",
+        "citations": [
+          "ND_68_2026_D3_K2",
+          "ND_68_2026_D12_K2",
+          "ND_68_2026_D4_K5_d",
+          "ND_68_2026_D12_K1",
+          "ND_68_2026_D10_K2_b"
+        ],
+        "missing_facts": [],
+        "rewritten_query": "tôi là hộ kinh doanh doanh thu 150 triệu một năm",
+        "latency_ms": 10715.9,
+        "scope_ok": true,
+        "status_ok": true,
+        "citation_ok": true,
+        "has_noise": false,
+        "has_missing_facts": false
+      },
+      {
+        "id": "UPG_21",
+        "category": "out_of_scope_and_boundary",
+        "answer_status": "INSUFFICIENT_BASIS",
+        "citations": [
+          "LUAT_108_2025_D44_K3_a",
+          "LUAT_108_2025_D44_K3_b"
+        ],
+        "missing_facts": [],
+        "rewritten_query": "Mức xử phạt vi phạm hành chính khi điều khiển ô tô vượt đèn đỏ là bao nhiêu tiền?",
+        "latency_ms": 11278.1,
+        "scope_ok": false,
+        "status_ok": false,
+        "citation_ok": true,
+        "has_noise": false,
+        "has_missing_facts": false
+      },
+      {
+        "id": "UPG_02",
+        "category": "colloquial_everyday",
+        "answer_status": "INSUFFICIENT_BASIS",
+        "citations": [
+          "LUAT_108_2025_D13_K1_a",
+          "ND_68_2026_D10_K1_b",
+          "ND_68_2026_D10_K1_a"
+        ],
+        "missing_facts": [],
+        "rewritten_query": "bán trà sữa mang đi doanh thu khoảng 400 triệu một năm có phải nộp thuế GTGT không?",
+        "latency_ms": 10401.9,
+        "scope_ok": true,
+        "status_ok": true,
+        "citation_ok": true,
+        "has_noise": false,
+        "has_missing_facts": false
+      },
+      {
+        "id": "UPG_07",
+        "category": "temporal_amendment",
+        "answer_status": "INSUFFICIENT_BASIS",
+        "citations": [
+          "LUAT_48_2024_D18_K2",
+          "ND_141_2026_D1_K2",
+          "ND_141_2026_D1_K1",
+          "ND_68_2026_D18_K4",
+          "ND_68_2026_D3_K1"
+        ],
+        "missing_facts": [],
+        "rewritten_query": "Ngưỡng doanh thu không chịu thuế GTGT của hộ, cá nhân kinh doanh áp dụng trong năm 2026 theo quy định sửa đổi là bao nhiêu?",
+        "latency_ms": 10986.9,
+        "scope_ok": true,
+        "status_ok": true,
+        "citation_ok": true,
+        "has_noise": false,
+        "has_missing_facts": false
+      },
+      {
+        "id": "UPG_12",
+        "category": "conditional_needs_facts",
+        "answer_status": "INSUFFICIENT_BASIS",
+        "citations": [
+          "ND_181_2025_D23_K14",
+          "ND_181_2025_D23_K13",
+          "ND_181_2025_D20_K3",
+          "LUAT_48_2024_D14_K1_e",
+          "LUAT_48_2024_D14_K1_b"
+        ],
+        "missing_facts": [],
+        "rewritten_query": "Công ty tôi mua máy tính xách tay phục vụ văn phòng có được khấu trừ thuế GTGT đầu vào không?",
+        "latency_ms": 11890.9,
+        "scope_ok": true,
+        "status_ok": true,
+        "citation_ok": true,
+        "has_noise": false,
+        "has_missing_facts": false
+      },
+      {
+        "id": "UPG_17",
+        "category": "multi_turn_followup",
+        "answer_status": "INSUFFICIENT_BASIS",
+        "citations": [
+          "ND_181_2025_D27_K3_k",
+          "ND_181_2025_D18_K1_b",
+          "ND_181_2025_D18_K2_b",
+          "ND_181_2025_D27_K3",
+          "ND_181_2025_D26_K2_h"
+        ],
+        "missing_facts": [],
+        "rewritten_query": "nếu hợp đồng thanh toán dưới 20 triệu đồng nhưng vẫn đáp ứng xuất khẩu thì điều kiện chứng từ thanh toán không dùng tiền mặt áp dụng ra sao?",
+        "latency_ms": 12442.1,
+        "scope_ok": true,
+        "status_ok": true,
+        "citation_ok": true,
+        "has_noise": false,
+        "has_missing_facts": false
+      },
+      {
+        "id": "UPG_22",
+        "category": "out_of_scope_and_boundary",
+        "answer_status": "OUT_OF_SCOPE",
+        "citations": [],
+        "missing_facts": [],
+        "rewritten_query": null,
+        "latency_ms": 0.7,
+        "scope_ok": true,
+        "status_ok": true,
+        "citation_ok": true,
+        "has_noise": false,
+        "has_missing_facts": false
+      }
+    ]
+  }
+}

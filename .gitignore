@@ -36,3 +36,4 @@ frontend/.env*
 .idea/
 .vscode/
 frontend_old_harvey/
+.cache/
