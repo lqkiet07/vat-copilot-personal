@@ -100,3 +100,32 @@ def test_expand_1hop_relations_uses_fake_session_safely():
     assert sess.last_kwargs["as_of_date"] == "2026-03-20"
 
 
+def test_clause_vector_search_and_merge_vector_ranks():
+    from src.engine.hybrid_retriever import _merge_vector_ranks, _search_clause_vector
+
+    class _FakeResult:
+        def data(self):
+            return [
+                {"id": "LUAT_48_2024_D5", "score": 0.78},
+                {"id": "ND_181_2025_D10", "score": 0.12},
+            ]
+
+    class _FakeSession:
+        def run(self, cypher, **kwargs):
+            return _FakeResult()
+
+    clause_hits = _search_clause_vector(_FakeSession(), [0.1, 0.2], "2026-03-20", min_score=0.35)
+    assert clause_hits == ["LUAT_48_2024_D5"]
+
+    class _BrokenSession:
+        def run(self, cypher, **kwargs):
+            raise RuntimeError("No clause_embedding index yet")
+
+    assert _search_clause_vector(_BrokenSession(), [0.1, 0.2], "2026-03-20") == []
+
+    assert _merge_vector_ranks(["D4", "D9"], []) == ["D4", "D9"]
+    merged = _merge_vector_ranks(["D9", "D4", "D5"], ["D5", "D10"])
+    assert merged[0] == "D5"
+
+
+

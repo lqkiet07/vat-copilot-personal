@@ -137,11 +137,54 @@ def _search_vector(
             r["id"] for r in rows
             if r.get("id") and float(r.get("score", 0.0)) >= min_score
         ]
-        if len(filtered) >= 5:
+        if filtered:
             return filtered
         return [r["id"] for r in rows[:5] if r.get("id")]
     except Exception:
         return []
+
+
+def _search_clause_vector(
+    session, vec: list[float], as_of_date: str, top_k: int = 30, min_score: float = 0.35
+) -> list[str]:
+    """Search Clause vector index and lift matching parent Article IDs."""
+    cypher_clause_vec = """
+    CALL db.index.vector.queryNodes('clause_embedding', $top_k, $vec) YIELD node, score
+    MATCH (parent:Article)-[:CONTAINS]->(node:Clause)
+    WHERE node.valid_from <= date($as_of_date)
+      AND node.valid_to >= date($as_of_date)
+      AND parent.valid_from <= date($as_of_date)
+      AND parent.valid_to >= date($as_of_date)
+    RETURN parent.id AS id, max(score) AS score
+    ORDER BY score DESC
+    """
+    try:
+        rows = session.run(
+            cypher_clause_vec, top_k=top_k, vec=vec, as_of_date=as_of_date
+        ).data()
+        if not isinstance(rows, list):
+            return []
+        filtered = [
+            r["id"] for r in rows
+            if isinstance(r, dict) and r.get("id") and float(r.get("score", 0.0)) >= min_score
+        ]
+        if filtered:
+            return filtered
+        return [r["id"] for r in rows[:5] if isinstance(r, dict) and r.get("id")]
+    except Exception:
+        return []
+
+
+def _merge_vector_ranks(
+    article_ranks: list[str], clause_ranks: list[str], k: int = 60
+) -> list[str]:
+    """Fuse article-level and clause-level vector rankings via weighted RRF."""
+    if not clause_ranks:
+        return list(article_ranks)
+    fused = reciprocal_rank_fusion(
+        article_ranks, clause_ranks, k=k, ft_weight=1.0, vec_weight=1.25
+    )
+    return [doc_id for doc_id, _ in fused]
 
 
 def _expand_1hop_relations(
@@ -175,6 +218,49 @@ def _expand_1hop_relations(
         return [r["id"] for r in rows if isinstance(r, dict) and r.get("id")]
     except Exception:
         return []
+
+
+def _search_clause_vector(
+    session, vec: list[float], as_of_date: str, top_k: int = 30, min_score: float = 0.35
+) -> list[str]:
+    """Search Clause vector index and lift matching parent Article IDs."""
+    cypher_clause_vec = """
+    CALL db.index.vector.queryNodes('clause_embedding', $top_k, $vec) YIELD node, score
+    MATCH (parent:Article)-[:CONTAINS]->(node:Clause)
+    WHERE node.valid_from <= date($as_of_date)
+      AND node.valid_to >= date($as_of_date)
+      AND parent.valid_from <= date($as_of_date)
+      AND parent.valid_to >= date($as_of_date)
+    RETURN parent.id AS id, max(score) AS score
+    ORDER BY score DESC
+    """
+    try:
+        rows = session.run(
+            cypher_clause_vec, top_k=top_k, vec=vec, as_of_date=as_of_date
+        ).data()
+        if not isinstance(rows, list):
+            return []
+        filtered = [
+            r["id"] for r in rows
+            if isinstance(r, dict) and r.get("id") and float(r.get("score", 0.0)) >= min_score
+        ]
+        if filtered:
+            return filtered
+        return [r["id"] for r in rows[:5] if isinstance(r, dict) and r.get("id")]
+    except Exception:
+        return []
+
+
+def _merge_vector_ranks(
+    article_ranks: list[str], clause_ranks: list[str], k: int = 60
+) -> list[str]:
+    """Fuse article-level and clause-level vector rankings via weighted RRF."""
+    if not clause_ranks:
+        return list(article_ranks)
+    fused = reciprocal_rank_fusion(
+        article_ranks, clause_ranks, k=k, ft_weight=1.0, vec_weight=1.25
+    )
+    return [doc_id for doc_id, _ in fused]
 
 
 def _enrich_articles(
@@ -257,7 +343,9 @@ def query_hybrid_temporal(
         vec_ranks: list[str] = []
         if active_embedder is not None:
             query_vec = active_embedder.embed_text(query)
-            vec_ranks = _search_vector(session, query_vec, as_of_date, top_k=30)
+            art_vec_ranks = _search_vector(session, query_vec, as_of_date, top_k=30)
+            clause_vec_ranks = _search_clause_vector(session, query_vec, as_of_date, top_k=30)
+            vec_ranks = _merge_vector_ranks(art_vec_ranks, clause_vec_ranks)
         has_anchors = detect_legal_anchors(query)
         ft_weight, vec_weight = (1.5, 1.0) if has_anchors else (1.0, 1.5)
         fused = reciprocal_rank_fusion(

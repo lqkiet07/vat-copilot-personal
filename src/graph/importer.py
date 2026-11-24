@@ -402,3 +402,25 @@ def import_article_embeddings(embeddings_dict: dict[str, list[float]]) -> int:
             if result:
                 total += result["c"]
     return total
+
+
+def import_clause_embeddings(
+    embeddings_dict: dict[str, list[float]],
+    batch_size: int = 200,
+) -> int:
+    """Batch-update Clause node embeddings in Neo4j. Idempotent."""
+    if not embeddings_dict:
+        return 0
+    driver = get_neo4j_driver()
+    rows = [{"id": cid, "vec": vec} for cid, vec in embeddings_dict.items()]
+    total = 0
+    with driver.session() as session:
+        for start in range(0, len(rows), max(1, batch_size)):
+            chunk = rows[start : start + batch_size]
+            result = session.run(
+                "UNWIND $rows AS row MATCH (c:Clause {id: row.id}) SET c.embedding = row.vec RETURN count(c) AS c",
+                rows=chunk,
+            ).single()
+            if result:
+                total += int(result["c"])
+    return total

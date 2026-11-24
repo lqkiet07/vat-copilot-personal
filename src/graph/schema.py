@@ -43,3 +43,11 @@ def init_schema():
             "  `vector.similarity_function`: 'cosine'"
             "}}"
         )
+        session.run(
+            "CREATE VECTOR INDEX clause_embedding IF NOT EXISTS "
+            "FOR (c:Clause) ON (c.embedding) "
+            "OPTIONS {indexConfig: {"
+            "  `vector.dimensions`: 1024,"
+            "  `vector.similarity_function`: 'cosine'"
+            "}}"
+        )

@@ -1,6 +1,10 @@
 import pytest
 from src.graph.connection import get_neo4j_driver
-from src.graph.importer import import_article_embeddings, import_corpus_to_neo4j
+from src.graph.importer import (
+    import_article_embeddings,
+    import_clause_embeddings,
+    import_corpus_to_neo4j,
+)
 from src.graph.schema import init_schema
 
 pytestmark = pytest.mark.requires_neo4j
@@ -13,6 +17,16 @@ def test_vector_index_exists_in_neo4j():
         indexes = session.run("SHOW INDEXES YIELD name, type WHERE type = 'VECTOR'").data()
         names = [idx["name"] for idx in indexes]
         assert "article_embedding" in names
+        assert "clause_embedding" in names
+
+
+def test_import_clause_embeddings():
+    init_schema()
+    import_corpus_to_neo4j("data/processed/vat_corpus.json")
+    dummy_vec = [0.0] * 1024
+    dummy_vec[1] = 1.0
+    updated = import_clause_embeddings({"LUAT_48_2024_D5_K1": dummy_vec})
+    assert updated >= 1
 
 
 def test_import_article_embeddings():
