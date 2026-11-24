@@ -19,7 +19,7 @@ from src.verifier.risk_score import verify_and_score
 _STOPWORDS = {
     "mức", "đối", "với", "là", "bao", "nhiêu", "của", "và", "các", "cho",
     "tại", "năm", "tháng", "ngày", "được", "theo", "quy", "định", "thuế",
-    "gtgt", "tôi", "thì", "có", "phải", "không", "tiền", "ở", "dưới", "quê",
+    "gtgt", "tôi", "thì", "có", "phải", "không", "tiền",
 }
 
 
@@ -448,7 +448,7 @@ def answer_query(
                 warnings=[],
                 irac_sections={
                     "issue": f"Phạm vi áp dụng pháp lý: '{question}'",
-                    "rule": "Phạm vi điều chỉnh: Các văn bản pháp luật về Thuế Giá trị gia tăng (Luật 48/2024, NĐ 181/2025, TT 69/2025, NĐ 359/2025, NĐ 144/2026).",
+                    "rule": "Phạm vi điều chỉnh: Các văn bản pháp luật về Thuế Giá trị gia tăng Việt Nam hiện hành trong cơ sở tri thức.",
                     "application": guard.refusal_message,
                     "conclusion": guard.refusal_message,
                 },
@@ -460,6 +460,54 @@ def answer_query(
             ),
             reason_override=EmptyReason.OUT_OF_SCOPE,
         )
+
+    # Run LLM query understanding only when LLM generation is eligible on the active pipeline.
+    if use_llm and (reviewed_amendment_path is not None or pipeline in {"P1_FlatRAG", "P2", "P2_TemporalGraphRAG"}):
+        from src.engine.query_understanding import understand_with_llm
+
+        understanding = understand_with_llm(
+            question,
+            history=history,
+            llm_fn=llm_fn or generate_llm_response,
+            model=model,
+            use_llm=True,
+        )
+        trace_data["rewritten_query"] = understanding.legal_query
+        trace_data["understanding_source"] = understanding.source
+        trace_data["understanding_missing_facts"] = list(understanding.missing_facts)
+        if understanding.scope in {"greeting", "out_of_scope"}:
+            is_greeting = understanding.scope == "greeting"
+            msg = (
+                "Xin chào! Tôi là Trợ lý Pháp lý ảo về Thuế Giá trị gia tăng (GTGT) Việt Nam."
+                if is_greeting
+                else "Câu hỏi của bạn không thuộc phạm vi điều chỉnh của Hệ thống Pháp lý Thuế Giá trị gia tăng (GTGT)."
+            )
+            trace_data["generation_reason"] = "out_of_scope"
+            return _finalize(
+                AnswerResult(
+                    query=question,
+                    as_of_date=as_of_date,
+                    pipeline=pipeline,
+                    citations=[],
+                    active_article_ids=[],
+                    risk_score=0,
+                    risk_level="LOW",
+                    warnings=[],
+                    irac_sections={
+                        "issue": f"Phạm vi áp dụng pháp lý: '{question}'",
+                        "rule": "Phạm vi điều chỉnh: Các văn bản pháp luật về Thuế Giá trị gia tăng Việt Nam hiện hành trong cơ sở tri thức.",
+                        "application": msg,
+                        "conclusion": msg,
+                    },
+                    llm_used=False,
+                    raw_llm_response=None,
+                    answer_status="OUT_OF_SCOPE",
+                    is_out_of_domain=not is_greeting,
+                    is_greeting=is_greeting,
+                ),
+                reason_override=EmptyReason.OUT_OF_SCOPE,
+            )
+        effective_query = understanding.legal_query
 
     if reviewed_amendment_path is not None and pipeline not in {"P1_FlatRAG", "P2", "P2_TemporalGraphRAG"}:
         from src.api.reviewed_answer import reviewed_answer
@@ -620,11 +668,7 @@ def answer_query(
             irac = _parse_irac_sections(raw_response)
 
             entities = understand_query(effective_query)
-            q_check = (normalize_query(effective_query) + " " + effective_query).lower()
-            is_household = (
-                entities.business_type == "HỘ_KINH_DOANH"
-                or any(k in q_check for k in ("hộ kinh doanh", "hộ cá thể", "tiệm", "quán", "cá nhân kinh doanh", "dưới quê"))
-            )
+            is_household = entities.business_type == "HỘ_KINH_DOANH"
             fallback_used = _needs_irac_fallback(raw_response, irac) or _is_llm_answer_unsupported(
                 raw_response, irac, prompt_articles, extracted, llm_citations, invalid_or_irrelevant, is_household=is_household
             )

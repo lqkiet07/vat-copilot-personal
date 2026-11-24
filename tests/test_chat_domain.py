@@ -111,7 +111,7 @@ def test_extract_entities_business_and_revenue():
     from src.api.chat_domain import extract_entities
 
     entities = extract_entities("tôi mở tiệm net dưới quê doanh thu 150 triệu 1 năm")
-    assert "dịch vụ internet" in entities.industry_synonyms
+    assert entities.industry_synonyms == ()
     assert entities.revenue_vnd == 150_000_000
     assert entities.business_type is None
 
@@ -121,7 +121,7 @@ def test_understand_query_integration():
 
     info = understand_query("tôi mở tiệm net dưới quê có phải đóng thuế kh")
     assert "thuế không" in info.normalized
-    assert "dịch vụ internet" in info.industry_synonyms
+    assert info.industry_synonyms == ()
 
 
 def test_telex_and_industry_expansion_tiem_net():
@@ -132,6 +132,6 @@ def test_telex_and_industry_expansion_tiem_net():
     assert "bao nhiêu" in norm
     entities = extract_entities(raw)
     assert entities.business_type is None
-    assert "dịch vụ" in entities.industry_synonyms
+    assert entities.industry_synonyms == ()
 
 

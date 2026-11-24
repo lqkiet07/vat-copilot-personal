@@ -35,16 +35,7 @@ _TELEX_PATTERN = re.compile(
     re.IGNORECASE,
 )
 
-_INDUSTRY_MAP: dict[tuple[str, ...], tuple[str, ...]] = {
-    ("tiệm net", "quán net", "cyber", "internet", "game net"): (
-        "dịch vụ internet",
-        "kinh doanh trò chơi điện tử",
-        "dịch vụ",
-    ),
-    ("quán cafe", "quán cà phê", "cà phê", "cafe"): ("dịch vụ ăn uống",),
-    ("tiệm tạp hóa", "quán tạp hóa", "tạp hóa"): ("bán lẻ hàng hóa",),
-    ("rửa xe", "tiệm rửa xe"): ("dịch vụ rửa xe",),
-}
+_INDUSTRY_MAP: dict[tuple[str, ...], tuple[str, ...]] = {}
 
 _REVENUE_PATTERN = re.compile(r"(\d+(?:[.,]\d+)?)\s*(triệu|tr|tỷ|tỉ)\b", re.IGNORECASE)
 
@@ -144,12 +135,9 @@ VAT_KEYWORDS: tuple[str, ...] = (
 OUT_OF_SCOPE_KEYWORDS: tuple[str, ...] = (
     "ly hôn",
     "hình sự",
-    "đất đai",
     "thừa kế",
     "lao động",
     "tố tụng",
-    "chứng khoán",
-    "lưu trú",
     "bảo hiểm xã hội",
     "cướp",
     "bị cáo",
