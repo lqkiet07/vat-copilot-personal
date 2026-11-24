@@ -1,9 +1,11 @@
 """Text embedding generation and caching utilities."""
+from collections import OrderedDict
 import hashlib
 import json
 import math
 import os
 from pathlib import Path
+import threading
 from typing import Protocol, runtime_checkable
 from urllib.error import URLError
 import urllib.request
@@ -91,18 +93,34 @@ class OllamaEmbedder:
         host: str = "http://localhost:11434",
         dimension: int = 1024,
         timeout: float = 60.0,
+        cache_maxsize: int = 256,
     ) -> None:
         self.model = model
         self.host = host.rstrip("/")
         self.dimension = dimension
         self.timeout = timeout
+        self._cache_maxsize = cache_maxsize
+        self._query_cache: OrderedDict[str, list[float]] = OrderedDict()
+        self._cache_lock = threading.Lock()
 
     def embed_text(self, text: str) -> list[float]:
-        """Generate normalized semantic embedding vector for a single string."""
+        """Generate normalized semantic embedding vector for a single string with bounded LRU cache."""
+        with self._cache_lock:
+            cached = self._query_cache.get(text)
+            if cached is not None:
+                self._query_cache.move_to_end(text)
+                return cached
         vectors = self.embed_texts([text])
         if not vectors or len(vectors) == 0:
             raise RuntimeError(f"Ollama failed to produce embedding for text using model {self.model}")
-        return vectors[0]
+        vec = vectors[0]
+        if self._cache_maxsize > 0:
+            with self._cache_lock:
+                self._query_cache[text] = vec
+                self._query_cache.move_to_end(text)
+                while len(self._query_cache) > self._cache_maxsize:
+                    self._query_cache.popitem(last=False)
+        return vec
 
     def embed_texts(self, texts: list[str]) -> list[list[float]]:
         """Generate normalized semantic embeddings for a batch of strings."""

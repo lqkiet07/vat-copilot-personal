@@ -336,6 +336,19 @@ def test_needs_user_facts_conditional_only_without_system_blockers(reviewed, blo
     assert delivery_allowed(result, resolution) is (not blocked)
 
 
+def test_needs_user_facts_allowed_when_only_container_blocker_present(reviewed):
+    from dataclasses import replace
+    from src.engine.answer_assessment import delivery_allowed, parse_assessment
+
+    resolution = replace(
+        answer(reviewed).resolved_evidence,
+        blocked={"LUAT_48_2024_D5": "Container is not citable; changed or blocked descendants: LUAT_48_2024_D5_K25"},
+    )
+    result = parse_assessment(assessment("needs_facts", False, missing=["Doanh thu hàng năm của hộ kinh doanh?"]), {SAFE})
+    assert delivery_allowed(result, resolution) is True
+
+
+
 @pytest.mark.parametrize("late_stage", ["generation", "assessment"])
 def test_late_provider_result_is_rejected(reviewed, monkeypatch, late_stage):
     from types import SimpleNamespace

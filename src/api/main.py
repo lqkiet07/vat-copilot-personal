@@ -1,5 +1,7 @@
 """FastAPI application initialization and middleware configuration."""
 from contextlib import asynccontextmanager
+import os
+import threading
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
@@ -13,6 +15,10 @@ async def lifespan(app):
     selected = get_runtime_config()
     app.state.environment = selected.environment
     app.state.artifacts = validate_runtime_artifacts(selected)
+    from src.engine.reranker import reranker_mode, warmup_reranker
+
+    if reranker_mode() == "cross_encoder" and not os.getenv("PYTEST_CURRENT_TEST"):
+        threading.Thread(target=warmup_reranker, name="reranker-warmup", daemon=True).start()
     yield
 
 

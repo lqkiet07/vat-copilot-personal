@@ -1,10 +1,25 @@
-"""Hybrid temporal retrieval combining fulltext and vector search with RRF."""
+"""Hybrid temporal retrieval combining fulltext, vector search, adaptive RRF, and 1-hop graph expansion."""
+import re
+
 from ..api.chat_domain import normalize_query, understand_query
 from ..config import get_runtime_config
 from ..graph.connection import get_neo4j_driver
 from .embedder import DeterministicEmbedder
 from .embedding_meta import resolve_embedder_for_index
 from .models import ArticleNode
+
+_LEGAL_ANCHOR_RE = re.compile(
+    r"\b(?:điều|khoản|điểm|luật|nghị định|thông tư|nghị quyết|quyết định)\s+\d+"
+    r"|\b\d+/\d{4}(?:/[\w-]+)?\b"
+    r"|\b(?:0|5|8|10)\s*%"
+    r"|\b(?:LUAT|ND|TT|NQ|QD|VBHN)_\d+_\d{4}\b",
+    re.IGNORECASE,
+)
+
+
+def detect_legal_anchors(query: str) -> bool:
+    """Detect explicit statutory or rate anchors signaling exact lexical search should lead."""
+    return bool(_LEGAL_ANCHOR_RE.search(query or ""))
 
 _LUCENE_STOPWORDS = {
     "tôi", "cho", "tại", "năm", "tháng", "ngày", "được", "theo", "quy", "định",
@@ -17,15 +32,17 @@ def reciprocal_rank_fusion(
     fulltext_ranks: list[str],
     vector_ranks: list[str],
     k: int = 60,
+    ft_weight: float = 1.0,
+    vec_weight: float = 1.0,
 ) -> list[tuple[str, float]]:
-    """Compute Reciprocal Rank Fusion (RRF) scores across rankings."""
+    """Compute weighted Reciprocal Rank Fusion (RRF) scores across rankings."""
     scores: dict[str, float] = {}
-    for rank_list in (fulltext_ranks, vector_ranks):
+    for rank_list, weight in ((fulltext_ranks, ft_weight), (vector_ranks, vec_weight)):
         seen: set[str] = set()
         for idx, doc_id in enumerate(rank_list, start=1):
             if doc_id not in seen:
                 seen.add(doc_id)
-                scores[doc_id] = scores.get(doc_id, 0.0) + 1.0 / (k + idx)
+                scores[doc_id] = scores.get(doc_id, 0.0) + weight / (k + idx)
     return sorted(scores.items(), key=lambda item: item[1], reverse=True)
 
 
@@ -102,9 +119,9 @@ def _search_fulltext(
 
 
 def _search_vector(
-    session, vec: list[float], as_of_date: str, top_k: int = 30
+    session, vec: list[float], as_of_date: str, top_k: int = 30, min_score: float = 0.32
 ) -> list[str]:
-    """Search candidate article IDs using vector index with temporal filter."""
+    """Search candidate article IDs using vector index with temporal filter and score cutoff."""
     try:
         cypher_vector = """
         CALL db.index.vector.queryNodes('article_embedding', $top_k, $vec) YIELD node, score
@@ -116,7 +133,46 @@ def _search_vector(
         rows = session.run(
             cypher_vector, top_k=top_k, vec=vec, as_of_date=as_of_date
         ).data()
-        return [r["id"] for r in rows if r.get("id")]
+        filtered = [
+            r["id"] for r in rows
+            if r.get("id") and float(r.get("score", 0.0)) >= min_score
+        ]
+        if len(filtered) >= 5:
+            return filtered
+        return [r["id"] for r in rows[:5] if r.get("id")]
+    except Exception:
+        return []
+
+
+def _expand_1hop_relations(
+    session, seed_ids: list[str], as_of_date: str, max_extra: int = 6
+) -> list[str]:
+    """Expand seed articles via active 1-hop AMENDS and CITES graph edges."""
+    if not seed_ids or max_extra <= 0:
+        return []
+    cypher_expand = """
+    MATCH (seed:Article)
+    WHERE seed.id IN $seed_ids
+    OPTIONAL MATCH (amender:Article)-[:AMENDS]->(seed)
+      WHERE amender.valid_from <= date($as_of_date)
+        AND amender.valid_to >= date($as_of_date)
+    OPTIONAL MATCH (seed)-[:CONTAINS]->(:Clause)-[:CITES]->(cited:Article)
+      WHERE cited.valid_from <= date($as_of_date)
+        AND cited.valid_to >= date($as_of_date)
+    WITH collect(DISTINCT amender.id) + collect(DISTINCT cited.id) AS linked
+    UNWIND linked AS lid
+    WITH DISTINCT lid
+    WHERE lid IS NOT NULL AND NOT lid IN $seed_ids
+    RETURN lid AS id
+    LIMIT $max_extra
+    """
+    try:
+        rows = session.run(
+            cypher_expand, seed_ids=seed_ids, as_of_date=as_of_date, max_extra=max_extra
+        ).data()
+        if not isinstance(rows, list):
+            return []
+        return [r["id"] for r in rows if isinstance(r, dict) and r.get("id")]
     except Exception:
         return []
 
@@ -202,6 +258,14 @@ def query_hybrid_temporal(
         if active_embedder is not None:
             query_vec = active_embedder.embed_text(query)
             vec_ranks = _search_vector(session, query_vec, as_of_date, top_k=30)
-        fused = reciprocal_rank_fusion(ft_ranks, vec_ranks, k=60)
+        has_anchors = detect_legal_anchors(query)
+        ft_weight, vec_weight = (1.5, 1.0) if has_anchors else (1.0, 1.5)
+        fused = reciprocal_rank_fusion(
+            ft_ranks, vec_ranks, k=60, ft_weight=ft_weight, vec_weight=vec_weight
+        )
         candidate_ids = [doc_id for doc_id, _ in fused[:top_k]]
+        extra_ids = _expand_1hop_relations(session, candidate_ids[:8], as_of_date, max_extra=5)
+        for lid in extra_ids:
+            if lid not in candidate_ids:
+                candidate_ids.append(lid)
         return _enrich_articles(session, candidate_ids, as_of_date)

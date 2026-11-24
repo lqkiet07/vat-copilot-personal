@@ -71,3 +71,32 @@ def test_enrich_articles_contains_clauses_content():
         d5 = nodes[0]
         assert "200 triệu" in d5.content or "Khoan 25" in d5.content
 
+
+def test_detect_legal_anchors_and_weighted_rrf():
+    from src.engine.hybrid_retriever import detect_legal_anchors
+
+    assert detect_legal_anchors("Theo Khoản 7 Điều 5 Luật 48/2024 thuế suất 0%") is True
+    assert detect_legal_anchors("tiệm net dưới quê có được miễn thuế không") is False
+
+    weighted = reciprocal_rank_fusion(["doc1", "doc2"], ["doc2", "doc1"], k=60, ft_weight=1.0, vec_weight=1.5)
+    assert weighted[0][0] == "doc2"
+
+
+def test_expand_1hop_relations_uses_fake_session_safely():
+    from src.engine.hybrid_retriever import _expand_1hop_relations
+
+    class _FakeResult:
+        def data(self):
+            return [{"id": "ND_144_2026_D2"}, {"id": "LUAT_48_2024_D4"}]
+
+    class _FakeSession:
+        def run(self, cypher, **kwargs):
+            self.last_kwargs = kwargs
+            return _FakeResult()
+
+    sess = _FakeSession()
+    extra = _expand_1hop_relations(sess, ["LUAT_48_2024_D5"], "2026-03-20", max_extra=5)
+    assert extra == ["ND_144_2026_D2", "LUAT_48_2024_D4"]
+    assert sess.last_kwargs["as_of_date"] == "2026-03-20"
+
+

@@ -60,6 +60,8 @@ class QueryResponse(BaseModel):
     is_out_of_domain: bool = Field(default=False, description="Whether query was outside VAT legal domain")
     is_greeting: bool = Field(default=False, description="Whether query was a conversational greeting")
     answer_status: str = Field(default="ANSWERED", description="Response status (ANSWERED, OUT_OF_SCOPE, INSUFFICIENT_BASIS)")
+    missing_facts: list[str] = Field(default_factory=list, description="Clarifying user facts requested for conditional answers")
+    rewritten_query: str | None = Field(default=None, description="Normalized legal query produced by query understanding")
 
 
 class DocumentSummary(BaseModel):

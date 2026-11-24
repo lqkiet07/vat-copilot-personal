@@ -41,6 +41,8 @@ class AnswerResult:
     is_greeting: bool = False
     articles: list[ArticleNode] = field(default_factory=list)
     resolved_evidence: Any = None
+    missing_facts: list[str] = field(default_factory=list)
+    rewritten_query: str | None = None
 
     def to_dict(self) -> dict:
         return {
@@ -58,6 +60,8 @@ class AnswerResult:
             "answer_status": self.answer_status,
             "is_out_of_domain": self.is_out_of_domain,
             "is_greeting": self.is_greeting,
+            "missing_facts": self.missing_facts,
+            "rewritten_query": self.rewritten_query,
         }
 
 

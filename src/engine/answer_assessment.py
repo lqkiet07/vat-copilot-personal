@@ -93,13 +93,25 @@ def parse_assessment(raw: str, safe_ids: set[str]) -> AnswerAssessment:
                             tuple(_text(f, 1000) for f in missing))
 
 
+def _has_system_evidence_blocker(blocked: dict) -> bool:
+    """Return True only when unresolved leaf/system blockers exist beyond parent container guards."""
+    for reasons in (blocked or {}).values():
+        items = (reasons,) if isinstance(reasons, str) else reasons
+        for reason in items:
+            if not str(reason).startswith("Container is not citable"):
+                return True
+    return False
+
+
 def delivery_allowed(assessment: AnswerAssessment, resolution) -> bool:
     if not assessment.claims or any(c.status != "supported" for c in assessment.claims):
         return False
     if assessment.outcome == "supported":
         return assessment.coverage and not assessment.missing_facts
+    # Allow conditional needs_facts answers when cited leaf clauses are verified valid despite container blockers.
     return (assessment.outcome == "needs_facts" and not assessment.coverage
-            and bool(assessment.missing_facts) and not resolution.blocked)
+            and bool(assessment.missing_facts)
+            and not _has_system_evidence_blocker(resolution.blocked))
 
 
 BLOCKER_INSTRUCTIONS = (

@@ -175,8 +175,12 @@ def _assess(question, day, history, articles, resolution, raw, llm, model, trace
         assessment = parse_assessment(output, set(extract_citations(raw)))
         if time.monotonic() >= deadline:
             return False
-        trace.update(assessment_outcome=assessment.outcome, assessment_claim_count=len(assessment.claims),
-                     assessment_coverage=assessment.coverage)
+        trace.update(
+            assessment_outcome=assessment.outcome,
+            assessment_claim_count=len(assessment.claims),
+            assessment_coverage=assessment.coverage,
+            assessment_missing_facts=list(assessment.missing_facts),
+        )
         allowed = delivery_allowed(assessment, resolution)
         trace["assessment_reason"] = "accepted" if allowed else "unsupported"
         return allowed
@@ -239,8 +243,14 @@ def reviewed_answer(question, query, day, pipeline, use_llm, model, history, tra
     packing_failure = None
     explicit_ids = explicit_evidence_ids(query, corpus_path)
     if articles:
+        from src.engine.reranker import rerank_provisions
         from src.engine.evidence_pack import pack_evidence
         from src.engine.answer_assessment import build_assessment_prompt
+
+        articles = rerank_provisions(
+            query, articles, explicit_ids=explicit_ids,
+            top_n=max(5, len(explicit_ids) + 4),
+        )
         context = provider_context_limit(_llm_provider())
         # Separate unavailable explicit refs so partial verified evidence still displays instead of wiping to [].
         available_requested = [
@@ -251,7 +261,9 @@ def reviewed_answer(question, query, day, pipeline, use_llm, model, history, tra
             articles, available_requested, context,
             lambda chosen, omitted: build_irac_prompt(query, day, chosen, history,
                 corpus_path=corpus_path, resolved_evidence=resolution),
-            lambda chosen, omitted: build_assessment_prompt(query, day, history, chosen, resolution, ""))
+            lambda chosen, omitted: build_assessment_prompt(query, day, history, chosen, resolution, ""),
+            max_extra=5,
+        )
         trace.update(selected_evidence_count=len(pack.articles), omitted_evidence_ids=pack.omitted_ids,
                      evidence_pack_reason=pack.reason, context_limit=context)
         articles = list(pack.articles)
@@ -291,11 +303,21 @@ def reviewed_answer(question, query, day, pipeline, use_llm, model, history, tra
     if packing_failure:
         context_warnings.append("CONTEXT_BUDGET_EXCEEDED: chưa gọi mô hình vì context không chứa đủ căn cứ bắt buộc.")
     warnings = list(dict.fromkeys(list(getattr(report, "warnings", [])) + blockers + context_warnings + [GROUNDING_LIMITATION]))
+    delivered_ok = bool(
+        trace.get("generated_delivered")
+        and trace.get("assessment_outcome") in {"supported", "needs_facts"}
+    )
+    missing_facts = list(
+        trace.get("assessment_missing_facts")
+        or trace.get("understanding_missing_facts")
+        or []
+    )
     return AnswerResult(
         query=question, as_of_date=day, pipeline=pipeline, citations=extract_citations("\n".join(sections.values())),
         active_article_ids=[a.id for a in articles], risk_score=getattr(report, "risk_score", 50),
         risk_level=getattr(report, "risk_level", "MEDIUM"), warnings=warnings, irac_sections=sections,
         llm_used=bool(raw_response and raw_response.strip()), raw_llm_response=raw_response,
-        answer_status="ANSWERED" if trace.get("generated_delivered") and trace.get("assessment_outcome") == "supported" else "INSUFFICIENT_BASIS",
+        answer_status="ANSWERED" if delivered_ok else "INSUFFICIENT_BASIS",
         articles=articles, resolved_evidence=resolution,
+        missing_facts=missing_facts, rewritten_query=trace.get("rewritten_query"),
     )
