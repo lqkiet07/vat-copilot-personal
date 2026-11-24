@@ -334,6 +334,46 @@ export function formatInlineCitationsPlainText(text: string): string {
     .join("\n");
 }
 
+const CANONICAL_DB_ID_RE =
+  /\b(?:LUAT|ND|TT|NQ|QD|VBHN)_[0-9]+_\d{4}(?:_D\d+[a-z]?(?:_K\d+[a-z]?(?:_(?:[a-zđ]|d_1))?)?)?\b/gi;
+const SPACED_DB_ID_RE =
+  /\b(LUAT|ND|TT|NQ|QD|VBHN)\s+(\d+)\s+(\d{4})(?:\s+D(\d+[a-z]?)(?:\s+K(\d+[a-z]?)(?:\s+([a-zđ]|d_1))?)?)?\b/gi;
+
+/** Translate technical English diagnostics and replace raw DB identifiers with readable Vietnamese labels. */
+export function formatTechnicalDiagnosticText(raw: string): string {
+  if (!raw) return "";
+  let formatted = raw
+    .replace(
+      /Container is not citable;\s*changed or blocked descendants:/gi,
+      "Điều/Khoản cha không trích dẫn gộp do có khoản/điểm con đã sửa đổi hoặc cần xác minh riêng:"
+    )
+    .replace(
+      /Consolidation reference is not operative evidence/gi,
+      "Văn bản hợp nhất chỉ mang tính tham khảo, không thay thế căn cứ gốc có hiệu lực"
+    )
+    .replace(/missing explicit authority/gi, "không tìm thấy văn bản được nêu trong cơ sở dữ liệu")
+    .replace(/missing explicit unit/gi, "không tìm thấy điều khoản được nêu trong cơ sở dữ liệu");
+
+  formatted = formatted.replace(CANONICAL_DB_ID_RE, (token) => {
+    const parsed = parseCitationId(token);
+    return isRecognizedInlineCitation(parsed) ? parsed.label : token;
+  });
+
+  formatted = formatted.replace(
+    SPACED_DB_ID_RE,
+    (full, prefix: string, num: string, year: string, art?: string, clause?: string, point?: string) => {
+      let canonical = `${prefix.toUpperCase()}_${num}_${year}`;
+      if (art) canonical += `_D${art.toLowerCase()}`;
+      if (clause) canonical += `_K${clause.toLowerCase()}`;
+      if (point) canonical += `_${point.toLowerCase()}`;
+      const parsed = parseCitationId(canonical);
+      return isRecognizedInlineCitation(parsed) ? parsed.label : full;
+    }
+  );
+
+  return formatted;
+}
+
 export const store = {
   get<T>(key: string, fallback: T): T {
     try {

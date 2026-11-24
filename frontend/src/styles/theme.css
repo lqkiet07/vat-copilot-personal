@@ -210,26 +210,24 @@
   font-family: 'JetBrains Mono', ui-monospace, SFMono-Regular, monospace;
 }
 
+/* Keep scrollbar geometry and color constant on hover to prevent Chromium Windows repaint jitter. */
 .scroll-quiet {
-  scrollbar-width: none;
-}
-
-.scroll-quiet:hover {
   scrollbar-width: thin;
-  scrollbar-color: #CBD5E1 transparent;
+  scrollbar-gutter: stable;
+  scrollbar-color: rgba(148, 163, 184, 0.35) transparent;
 }
 
 .scroll-quiet::-webkit-scrollbar {
-  width: 0;
-  height: 0;
-}
-
-.scroll-quiet:hover::-webkit-scrollbar {
   width: 6px;
+  height: 6px;
 }
 
-.scroll-quiet:hover::-webkit-scrollbar-thumb {
-  background: #CBD5E1;
+.scroll-quiet::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.scroll-quiet::-webkit-scrollbar-thumb {
+  background: rgba(148, 163, 184, 0.35);
   border-radius: 6px;
 }
 

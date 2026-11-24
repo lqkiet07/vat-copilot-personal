@@ -10,10 +10,10 @@ export type Msg = { id: number; q: string; date: string; pipeline: Pipeline; res
 export type Conversation = { id: string; title: string; updated: number; messages: Msg[] };
 
 export const REASONING_STEPS = [
-  "Phân tích thực thể pháp lý và mốc thời gian sự kiện...",
-  "Truy vấn đồ thị tri thức Neo4j: Xác định khoảng hiệu lực văn bản...",
-  "Áp dụng Rule Engine: So sánh điều kiện miễn thuế & thuế suất 0%...",
-  "Kiểm định đối chiếu thực tế và thẩm định chống ảo giác...",
+  "Chuẩn hóa câu hỏi pháp lý và xác định mốc thời gian thẩm định...",
+  "Truy vấn đồ thị tri thức thời gian Neo4j và mở rộng điều khoản liên quan...",
+  "Xếp hạng mức độ liên quan và xác minh hiệu lực từng khoản/điểm...",
+  "Tổng hợp lập luận IRAC và kiểm định trích dẫn chống ảo giác...",
 ];
 
 type UseChatSessionArgs = {
@@ -49,7 +49,6 @@ export function useChatSession({
   });
   const [loading, setLoading] = useState(false);
   const [step, setStep] = useState(0);
-  const [elapsedSec, setElapsedSec] = useState(0);
 
   const activeIdRef = useRef(activeId);
   const focusTimerRef = useRef<number | null>(null);
@@ -63,15 +62,6 @@ export function useChatSession({
   useEffect(() => {
     saveConversations("vat_public_convs", convs);
   }, [convs]);
-
-  useEffect(() => {
-    if (!loading) {
-      setElapsedSec(0);
-      return;
-    }
-    const timer = window.setInterval(() => setElapsedSec((s) => s + 1), 1000);
-    return () => window.clearInterval(timer);
-  }, [loading]);
 
   useEffect(() => {
     return () => {
@@ -274,7 +264,6 @@ export function useChatSession({
     messages,
     loading,
     step,
-    elapsedSec,
     newChat,
     selectConv,
     deleteConv,

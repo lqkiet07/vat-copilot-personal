@@ -107,7 +107,6 @@ export function App() {
     messages,
     loading,
     step,
-    elapsedSec,
     newChat,
     selectConv,
     deleteConv,
@@ -359,7 +358,6 @@ export function App() {
                     ) : (
                       <ReasoningProgressCard
                         step={step}
-                        elapsedSec={elapsedSec}
                         onAbort={abortQuery}
                       />
                     )}
@@ -536,7 +534,7 @@ function Answer({ msg, onClickCitation, onOpenRelated, onRetry, onEditQuery }: A
   }
 
   return (
-    <article className="group rounded-3xl border border-[#CBD5E1] bg-white/95 p-4 shadow-xs backdrop-blur-xs transition-shadow hover:shadow-md sm:p-5">
+    <article className="group rounded-3xl border border-[#CBD5E1] bg-white p-4 shadow-xs sm:p-5">
       <AnswerHeader
         pipeline={msg.pipeline}
         date={msg.date}

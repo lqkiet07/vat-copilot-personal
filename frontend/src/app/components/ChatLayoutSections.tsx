@@ -1,3 +1,4 @@
+import { useEffect, useState } from "react";
 import type React from "react";
 import {
   AlertTriangle,
@@ -206,23 +207,34 @@ export function UserPromptBubble({ q, date, pipeline }: { q: string; date: strin
   );
 }
 
-/** Progress feedback card shown while querying the backend with cancel action and elapsed timer. */
+/** Progress feedback card shown while querying the backend with cancel action and local elapsed timer. */
 export function ReasoningProgressCard({
   step,
-  elapsedSec,
   onAbort,
 }: {
   step: number;
-  elapsedSec: number;
   onAbort: () => void;
 }) {
+  // Isolate the 1s tick inside this card so the outer chat tree stays static while loading.
+  const [elapsedSec, setElapsedSec] = useState(0);
+
+  useEffect(() => {
+    const timer = window.setInterval(() => setElapsedSec((s) => s + 1), 1000);
+    return () => window.clearInterval(timer);
+  }, []);
+
   return (
     <div className="rounded-2xl border border-[#CBD5E1] bg-white p-4 shadow-xs">
       <div className="mb-3 flex flex-wrap items-center justify-between gap-2 text-[13px] font-bold text-[#1E3A8A]">
         <div className="flex items-center gap-2">
-          <Loader2 className="h-4 w-4 animate-spin text-[#1E3A8A]" />
+          <Loader2 className="h-4 w-4 animate-spin will-change-transform text-[#1E3A8A]" />
           <span>
-            Đang thẩm định Temporal GraphRAG{elapsedSec > 0 ? ` (${elapsedSec}s)` : "..."}
+            Đang thẩm định Temporal GraphRAG
+            {elapsedSec > 0 ? (
+              <span className="font-mono-num tabular-nums">{` (${elapsedSec}s)`}</span>
+            ) : (
+              "..."
+            )}
           </span>
         </div>
         <button
@@ -239,7 +251,7 @@ export function ReasoningProgressCard({
             {i < step ? (
               <CheckCircle2 className="h-4 w-4 shrink-0 text-[#059669]" />
             ) : i === step ? (
-              <Loader2 className="h-4 w-4 shrink-0 animate-spin text-[#1E3A8A]" />
+              <Loader2 className="h-4 w-4 shrink-0 animate-spin will-change-transform text-[#1E3A8A]" />
             ) : (
               <span className="h-4 w-4 shrink-0 rounded-full border border-[#CBD5E1]" />
             )}

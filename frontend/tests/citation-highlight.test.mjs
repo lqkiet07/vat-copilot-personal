@@ -30,6 +30,7 @@ const {
   splitTechnicalDiagnosticLines,
   formatInlineCitationsToMarkdownLinks,
   formatInlineCitationsPlainText,
+  formatTechnicalDiagnosticText,
 } = await load("../src/app/utils/citationMatch.ts");
 
 const inventory = JSON.parse(
@@ -182,4 +183,28 @@ test("Inline citation formatters convert known Neo4j tags and keep unknown or ma
     "Kết quả kiểm thử"
   );
 });
+
+test("formatTechnicalDiagnosticText translates English diagnostics and replaces canonical and spaced DB IDs", () => {
+  const amended = formatTechnicalDiagnosticText("Điều khoản ND_68_2026_D11_K3 đã bị sửa đổi/bổ sung bởi văn bản sửa đổi.");
+  assert.match(amended, /Khoản 3 Điều 11 Nghị định 68\/2026\/NĐ-CP/);
+  assert.doesNotMatch(amended, /ND_68_2026_D11_K3/);
+
+  const container = formatTechnicalDiagnosticText(
+    "Hệ thống chưa xác minh được chứng cứ LUAT_48_2024_D5: Container is not citable; changed or blocked descendants: LUAT_48_2024_D5_K1, LUAT_48_2024_D5_K25"
+  );
+  assert.match(container, /Điều 5 Luật 48\/2024/);
+  assert.match(container, /Khoản 1 Điều 5 Luật 48\/2024/);
+  assert.match(container, /Khoản 25 Điều 5 Luật 48\/2024/);
+  assert.match(container, /không trích dẫn gộp/i);
+  assert.doesNotMatch(container, /Container is not citable/i);
+  assert.doesNotMatch(container, /LUAT_48_2024/);
+
+  const spaced = formatTechnicalDiagnosticText(
+    "Hệ thống chưa xác minh được chứng cứ ND 181 2025 D4: Consolidation reference is not operative evidence"
+  );
+  assert.match(spaced, /Điều 4 Nghị định 181\/2025\/NĐ-CP/);
+  assert.match(spaced, /Văn bản hợp nhất chỉ mang tính tham khảo/i);
+  assert.doesNotMatch(spaced, /ND 181 2025 D4/);
+});
+
 

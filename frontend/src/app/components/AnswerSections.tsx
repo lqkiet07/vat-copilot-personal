@@ -2,7 +2,7 @@ import { useState } from "react";
 import { AlertTriangle, CalendarDays, ChevronDown, ChevronUp, RotateCcw } from "lucide-react";
 import emblem from "@/imports/tai-xuong.png";
 import type { AuditItem, Citation, Result } from "../data";
-import { fmtDate, splitTechnicalDiagnosticLines } from "../utils/citationMatch";
+import { fmtDate, formatTechnicalDiagnosticText, splitTechnicalDiagnosticLines } from "../utils/citationMatch";
 import { MarkdownContent } from "./MarkdownContent";
 import type { Pipeline } from "./SettingsDialog";
 
@@ -113,7 +113,7 @@ export function AnswerConclusionBox({
           {showDiagnostics && (
             <ul className="font-mono-num mt-2 max-h-56 space-y-1.5 overflow-y-auto rounded-xl border border-[#E2E8F0] bg-white p-3 text-[11px] text-[#475569]">
               {diagnosticLines.map((line, idx) => (
-                <li key={idx} className="break-words">{line}</li>
+                <li key={idx} className="break-words">{formatTechnicalDiagnosticText(line)}</li>
               ))}
             </ul>
           )}
@@ -174,7 +174,7 @@ export function AnswerAuditSection({ audit }: { audit: AuditItem[] }) {
                   a.tone === "ok" ? "bg-[#059669]" : "bg-[#EA580C]"
                 }`}
               />
-              <span>{a.text}</span>
+              <span>{formatTechnicalDiagnosticText(a.text)}</span>
             </li>
           ))}
         </ul>
@@ -202,7 +202,7 @@ export function AnswerAuditSection({ audit }: { audit: AuditItem[] }) {
                   a.tone === "ok" ? "bg-[#059669]" : "bg-[#EA580C]"
                 }`}
               />
-              <span className="break-words">{a.text}</span>
+              <span className="break-words">{formatTechnicalDiagnosticText(a.text)}</span>
             </li>
           ))}
         </ul>
