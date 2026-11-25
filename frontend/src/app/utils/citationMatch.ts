@@ -257,7 +257,7 @@ export function getDocCategory(id: string): Exclude<DocCategory, "all"> {
   return "other";
 }
 
-/** Split trailing unverified/container diagnostic lines out of deterministic conclusion blocks. */
+/** Split trailing internal/container diagnostic lines out of conclusion blocks while keeping user-facing temporal explanations visible. */
 export function splitTechnicalDiagnosticLines(text: string): {
   primaryText: string;
   diagnosticLines: string[];
@@ -269,13 +269,24 @@ export function splitTechnicalDiagnosticLines(text: string): {
 
   for (const line of lines) {
     const trimmed = line.trim();
+    const isTemporalReason =
+      /^(?:LUAT|ND|TT|NQ|QD|VBHN)\s+[0-9A-Z\s]+:\s+ngày (?:bắt đầu|kết thúc) hiệu lực theo dữ liệu là/i.test(
+        trimmed
+      );
+    if (isTemporalReason) {
+      const formattedTemporal = formatTechnicalDiagnosticText(trimmed).replace(
+        /\b(\d{4})-(\d{2})-(\d{2})\b/g,
+        (_, y: string, m: string, d: string) => `${d}/${m}/${y}`
+      );
+      primary.push(formattedTemporal);
+      continue;
+    }
+
     const isTechLine =
       /^(?:Hệ thống chưa xác minh được chứng cứ(?:\s|:|$)|Container is not citable|changed or blocked descendants:|\[audit\]|excluded_by_budget)/i.test(
         trimmed
       ) ||
-      (/^(?:LUAT|ND|TT|NQ|QD|VBHN)\s+[0-9A-Z\s]+:\s+(?:ngày (?:bắt đầu|kết thúc) hiệu lực theo dữ liệu là|Consolidation reference)/i.test(
-        trimmed
-      )) ||
+      (/^(?:LUAT|ND|TT|NQ|QD|VBHN)\s+[0-9A-Z\s]+:\s+Consolidation reference/i.test(trimmed)) ||
       (/(?:Container is not citable|Consolidation reference is not operative)/i.test(trimmed) && trimmed.length > 50);
 
     if (isTechLine) {

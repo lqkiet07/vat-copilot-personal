@@ -67,12 +67,8 @@ test("Step8.3 drawer navigation requires exact body and makes no blanket verifie
   assert.doesNotMatch(appSource, /setTimeout\(\(\) => \{\s*const el = document.getElementById\(`lib-art-/);
 });
 
-test("Step8.3 trace is simulated, generic and never reconstructs canonical IDs", () => {
-  assert.match(appSource, /MATCH \(citation\)/);
-  assert.doesNotMatch(appSource, /art:Article|c\.art\.toUpperCase/);
-  assert.match(appSource, /parseCitationId\(c.id\)/);
-  assert.match(appSource, /chưa có ID chuẩn/);
-  assert.match(appSource, /không phải kết quả xác minh/);
+test("Step8.3 trace debug block is hidden from end-user UI and never reconstructs canonical IDs", () => {
+  assert.doesNotMatch(appSource, /MATCH \(citation\)|Mô phỏng Cypher|art:Article|c\.art\.toUpperCase/);
   assert.doesNotMatch(appSource, /Cảnh báo rủi ro|Kiểm định căn cứ pháp lý đồ thị/);
 });
 

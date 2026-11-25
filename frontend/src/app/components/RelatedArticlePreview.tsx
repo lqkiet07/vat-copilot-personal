@@ -1,19 +1,21 @@
-import type { Article, Citation } from "../data";
+import type { Article, Citation, ResolvedProvisionMeta } from "../data";
 import {
   doesClauseMatchCitation,
   doesPointMatchCitation,
   getPreviewClausesForCitation,
   parseCitationTarget,
+  stripLeadingClauseNumber,
 } from "../utils/citationMatch";
 
 type Props = {
   article: Article;
   citation: Citation;
   openActionLabel: string;
+  resolvedProvisions?: Record<string, ResolvedProvisionMeta>;
 };
 
-/** Render exact cited clause/point preview inside the Related Citations drawer. */
-export function RelatedArticlePreview({ article, citation, openActionLabel }: Props) {
+/** Render exact cited clause/point preview inside the Related Citations panel with operative amendments synced. */
+export function RelatedArticlePreview({ article, citation, openActionLabel, resolvedProvisions }: Props) {
   const preview = getPreviewClausesForCitation(article, citation);
   const target = parseCitationTarget(citation);
 
@@ -29,6 +31,16 @@ export function RelatedArticlePreview({ article, citation, openActionLabel }: Pr
             preview.isExactClauseMatch &&
             target.level === "point" &&
             doesClauseMatchCitation(cl, article, citation);
+          const clauseLabel = cl.label || String(cl.n);
+          const resolvedClauseMeta =
+            (cl.id ? resolvedProvisions?.[cl.id] : undefined) ||
+            (isExactClause ? resolvedProvisions?.[citation.id] : undefined);
+          const isClauseAmended = Boolean(
+            resolvedClauseMeta && resolvedClauseMeta.status === "AMENDED" && resolvedClauseMeta.text
+          );
+          const clauseBody = isClauseAmended
+            ? stripLeadingClauseNumber(resolvedClauseMeta!.text, clauseLabel)
+            : cl.text;
 
           return (
             <div
@@ -41,13 +53,29 @@ export function RelatedArticlePreview({ article, citation, openActionLabel }: Pr
                     : undefined
               }
             >
+              {isClauseAmended && (
+                <div className="font-sans-ui mb-1">
+                  <span className="inline-flex items-center rounded-full border border-indigo-200 bg-indigo-50 px-2 py-0.5 text-[10px] font-bold text-indigo-900">
+                    Đã sửa đổi (hiện hành)
+                  </span>
+                </div>
+              )}
               <p className="m-0">
-                <strong>{cl.label || cl.n}.</strong> {cl.text}
+                <strong>{clauseLabel}.</strong> {clauseBody}
               </p>
               {cl.points && cl.points.length > 0 && (
                 <div className="mt-1.5 space-y-1 pl-3 text-[12px]">
                   {cl.points.map((pt, pIdx) => {
                     const ptMatch = doesPointMatchCitation(pt, cl, article, citation);
+                    const resolvedPointMeta =
+                      (pt.id ? resolvedProvisions?.[pt.id] : undefined) ||
+                      (ptMatch ? resolvedProvisions?.[citation.id] : undefined);
+                    const isPointAmended = Boolean(
+                      resolvedPointMeta && resolvedPointMeta.status === "AMENDED" && resolvedPointMeta.text
+                    );
+                    const pointBody = isPointAmended
+                      ? stripLeadingClauseNumber(resolvedPointMeta!.text, pt.l)
+                      : pt.text;
                     return (
                       <div
                         key={pt.id || `${cl.n}-pt-${pIdx}-${pt.l}`}
@@ -57,8 +85,13 @@ export function RelatedArticlePreview({ article, citation, openActionLabel }: Pr
                             : undefined
                         }
                       >
+                        {isPointAmended && (
+                          <span className="font-sans-ui mr-1.5 inline-flex items-center rounded-full border border-indigo-200 bg-indigo-50 px-1.5 py-0.5 text-[9.5px] font-bold text-indigo-900">
+                            Đã sửa đổi
+                          </span>
+                        )}
                         <span className="font-semibold text-[#1E3A8A]">{pt.l}) </span>
-                        <span>{pt.text}</span>
+                        <span>{pointBody}</span>
                       </div>
                     );
                   })}

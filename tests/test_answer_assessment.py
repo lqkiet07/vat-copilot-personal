@@ -675,3 +675,25 @@ def test_assessment_and_irac_prompts_align_accented_missing_facts(reviewed):
     assert "tiếng Việt có dấu đầy đủ" in assess_prompt
     assert "kết thúc phần Conclusion" in irac_prompt
 
+
+def test_needs_facts_allows_coverage_true_and_ignores_unrelated_or_repeal_blockers(reviewed):
+    from dataclasses import replace
+    from src.engine.answer_assessment import delivery_allowed, parse_assessment
+
+    base_res = answer(reviewed).resolved_evidence
+    parsed = parse_assessment(
+        assessment("needs_facts", True, missing=["Doanh thu hằng năm của hộ kinh doanh?"]),
+        {SAFE},
+    )
+
+    # Unrelated article blocker + reviewed repeal on another clause must not block grounded needs_facts.
+    unrelated_blocked = {
+        "LUAT_48_2024_D12_K3": "LUAT_149_2025:17:18: Reviewed repeal suppresses provision",
+        "ND_181_2025_D37_K3_a": "ND_359_2025:16:2: Overlapping scope requires independent exact provision text",
+    }
+    assert delivery_allowed(parsed, replace(base_res, blocked=unrelated_blocked)) is True
+
+    # Sibling blocker under the cited article MUST still block.
+    assert delivery_allowed(parsed, base_res) is False
+
+

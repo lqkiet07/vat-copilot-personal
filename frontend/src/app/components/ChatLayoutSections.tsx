@@ -19,7 +19,7 @@ import type { Pipeline } from "./SettingsDialog";
 const SHORT_SCENARIO_MAP: Record<number, string> = {
   1: "Xuất khẩu phần mềm (0%)",
   2: "Bẫy niên đại 01/07/2025",
-  3: "Sửa hóa đơn NĐ 144/2026",
+  3: "Sửa đổi theo NĐ 144/2026",
 };
 
 /** Top portal header with mobile sidebar trigger, knowledge base badge, and related panel toggle. */
@@ -65,30 +65,27 @@ export function PortalHeader({
         </div>
 
         <span className="font-mono-num hidden shrink-0 rounded-full border border-[#BFDBFE] bg-[#EFF6FF] px-2.5 py-0.5 text-[10.5px] font-semibold text-[#1E3A8A] md:inline-flex">
-          {isStaging
-            ? `Kho pháp luật (${docCount} văn bản · ${fmtDate(freezeDate)})`
-            : `Kho pháp luật · Cập nhật ${fmtDate(freezeDate)}`}
+          {`Dữ liệu cập nhật ${fmtDate(freezeDate)}`}
         </span>
       </div>
 
-      <button
-        type="button"
-        onClick={onToggleRelated}
-        aria-expanded={relatedOpen}
-        aria-label="Mở danh sách văn bản liên quan"
-        className={`flex min-h-[36px] shrink-0 items-center gap-1.5 rounded-full px-3 py-1.5 text-[12px] font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#1E3A8A]/40 ${
-          relatedOpen
-            ? "bg-[#1E3A8A] text-white shadow-xs"
-            : citationsCount > 0
-              ? "border border-[#BFDBFE] bg-[#EFF6FF] text-[#1E3A8A] hover:bg-[#DBEAFE]"
-              : "border border-[#E2E8F0] bg-white text-[#64748B] hover:bg-[#F8FAFC]"
-        }`}
-        title="Mở danh sách văn bản và điều khoản pháp luật được trích dẫn"
-      >
-        <FileSearch className="h-3.5 w-3.5 shrink-0" />
-        <span className="hidden sm:inline">Văn bản liên quan</span>
-        {citationsCount > 0 && <span className="font-mono-num font-bold">({citationsCount})</span>}
-      </button>
+      {citationsCount > 0 && (
+        <button
+          type="button"
+          onClick={onToggleRelated}
+          aria-expanded={relatedOpen}
+          aria-label="Mở danh sách văn bản liên quan"
+          className={`flex min-h-[36px] shrink-0 items-center gap-1.5 rounded-full px-3 py-1.5 text-[12px] font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#1E3A8A]/40 ${relatedOpen
+              ? "bg-[#1E3A8A] text-white shadow-xs"
+              : "border border-[#BFDBFE] bg-[#EFF6FF] text-[#1E3A8A] hover:bg-[#DBEAFE]"
+            }`}
+          title="Mở danh sách điều khoản được trích dẫn trong câu trả lời"
+        >
+          <FileSearch className="h-3.5 w-3.5 shrink-0" />
+          <span className="hidden sm:inline">Văn bản liên quan</span>
+          <span className="font-mono-num font-bold">({citationsCount})</span>
+        </button>
+      )}
     </header>
   );
 }
@@ -99,8 +96,8 @@ export function FreezeWarningBanner({ freezeDate }: { freezeDate: string }) {
     <div className="relative z-20 flex items-center justify-center gap-2 border-b border-amber-200 bg-amber-50 px-4 py-2 text-[12px] text-amber-800">
       <AlertTriangle className="h-4 w-4 shrink-0 text-amber-600" />
       <span>
-        Mốc thời gian vượt quá ngày đóng băng dữ liệu ({fmtDate(freezeDate)}). Hệ thống sẽ thẩm định
-        theo quy định có hiệu lực tính đến {fmtDate(freezeDate)}.
+        Ngày tra cứu vượt quá mốc dữ liệu hiện có ({fmtDate(freezeDate)}). Hệ thống sẽ tra cứu theo
+        quy định có hiệu lực tính đến {fmtDate(freezeDate)}.
       </span>
     </div>
   );

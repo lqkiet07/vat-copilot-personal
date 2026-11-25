@@ -46,7 +46,7 @@ export function MarkdownContent({ text, className = "", onCitationClick }: Props
                   type="button"
                   data-inline-citation={citation.id}
                   onClick={() => onCitationClick?.(citation)}
-                  title={`Bấm để xem & tô sáng trong Thư viện · Mã CSDL: ${citation.id}`}
+                  title="Bấm để mở văn bản và xem điều khoản này"
                   className="mx-0.5 inline-flex items-center rounded-md border border-[#BFDBFE] bg-[#EFF6FF] px-1.5 py-0.5 align-baseline text-[12px] font-semibold text-[#1E3A8A] transition-colors hover:bg-[#DBEAFE] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#1E3A8A]/40"
                 >
                   {children}

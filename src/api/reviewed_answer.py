@@ -1,6 +1,7 @@
 from src.engine.prompt import build_irac_prompt
 from src.engine.retrieval_service import _invoke_callback, explicit_evidence_ids, project_reviewed_articles, retrieve_and_gate
 from src.verifier.citation_verifier import extract_citations
+import re
 import time
 
 
@@ -78,7 +79,7 @@ def grounded_delivery(text, articles, report):
     return True
 
 
-def evidence_sections(question, day, articles, resolution=None, metadata=None):
+def evidence_sections(question, day, articles, resolution=None, metadata=None, missing_facts=None):
     blockers = "\n".join(f"Hệ thống chưa xác minh được chứng cứ {unit}: {reason}".replace("_", " ")
                          for unit, reason in (resolution.blocked.items() if resolution else []))
     temporal = []
@@ -90,12 +91,21 @@ def evidence_sections(question, day, articles, resolution=None, metadata=None):
         elif end and day > end:
             temporal.append(f"{unit.replace('_', ' ')}: ngày kết thúc hiệu lực theo dữ liệu là {end}; ngày tra cứu {day} nằm sau mốc này.")
     blockers = "\n".join(filter(None, [blockers, *temporal]))
+    if missing_facts:
+        conclusion = (
+            "Để trả lời chính xác trường hợp của bạn, vui lòng cho biết thêm các thông tin bên dưới "
+            "(một số quy định liên quan đang có hiệu lực đã được đính kèm bên trong phần phân tích chi tiết)."
+        )
+    else:
+        conclusion = (
+            "Chưa đủ căn cứ để kết luận pháp lý cho tình huống; trên đây chỉ là trích đoạn chứng cứ đã xác minh."
+            + ("\n" + blockers if blockers else "")
+        )
     return {
         "issue": f"Tra cứu chứng cứ pháp lý tại ngày {day}.",
         "rule": " ".join(f"[{a.id}]" for a in articles),
         "application": "\n".join(f"[{a.id}] {a.content}" for a in articles),
-        "conclusion": "Chưa đủ căn cứ để kết luận pháp lý cho tình huống; trên đây chỉ là trích đoạn chứng cứ đã xác minh."
-                      + ("\n" + blockers if blockers else ""),
+        "conclusion": conclusion,
     }
 
 
@@ -120,7 +130,38 @@ def _verify(text, day, articles, resolution, scorer, corpus_path, review_path, q
     )
 
 
-def _generate(question, day, articles, resolution, llm, scorer, model, history, paths, trace):
+_UNIT_LEVEL_REF_RE = re.compile(
+    r"\b(?:điều|dieu|khoản|khoan|điểm|diem)\s*\d+|\[[A-Z0-9_]+_D\d+",
+    re.IGNORECASE,
+)
+
+
+def _partition_explicit_ids(query: str, explicit_ids: list[str], articles: list) -> tuple[list[str], list[str]]:
+    """Keep article/clause/point citations and missing authorities strict; treat whole-doc mentions as soft scope."""
+    if not explicit_ids:
+        return [], []
+    if _UNIT_LEVEL_REF_RE.search(query or ""):
+        return list(explicit_ids), []
+    strict: list[str] = []
+    doc_scope: list[str] = []
+    seen_missing_docs: set[str] = set()
+    for eid in explicit_ids:
+        if eid.startswith("missing_explicit_"):
+            strict.append(eid)
+            continue
+        doc_id = eid.split("_D", 1)[0]
+        has_active = any(a.id == doc_id or a.id.startswith(doc_id + "_") for a in articles)
+        if not has_active:
+            # Keep one representative ID per inactive/temporal-trap document so fail-closed checks still catch it.
+            if doc_id not in seen_missing_docs:
+                seen_missing_docs.add(doc_id)
+                strict.append(eid)
+        else:
+            doc_scope.append(eid)
+    return strict, doc_scope
+
+
+def _generate(question, day, articles, resolution, llm, scorer, model, history, paths, trace, strict_explicit=()):
     from src.api.answer_service import _parse_irac_sections, _needs_irac_fallback
     prompt = build_irac_prompt(question, day, articles, history, resolved_evidence=resolution, corpus_path=paths[0])
     from src.engine.diagnostics import text_sha256
@@ -170,7 +211,10 @@ def _generate(question, day, articles, resolution, llm, scorer, model, history, 
     trace.setdefault("assessment_call_count", 0)
     if grounded_delivery(raw, articles, report) and not _needs_irac_fallback(raw, sections):
         assessment_deadline = min(deadline, time.monotonic() + assessment)
-        accepted = _assess(question, day, history, articles, resolution, raw, llm, model, trace, assessment_deadline)
+        accepted = _assess(
+            question, day, history, articles, resolution, raw, llm, model, trace,
+            assessment_deadline, strict_explicit=strict_explicit,
+        )
         if accepted:
             report = _verify(raw, day, articles, resolution, scorer, *paths, question)
             accepted = grounded_delivery(raw, articles, report) and time.monotonic() < deadline
@@ -179,7 +223,7 @@ def _generate(question, day, articles, resolution, llm, scorer, model, history, 
     return (sections if accepted else None), (report if accepted else None), raw
 
 
-def _assess(question, day, history, articles, resolution, raw, llm, model, trace, deadline):
+def _assess(question, day, history, articles, resolution, raw, llm, model, trace, deadline, strict_explicit=()):
     from src.engine.answer_assessment import (
         AssessmentJSONError, assessment_generation_config, build_assessment_prompt, delivery_allowed, parse_assessment,
     )
@@ -230,7 +274,7 @@ def _assess(question, day, history, articles, resolution, raw, llm, model, trace
             assessment_coverage=assessment.coverage,
             assessment_missing_facts=list(assessment.missing_facts),
         )
-        allowed = delivery_allowed(assessment, resolution)
+        allowed = delivery_allowed(assessment, resolution, explicit_ids=strict_explicit)
         trace["assessment_reason"] = "accepted" if allowed else "unsupported"
         return allowed
     except AssessmentProviderError as error:
@@ -298,19 +342,29 @@ def reviewed_answer(question, query, day, pipeline, use_llm, model, history, tra
     from src.engine.llm_client import _llm_provider
     packing_failure = None
     explicit_ids = explicit_evidence_ids(query, corpus_path)
+    strict_explicit, doc_scope = _partition_explicit_ids(query, explicit_ids, articles)
     if articles:
         from src.engine.reranker import rerank_provisions
         from src.engine.evidence_pack import pack_evidence
         from src.engine.answer_assessment import build_assessment_prompt
 
-        articles = rerank_provisions(
-            query, articles, explicit_ids=explicit_ids,
-            top_n=max(5, len(explicit_ids) + 4),
-        )
+        if doc_scope:
+            scope_docs = {eid.split("_D", 1)[0] for eid in doc_scope}
+            in_scope = [a for a in articles if a.id.split("_D", 1)[0] in scope_docs]
+            other = [a for a in articles if a.id.split("_D", 1)[0] not in scope_docs]
+            articles = rerank_provisions(
+                query, in_scope + other, explicit_ids=strict_explicit,
+                top_n=max(10, len(strict_explicit) + 6),
+            )
+        else:
+            articles = rerank_provisions(
+                query, articles, explicit_ids=strict_explicit,
+                top_n=max(10, len(strict_explicit) + 5),
+            )
         context = provider_context_limit(_llm_provider())
         # Separate unavailable explicit refs so partial verified evidence still displays instead of wiping to [].
         available_requested = [
-            cid for cid in explicit_ids
+            cid for cid in strict_explicit
             if any(a.id == cid or a.id.startswith(cid + "_") for a in articles)
         ]
         pack = pack_evidence(
@@ -318,7 +372,7 @@ def reviewed_answer(question, query, day, pipeline, use_llm, model, history, tra
             lambda chosen, omitted: build_irac_prompt(query, day, chosen, history,
                 corpus_path=corpus_path, resolved_evidence=resolution),
             lambda chosen, omitted: build_assessment_prompt(query, day, history, chosen, resolution, ""),
-            max_extra=5,
+            max_extra=9,
         )
         trace.update(selected_evidence_count=len(pack.articles), omitted_evidence_ids=pack.omitted_ids,
                      evidence_pack_reason=pack.reason, context_limit=context)
@@ -337,7 +391,7 @@ def reviewed_answer(question, query, day, pipeline, use_llm, model, history, tra
     if packing_failure:
         sections["conclusion"] += " Không thể đóng gói đầy đủ căn cứ bắt buộc trong giới hạn context; chưa gọi mô hình."
     report, raw_response = None, None
-    missing_requested = [cid for cid in explicit_ids
+    missing_requested = [cid for cid in strict_explicit
                          if not any(a.id == cid or a.id.startswith(cid + "_") for a in articles)]
     if missing_requested and not packing_failure:
         trace.update(generation_reason="unresolved_evidence")
@@ -348,8 +402,11 @@ def reviewed_answer(question, query, day, pipeline, use_llm, model, history, tra
             "generate",
             "Đang tổng hợp câu trả lời và kiểm tra trích dẫn...",
         )
-        generated, report, raw_response = _generate(query, day, articles, resolution, llm, scorer,
-                                                    model, history, (corpus_path, review_path), trace)
+        generated, report, raw_response = _generate(
+            query, day, articles, resolution, llm, scorer,
+            model, history, (corpus_path, review_path), trace,
+            strict_explicit=strict_explicit,
+        )
         sections = generated or sections
     if report is None:
         report = _verify("\n".join(sections.values()), day, articles, resolution, scorer, corpus_path, review_path, query)
@@ -382,6 +439,16 @@ def reviewed_answer(question, query, day, pipeline, use_llm, model, history, tra
         or trace.get("understanding_missing_facts")
         or []
     )
+    if not delivered_ok and missing_facts and not missing_requested and not packing_failure:
+        has_temporal_miss = any(
+            (metadata.get(unit, {}).get("valid_from", "") and day < metadata.get(unit, {}).get("valid_from", ""))
+            or (metadata.get(unit, {}).get("valid_to", "") and day > metadata.get(unit, {}).get("valid_to", ""))
+            for unit in resolution.blocked
+        )
+        if not has_temporal_miss:
+            sections = evidence_sections(
+                question, day, articles, resolution, metadata, missing_facts=missing_facts,
+            )
     final_citations = extract_citations("\n".join(sections.values()))
     final_cite_set = set(final_citations)
     amended_citation_ids = sorted({

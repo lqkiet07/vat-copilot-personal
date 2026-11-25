@@ -38,8 +38,8 @@ export function RelatedDrawerFrame({ isDesktop, hasCitations, onClose, children 
             type="button"
             onClick={onClose}
             className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-[#64748B] transition-colors hover:bg-[#F1F5F9] hover:text-[#0F172A] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#1E3A8A]/40"
-            title="Đóng ngăn kéo"
-            aria-label="Đóng ngăn kéo"
+            title="Đóng"
+            aria-label="Đóng"
           >
             <X className="h-4 w-4" />
           </button>

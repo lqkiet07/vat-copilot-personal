@@ -53,7 +53,6 @@ type Props = {
   onFocusCitation: (c: Citation) => void;
   onJumpToProvision?: (unitId: string) => void;
   onRetryDoc: (docId: string) => void;
-  onOpenRelated: () => void;
   onClose: () => void;
 };
 
@@ -62,12 +61,12 @@ const CATEGORY_TABS: Array<{
   label: string;
   Icon: typeof Layers;
 }> = [
-  { key: "all", label: "Tất cả", Icon: Layers },
-  { key: "luat", label: "Luật", Icon: Scale },
-  { key: "nghidinh", label: "Nghị định", Icon: Landmark },
-  { key: "thongtu", label: "Thông tư", Icon: FileText },
-  { key: "other", label: "Khác", Icon: FolderKanban },
-];
+    { key: "all", label: "Tất cả", Icon: Layers },
+    { key: "luat", label: "Luật", Icon: Scale },
+    { key: "nghidinh", label: "Nghị định", Icon: Landmark },
+    { key: "thongtu", label: "Thông tư", Icon: FileText },
+    { key: "other", label: "Khác", Icon: FolderKanban },
+  ];
 
 /** Right drawer rendering legal documents with Citation Focus Mode, operative amendments, and key-phrase highlighting. */
 export function LibraryDrawer({
@@ -92,19 +91,11 @@ export function LibraryDrawer({
   onFocusCitation,
   onJumpToProvision,
   onRetryDoc,
-  onOpenRelated,
   onClose,
 }: Props) {
   const scrollContainerRef = useRef<HTMLDivElement>(null);
-  const [browseAllMode, setBrowseAllMode] = useState<boolean>(
-    () => !(openedFromCitation && highlightedCitations.length > 0)
-  );
+  const browseAllMode = !(openedFromCitation && highlightedCitations.length > 0);
   const [showOriginalMap, setShowOriginalMap] = useState<Record<string, boolean>>({});
-
-  useEffect(() => {
-    if (!open) return;
-    setBrowseAllMode(!(openedFromCitation && highlightedCitations.length > 0));
-  }, [open, openedFromCitation, focusedCitation?.id, highlightedCitations.length]);
 
   const categoryCounts = useMemo(() => {
     const counts: Record<DocCategory, number> = {
@@ -206,8 +197,8 @@ export function LibraryDrawer({
 
   const isDocLoading = Boolean(
     activeDocData &&
-      loadingDocIds.has(activeDocData.id) &&
-      activeDocData.chapters.length === 0
+    loadingDocIds.has(activeDocData.id) &&
+    activeDocData.chapters.length === 0
   );
   const docError = activeDocData ? docErrors[activeDocData.id] : undefined;
   const focusedTarget = focusedCitation ? parseCitationTarget(focusedCitation) : null;
@@ -238,26 +229,15 @@ export function LibraryDrawer({
               {activeDocData && !browseAllMode ? activeDocData.tab : "Kho Văn Bản Pháp Luật GTGT"}
             </span>
           </div>
-          <div className="flex shrink-0 items-center gap-1.5">
-            <button
-              type="button"
-              onClick={() => setBrowseAllMode((v) => !v)}
-              className="flex h-8 shrink-0 items-center gap-1 rounded-full border border-[#CBD5E1] bg-[#F8FAFC] px-2.5 text-[11px] font-semibold text-[#1E3A8A] transition-colors hover:bg-[#EFF6FF] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#1E3A8A]/40"
-              title={browseAllMode ? "Thu gọn bộ lọc để tập trung vào điều khoản đang xem" : "Mở danh sách và tìm kiếm toàn bộ văn bản"}
-            >
-              <Layers className="h-3 w-3 shrink-0" />
-              <span>{browseAllMode ? "Thu gọn" : `Duyệt kho (${libraryDocs.length} VB)`}</span>
-            </button>
-            <button
-              type="button"
-              onClick={onClose}
-              className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-[#64748B] transition-colors hover:bg-[#F1F5F9] hover:text-[#0F172A] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#1E3A8A]/40"
-              title="Đóng thư viện"
-              aria-label="Đóng thư viện"
-            >
-              <X className="h-4 w-4" />
-            </button>
-          </div>
+          <button
+            type="button"
+            onClick={onClose}
+            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-[#64748B] transition-colors hover:bg-[#F1F5F9] hover:text-[#0F172A] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#1E3A8A]/40"
+            title="Đóng thư viện"
+            aria-label="Đóng thư viện"
+          >
+            <X className="h-4 w-4" />
+          </button>
         </div>
 
         {browseAllMode && (
@@ -279,11 +259,10 @@ export function LibraryDrawer({
                     aria-selected={active}
                     key={key}
                     onClick={() => onCategoryChange(key)}
-                    className={`flex shrink-0 items-center gap-1.5 rounded-t-lg px-2.5 py-2 font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#1E3A8A]/40 ${
-                      active
+                    className={`flex shrink-0 items-center gap-1.5 rounded-t-lg px-2.5 py-2 font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#1E3A8A]/40 ${active
                         ? "border-b-2 border-[#1E3A8A] bg-[#EFF6FF] text-[#1E3A8A]"
                         : "text-[#64748B] hover:bg-[#F8FAFC] hover:text-[#0F172A]"
-                    }`}
+                      }`}
                   >
                     <Icon className="h-3.5 w-3.5 shrink-0" />
                     <span>
@@ -341,13 +320,12 @@ export function LibraryDrawer({
                       key={d.id}
                       onClick={() => onSelectDoc(d.id)}
                       title={isCitedDoc ? "Văn bản có điều khoản đang được trích dẫn" : d.full}
-                      className={`flex shrink-0 items-center gap-1.5 rounded-full px-3 py-1.5 font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#1E3A8A]/40 ${
-                        isSelected
+                      className={`flex shrink-0 items-center gap-1.5 rounded-full px-3 py-1.5 font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#1E3A8A]/40 ${isSelected
                           ? "bg-[#1E3A8A] text-white shadow-xs"
                           : isCitedDoc
                             ? "border border-amber-300 bg-amber-50 text-amber-950 hover:bg-amber-100"
                             : "bg-[#F1F5F9] text-[#475569] hover:bg-[#E2E8F0]"
-                      }`}
+                        }`}
                     >
                       {isCitedDoc && (
                         <span
@@ -408,13 +386,6 @@ export function LibraryDrawer({
                   </button>
                 </>
               )}
-              <button
-                type="button"
-                onClick={onOpenRelated}
-                className="ml-1 rounded-lg border border-amber-300 bg-white px-2.5 py-1 text-[11px] font-semibold text-amber-900 hover:bg-amber-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500/40"
-              >
-                Tất cả trích dẫn
-              </button>
             </div>
           </div>
         )}
@@ -445,10 +416,10 @@ export function LibraryDrawer({
           ) : !activeDocData ? (
             <div className="rounded-2xl border border-[#CBD5E1] bg-white p-6 text-center text-[#475569]">
               <p className="text-[13px] font-semibold text-[#1E3A8A]">
-                Chưa có bản trích demo cho văn bản được chọn trong thư viện hiện tại.
+                Hiện chưa có nội dung toàn văn cho văn bản này trong chế độ ngoại tuyến.
               </p>
               <p className="mt-2 text-[12px] text-[#64748B]">
-                Thư viện demo hiện cung cấp bản trích của 5 văn bản trọng yếu (Luật 48, NĐ 181, TT 69, NĐ 359, NĐ 144).
+                Vui lòng kiểm tra kết nối máy chủ để tải đầy đủ điều khoản của văn bản.
               </p>
             </div>
           ) : (
@@ -461,11 +432,10 @@ export function LibraryDrawer({
                   </span>
                   {activeDocData.badge.text && (
                     <span
-                      className={`rounded px-1.5 py-0.5 text-[10px] font-bold ${
-                        activeDocData.badge.tone === "green"
+                      className={`rounded px-1.5 py-0.5 text-[10px] font-bold ${activeDocData.badge.tone === "green"
                           ? "bg-green-100 text-green-800"
                           : "bg-amber-100 text-amber-900"
-                      }`}
+                        }`}
                     >
                       {activeDocData.badge.text}
                     </span>
@@ -509,8 +479,8 @@ export function LibraryDrawer({
                     );
                     const isFocusedArticle = Boolean(
                       focusedCitation &&
-                        focusedTarget?.level === "article" &&
-                        doesArticleMatchCitation(art, focusedCitation)
+                      focusedTarget?.level === "article" &&
+                      doesArticleMatchCitation(art, focusedCitation)
                     );
 
                     return (
@@ -519,13 +489,12 @@ export function LibraryDrawer({
                         id={`lib-art-${art.id}`}
                         data-cited={isArticleLevelHit ? "true" : undefined}
                         data-focused-citation={isFocusedArticle ? "true" : undefined}
-                        className={`rounded-2xl border p-4 transition-colors ${
-                          isFocusedArticle
+                        className={`rounded-2xl border p-4 transition-colors ${isFocusedArticle
                             ? "cite-glow border-amber-500 bg-[#FFFBEB]"
                             : hasArticleDescendantHit
                               ? "border-amber-300 bg-white shadow-xs"
                               : "border-[#CBD5E1] bg-white"
-                        }`}
+                          }`}
                       >
                         <div className="flex flex-wrap items-start justify-between gap-2">
                           <h3 className="font-serif-legal text-[15px] font-semibold leading-snug text-[#1E3A8A]">
@@ -533,11 +502,10 @@ export function LibraryDrawer({
                           </h3>
                           {hasArticleDescendantHit && (
                             <span
-                              className={`shrink-0 rounded-full px-2 py-0.5 text-[10px] font-bold ${
-                                isArticleLevelHit
+                              className={`shrink-0 rounded-full px-2 py-0.5 text-[10px] font-bold ${isArticleLevelHit
                                   ? "bg-amber-200 text-amber-950"
                                   : "bg-amber-100 text-amber-900"
-                              }`}
+                                }`}
                             >
                               {isArticleLevelHit ? "Điều được trích dẫn" : "Có căn cứ trích dẫn"}
                             </span>
@@ -554,8 +522,8 @@ export function LibraryDrawer({
                             );
                             const isFocusedClause = Boolean(
                               focusedCitation &&
-                                focusedTarget?.level === "clause" &&
-                                doesClauseMatchCitation(c, art, focusedCitation)
+                              focusedTarget?.level === "clause" &&
+                              doesClauseMatchCitation(c, art, focusedCitation)
                             );
                             const clauseKey = c.id || `${art.id}-c-${cIdx}-${c.n}`;
                             const clauseDisplay = c.label || String(c.n);
@@ -564,8 +532,8 @@ export function LibraryDrawer({
                               clauseHits.map((h) => resolvedProvisions?.[h.id]).find(Boolean);
                             const isClauseAmended = Boolean(
                               resolvedClauseMeta &&
-                                resolvedClauseMeta.status === "AMENDED" &&
-                                resolvedClauseMeta.text
+                              resolvedClauseMeta.status === "AMENDED" &&
+                              resolvedClauseMeta.text
                             );
                             const showOriginalClause = Boolean(showOriginalMap[clauseKey]);
                             const rawClauseBody =
@@ -584,9 +552,8 @@ export function LibraryDrawer({
                                 data-focused-citation={isFocusedClause ? "true" : undefined}
                                 className={
                                   isClauseLevelHit
-                                    ? `rounded-xl border-l-4 border-amber-500 bg-amber-50/95 px-3 py-2 text-[#0F172A] ring-1 ring-amber-200 ${
-                                        isFocusedClause ? "cite-glow" : ""
-                                      }`
+                                    ? `rounded-xl border-l-4 border-amber-500 bg-amber-50/95 px-3 py-2 text-[#0F172A] ring-1 ring-amber-200 ${isFocusedClause ? "cite-glow" : ""
+                                    }`
                                     : clauseHits.length > 0
                                       ? "rounded-xl border-l-2 border-amber-300 pl-2.5"
                                       : undefined
@@ -672,8 +639,8 @@ export function LibraryDrawer({
                                       const isPointHit = pointHits.length > 0;
                                       const isFocusedPoint = Boolean(
                                         focusedCitation &&
-                                          focusedTarget?.level === "point" &&
-                                          doesPointMatchCitation(pt, c, art, focusedCitation)
+                                        focusedTarget?.level === "point" &&
+                                        doesPointMatchCitation(pt, c, art, focusedCitation)
                                       );
                                       const pointKey = pt.id || `${clauseKey}-p-${pIdx}-${pt.l}`;
                                       const resolvedPointMeta =
@@ -681,8 +648,8 @@ export function LibraryDrawer({
                                         pointHits.map((h) => resolvedProvisions?.[h.id]).find(Boolean);
                                       const isPointAmended = Boolean(
                                         resolvedPointMeta &&
-                                          resolvedPointMeta.status === "AMENDED" &&
-                                          resolvedPointMeta.text
+                                        resolvedPointMeta.status === "AMENDED" &&
+                                        resolvedPointMeta.text
                                       );
                                       const showOriginalPoint = Boolean(showOriginalMap[pointKey]);
                                       const rawPointBody =
@@ -701,9 +668,8 @@ export function LibraryDrawer({
                                           data-focused-citation={isFocusedPoint ? "true" : undefined}
                                           className={
                                             isPointHit
-                                              ? `rounded-lg border-l-4 border-amber-500 bg-amber-100/85 px-2.5 py-1.5 text-[#0F172A] ring-1 ring-amber-300 ${
-                                                  isFocusedPoint ? "cite-glow" : ""
-                                                }`
+                                              ? `rounded-lg border-l-4 border-amber-500 bg-amber-100/85 px-2.5 py-1.5 text-[#0F172A] ring-1 ring-amber-300 ${isFocusedPoint ? "cite-glow" : ""
+                                              }`
                                               : undefined
                                           }
                                         >

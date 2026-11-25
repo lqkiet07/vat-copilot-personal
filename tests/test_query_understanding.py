@@ -135,4 +135,15 @@ def test_understanding_prompt_enforces_accented_vietnamese_missing_facts():
 
     prompt = _build_understanding_prompt("quán net có phải đóng thuế kh", [])
     assert "tiếng Việt có dấu đầy đủ" in prompt
+    assert "hộ kinh doanh, cá nhân kinh doanh hoặc doanh nghiệp" in prompt
+
+
+def test_needs_query_understanding_handles_colloquial_and_chip_followups():
+    assert needs_query_understanding("bán quần áo online tại nhà có phải đóng thuế GTGT không") is True
+    hist = [{"role": "user", "content": "quán net tôi có phải đóng thuế kh"}]
+    assert needs_query_understanding(
+        "Bổ sung thông tin (Loại hình đăng ký kinh doanh): hộ kinh doanh doanh thu 700 triệu",
+        history=hist,
+    ) is True
+
 

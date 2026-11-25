@@ -605,3 +605,20 @@ def test_reviewed_answer_exposes_resolved_provisions_and_clean_progress(tmp_path
     assert not any(tok in joined for tok in ("Neo4j", "Reranker", "IRAC"))
 
 
+def test_whole_document_mention_does_not_force_context_budget_exceeded(reviewed):
+    from src.api.reviewed_answer import _partition_explicit_ids, evidence_sections
+
+    articles = reviewed.fetch("Hồ sơ theo Luật 1/2024?", DAY).articles
+    strict, doc_scope = _partition_explicit_ids("Theo Luật 1/2024 thì lưu trữ thế nào?", ["LUAT_1_2024_D1", "LUAT_1_2024_D2"], articles)
+    assert strict == []
+    assert doc_scope == ["LUAT_1_2024_D1", "LUAT_1_2024_D2"]
+
+    inactive_strict, inactive_scope = _partition_explicit_ids("Theo Luật 99/2030 thì sao?", ["LUAT_99_2030_D1", "LUAT_99_2030_D2"], articles)
+    assert inactive_strict == ["LUAT_99_2030_D1"]
+    assert inactive_scope == []
+
+    fallback = evidence_sections("quán net?", DAY, articles, missing_facts=["Doanh thu hằng năm?"])
+    assert "vui lòng cho biết thêm" in fallback["conclusion"].lower()
+
+
+

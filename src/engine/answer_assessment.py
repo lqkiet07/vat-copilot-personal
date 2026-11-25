@@ -93,25 +93,43 @@ def parse_assessment(raw: str, safe_ids: set[str]) -> AnswerAssessment:
                             tuple(_text(f, 1000) for f in missing))
 
 
-def _has_system_evidence_blocker(blocked: dict) -> bool:
-    """Return True only when unresolved leaf/system blockers exist beyond parent container guards."""
-    for reasons in (blocked or {}).values():
+def _article_root(unit_id: str) -> str:
+    return (unit_id or "").split("_K", 1)[0]
+
+
+def _has_system_evidence_blocker(blocked: dict, relevant_ids: set[str] | None = None) -> bool:
+    """Return True when unresolved evidence blockers affect relevant articles beyond container guards or reviewed repeals."""
+    relevant_roots = {_article_root(uid) for uid in relevant_ids} if relevant_ids else set()
+    for unit, reasons in (blocked or {}).items():
+        if relevant_ids is not None:
+            is_missing = str(unit).startswith("missing_explicit_")
+            matches_unit = unit in relevant_ids or _article_root(str(unit)) in relevant_roots
+            matches_parent = any(str(rel).startswith(str(unit) + "_") for rel in relevant_ids)
+            if not (is_missing or matches_unit or matches_parent):
+                continue
         items = (reasons,) if isinstance(reasons, str) else reasons
         for reason in items:
-            if not str(reason).startswith("Container is not citable"):
-                return True
+            text = str(reason)
+            if text.startswith("Container is not citable") or "Reviewed repeal suppresses provision" in text:
+                continue
+            return True
     return False
 
 
-def delivery_allowed(assessment: AnswerAssessment, resolution) -> bool:
+def delivery_allowed(assessment: AnswerAssessment, resolution, explicit_ids=()) -> bool:
     if not assessment.claims or any(c.status != "supported" for c in assessment.claims):
         return False
     if assessment.outcome == "supported":
         return assessment.coverage and not assessment.missing_facts
-    # Allow conditional needs_facts answers when cited leaf clauses are verified valid despite container blockers.
-    return (assessment.outcome == "needs_facts" and not assessment.coverage
-            and bool(assessment.missing_facts)
-            and not _has_system_evidence_blocker(resolution.blocked))
+    # Allow grounded conditional needs_facts replies even when claim coverage=true, provided relevant units have no system blockers.
+    relevant_ids = set(explicit_ids or ()) | {
+        eid for claim in assessment.claims for eid in claim.evidence_ids
+    }
+    return (
+        assessment.outcome == "needs_facts"
+        and bool(assessment.missing_facts)
+        and not _has_system_evidence_blocker(resolution.blocked, relevant_ids=relevant_ids or None)
+    )
 
 
 BLOCKER_INSTRUCTIONS = (

@@ -302,9 +302,9 @@ export const SCENARIOS = [
   {
     id: 3,
     tone: "amber",
-    label: "Kịch bản 3: Sửa đổi hóa đơn theo NĐ 144/2026",
-    query: "Hóa đơn xuất khẩu đã lập sai thuế suất 10%. Quy trình lập hóa đơn điều chỉnh theo Nghị định 144/2026 như thế nào?",
-    date: "2026-05-10",
+    label: "Kịch bản 3: Sửa đổi Nghị định 181 theo NĐ 144/2026",
+    query: "Nghị định 144/2026/NĐ-CP sửa đổi, bổ sung điểm b khoản 1 Điều 9 Nghị định 181/2025 như thế nào tại ngày 10/08/2026?",
+    date: "2026-08-10",
   },
 ];
 

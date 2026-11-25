@@ -57,12 +57,10 @@ export function Sidebar({
         aria-hidden={!isDesktop && !sidebarOpen ? true : undefined}
         className={
           isDesktop
-            ? `relative z-30 flex h-full shrink-0 flex-col border-r border-[#E2E8F0] bg-[#F8FAFC] ${
-                sidebarOpen ? "w-[280px]" : "w-[68px]"
-              }`
-            : `fixed inset-y-0 left-0 z-50 flex h-full w-[280px] max-w-[85vw] flex-col border-r border-[#E2E8F0] bg-[#F8FAFC] shadow-2xl transition-transform duration-200 ease-out ${
-                sidebarOpen ? "translate-x-0" : "-translate-x-full pointer-events-none"
-              }`
+            ? `relative z-30 flex h-full shrink-0 flex-col border-r border-[#E2E8F0] bg-[#F8FAFC] ${sidebarOpen ? "w-[280px]" : "w-[68px]"
+            }`
+            : `fixed inset-y-0 left-0 z-50 flex h-full w-[280px] max-w-[85vw] flex-col border-r border-[#E2E8F0] bg-[#F8FAFC] shadow-2xl transition-transform duration-200 ease-out ${sidebarOpen ? "translate-x-0" : "-translate-x-full pointer-events-none"
+            }`
         }
       >
         <div className="flex h-14 items-center justify-between border-b border-[#E2E8F0]/80 px-3">
@@ -119,9 +117,8 @@ export function Sidebar({
               onNewChat();
               if (!isDesktop) onCloseMobile();
             }}
-            className={`group flex items-center rounded-full bg-[#1E3A8A] font-medium text-white shadow-xs transition-colors hover:bg-[#1E40AF] active:scale-98 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#1E3A8A]/40 ${
-              expanded ? "w-full gap-2.5 px-4 py-2.5 text-[13.5px]" : "h-11 w-11 justify-center p-0"
-            }`}
+            className={`group flex items-center rounded-full bg-[#1E3A8A] font-medium text-white shadow-xs transition-colors hover:bg-[#1E40AF] active:scale-98 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#1E3A8A]/40 ${expanded ? "w-full gap-2.5 px-4 py-2.5 text-[13.5px]" : "h-11 w-11 justify-center p-0"
+              }`}
             title="Tạo cuộc hội thoại mới"
             aria-label="Tạo cuộc hội thoại mới"
           >
@@ -139,22 +136,16 @@ export function Sidebar({
                 if (!isDesktop) onCloseMobile();
               }}
               aria-expanded={libraryOpen}
-              className={`flex w-full items-center rounded-xl py-2.5 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#1E3A8A]/40 ${
-                libraryOpen
+              className={`flex w-full items-center rounded-xl py-2.5 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#1E3A8A]/40 ${libraryOpen
                   ? "bg-[#EFF6FF] text-[#1E3A8A]"
                   : "text-[#334155] hover:bg-[#E2E8F0]"
-              } ${expanded ? "gap-3 px-3" : "justify-center px-0"}`}
+                } ${expanded ? "gap-3 px-3" : "justify-center px-0"}`}
               title="Thư viện toàn bộ văn bản pháp luật GTGT"
               aria-label="Mở thư viện văn bản pháp luật GTGT"
             >
               <BookOpen className="h-4 w-4 shrink-0 text-[#1E3A8A]" />
               {expanded && (
-                <div className="flex flex-1 items-center justify-between gap-2">
-                  <span className="font-medium text-[#1E293B]">Thư viện văn bản</span>
-                  <span className="font-mono-num rounded-full bg-[#E0E7FF] px-2 py-0.5 text-[10px] font-bold text-[#1E3A8A]">
-                    {libraryCount} VB
-                  </span>
-                </div>
+                <span className="font-medium text-[#1E293B]">Thư viện văn bản</span>
               )}
             </button>
           </div>
@@ -176,11 +167,10 @@ export function Sidebar({
                     return (
                       <div
                         key={c.id}
-                        className={`group relative flex items-center justify-between gap-1 rounded-xl px-1.5 py-1 text-[12.5px] transition-colors ${
-                          isActive
+                        className={`group relative flex items-center justify-between gap-1 rounded-xl px-1.5 py-1 text-[12.5px] transition-colors ${isActive
                             ? "bg-[#E2E8F0] font-semibold text-[#1E293B]"
                             : "text-[#475569] hover:bg-[#F1F5F9]"
-                        }`}
+                          }`}
                       >
                         <button
                           type="button"
@@ -218,9 +208,8 @@ export function Sidebar({
           <button
             type="button"
             onClick={onOpenSettings}
-            className={`flex w-full items-center rounded-xl py-2.5 text-[#475569] transition-colors hover:bg-[#E2E8F0] hover:text-[#1E3A8A] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#1E3A8A]/40 ${
-              expanded ? "gap-2.5 px-3 text-[13px] font-medium" : "justify-center px-0"
-            }`}
+            className={`flex w-full items-center rounded-xl py-2.5 text-[#475569] transition-colors hover:bg-[#E2E8F0] hover:text-[#1E3A8A] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#1E3A8A]/40 ${expanded ? "gap-2.5 px-3 text-[13px] font-medium" : "justify-center px-0"
+              }`}
             title="Cài đặt (Chế độ tra cứu, Mốc ngày, Trợ lý AI)"
             aria-label="Mở cài đặt"
           >

@@ -162,8 +162,9 @@ test("splitTechnicalDiagnosticLines separates raw container diagnostics from mai
     "Hệ thống chưa xác minh được chứng cứ VBHN 25 2026 D3 K1: Consolidation reference is not operative evidence\n" +
     "LUAT 48 2024 D5 K7: ngày bắt đầu hiệu lực theo dữ liệu là 2025-07-01; ngày tra cứu 2025-06-01 nằm trước mốc này.";
   const split = splitTechnicalDiagnosticLines(sample);
-  assert.equal(split.primaryText, "Chưa đủ căn cứ để kết luận pháp lý cho tình huống.");
-  assert.equal(split.diagnosticLines.length, 3);
+  assert.match(split.primaryText, /^Chưa đủ căn cứ để kết luận pháp lý cho tình huống\./);
+  assert.match(split.primaryText, /Khoản 7 Điều 5 Luật 48\/2024: ngày bắt đầu hiệu lực theo dữ liệu là 01\/07\/2025/);
+  assert.equal(split.diagnosticLines.length, 2);
 });
 
 test("Inline citation formatters convert known Neo4j tags and keep unknown or markdown links intact", () => {

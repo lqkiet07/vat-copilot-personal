@@ -28,13 +28,12 @@ export function AnswerHeader({
         <span className="text-[14px] font-bold text-[#1E3A8A]">Trợ lý Thuế GTGT</span>
         {answerStatus && !isGreeting && (
           <span
-            className={`rounded-full border px-2 py-0.5 text-[10.5px] font-semibold ${
-              answerStatus === "ANSWERED"
+            className={`rounded-full border px-2 py-0.5 text-[10.5px] font-semibold ${answerStatus === "ANSWERED"
                 ? "border-emerald-200 bg-emerald-50 text-emerald-700"
                 : answerStatus === "INSUFFICIENT_BASIS"
                   ? "border-amber-200 bg-amber-50 text-amber-800"
                   : "border-orange-200 bg-orange-50 text-orange-800"
-            }`}
+              }`}
           >
             {answerStatus === "ANSWERED"
               ? "Đã trả lời"
@@ -247,10 +246,28 @@ export function AnswerAnalysisAccordion({
   );
 }
 
-/** Render collapsible verification checklist when warnings are lengthy. */
-export function AnswerAuditSection({ audit }: { audit: AuditItem[] }) {
+/** Render collapsible verification checklist, hiding internal container noise on answered replies. */
+export function AnswerAuditSection({
+  audit,
+  answerStatus,
+}: {
+  audit: AuditItem[];
+  answerStatus?: Result["answer_status"];
+}) {
   const [expanded, setExpanded] = useState(false);
-  const shouldCollapse = audit.length > 2 || audit.some((item) => item.text.length > 150);
+  const visibleAudit =
+    answerStatus === "ANSWERED"
+      ? audit.filter(
+        (item) =>
+          !/Container is not citable|Reviewed repeal suppresses provision|chưa xác minh được chứng cứ/i.test(
+            item.text
+          )
+      )
+      : audit;
+
+  if (visibleAudit.length === 0) return null;
+  const shouldCollapse =
+    visibleAudit.length > 2 || visibleAudit.some((item) => item.text.length > 150);
 
   if (!shouldCollapse) {
     return (
@@ -259,12 +276,11 @@ export function AnswerAuditSection({ audit }: { audit: AuditItem[] }) {
           Lưu ý đối chiếu:
         </div>
         <ul className="space-y-1.5 text-[13px]">
-          {audit.map((a, i) => (
+          {visibleAudit.map((a, i) => (
             <li key={i} className="flex items-start gap-2 text-[#334155]">
               <span
-                className={`mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full ${
-                  a.tone === "ok" ? "bg-[#059669]" : "bg-[#EA580C]"
-                }`}
+                className={`mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full ${a.tone === "ok" ? "bg-[#059669]" : "bg-[#EA580C]"
+                  }`}
               />
               <span>{formatTechnicalDiagnosticText(a.text)}</span>
             </li>
@@ -282,17 +298,16 @@ export function AnswerAuditSection({ audit }: { audit: AuditItem[] }) {
         onClick={() => setExpanded((v) => !v)}
         className="flex w-full items-center justify-between gap-2 text-left text-[12px] font-semibold text-[#475569] hover:text-[#1E3A8A] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#1E3A8A]/40"
       >
-        <span>Lưu ý đối chiếu hiệu lực ({audit.length} mục)</span>
+        <span>Lưu ý đối chiếu hiệu lực ({visibleAudit.length} mục)</span>
         {expanded ? <ChevronUp className="h-4 w-4 shrink-0" /> : <ChevronDown className="h-4 w-4 shrink-0" />}
       </button>
       {expanded && (
         <ul className="mt-2 max-h-60 space-y-1.5 overflow-y-auto border-t border-[#E2E8F0] pt-2 text-[12.5px]">
-          {audit.map((a, i) => (
+          {visibleAudit.map((a, i) => (
             <li key={i} className="flex items-start gap-2 text-[#334155]">
               <span
-                className={`mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full ${
-                  a.tone === "ok" ? "bg-[#059669]" : "bg-[#EA580C]"
-                }`}
+                className={`mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full ${a.tone === "ok" ? "bg-[#059669]" : "bg-[#EA580C]"
+                  }`}
               />
               <span className="break-words">{formatTechnicalDiagnosticText(a.text)}</span>
             </li>

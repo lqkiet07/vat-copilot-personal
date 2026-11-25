@@ -234,7 +234,7 @@ export function mapApiQueryResponseToResult(
       citations: [],
       application: [
         data.irac_sections?.application ||
-          "Câu hỏi của bạn không thuộc phạm vi điều chỉnh của Hệ thống Pháp lý Thuế Giá trị gia tăng (GTGT).",
+        "Câu hỏi của bạn không thuộc phạm vi điều chỉnh của Hệ thống Pháp lý Thuế Giá trị gia tăng (GTGT).",
       ],
       conclusion:
         data.irac_sections?.conclusion ||
@@ -319,7 +319,7 @@ export function mapApiQueryResponseToResult(
 
   let trap: string | undefined = undefined;
   if (data.risk_score >= 60 || data.risk_level === "CRITICAL" || data.risk_level === "HIGH") {
-    trap = "API trả về lưu ý cần rà soát; hãy đối chiếu nội dung và hiệu lực căn cứ tại mốc đã chọn.";
+    trap = "Có lưu ý cần rà soát thêm; bạn nên đối chiếu lại nội dung và hiệu lực căn cứ tại ngày đã chọn.";
   }
 
   const missingFacts = Array.isArray(data.missing_facts)
@@ -339,13 +339,13 @@ export function mapApiQueryResponseToResult(
       const status = typeof metaObj.status === "string" ? metaObj.status : "VALID";
       const amendedBy = Array.isArray(metaObj.amended_by)
         ? metaObj.amended_by
-            .filter((entry): entry is Record<string, unknown> => Boolean(entry && typeof entry === "object"))
-            .map((entry) => ({
-              source_unit: typeof entry.source_unit === "string" ? entry.source_unit : "",
-              effective_on: typeof entry.effective_on === "string" ? entry.effective_on : undefined,
-              action: typeof entry.action === "string" ? entry.action : undefined,
-            }))
-            .filter((entry) => entry.source_unit.length > 0)
+          .filter((entry): entry is Record<string, unknown> => Boolean(entry && typeof entry === "object"))
+          .map((entry) => ({
+            source_unit: typeof entry.source_unit === "string" ? entry.source_unit : "",
+            effective_on: typeof entry.effective_on === "string" ? entry.effective_on : undefined,
+            action: typeof entry.action === "string" ? entry.action : undefined,
+          }))
+          .filter((entry) => entry.source_unit.length > 0)
         : [];
       resolvedProvisions[unitId] = { text, status, amended_by: amendedBy };
     }
@@ -409,7 +409,7 @@ export async function queryLegalApi(
       const detail = typeof errData?.detail === "string" ? errData.detail : "";
       if (res.status >= 500) {
         throw new HttpApiError(
-          `Không thể kết nối máy chủ thẩm định pháp lý (HTTP ${res.status}${detail ? `: ${detail}` : ""}).`
+          `Không thể kết nối đến máy chủ tra cứu (HTTP ${res.status}${detail ? `: ${detail}` : ""}).`
         );
       }
       throw new HttpApiError(
@@ -423,7 +423,7 @@ export async function queryLegalApi(
     if (err instanceof HttpApiError || (err instanceof Error && err.name === "AbortError")) {
       throw err;
     }
-    throw new Error("Không thể kết nối máy chủ thẩm định pháp lý (Backend offline).");
+    throw new Error("Không thể kết nối đến máy chủ tra cứu. Vui lòng thử lại sau.");
   }
 }
 
@@ -470,7 +470,7 @@ export async function queryLegalApiStream(
       const detail = typeof errData?.detail === "string" ? errData.detail : "";
       throw new HttpApiError(
         res.status >= 500
-          ? `Không thể kết nối máy chủ thẩm định pháp lý (HTTP ${res.status}${detail ? `: ${detail}` : ""}).`
+          ? `Không thể kết nối đến máy chủ tra cứu (HTTP ${res.status}${detail ? `: ${detail}` : ""}).`
           : `Yêu cầu không hợp lệ (HTTP ${res.status}${detail ? `: ${detail}` : ""}).`
       );
     }
@@ -517,6 +517,6 @@ export async function queryLegalApiStream(
     if (err instanceof HttpApiError || (err instanceof Error && err.name === "AbortError")) {
       throw err;
     }
-    throw new Error("Không thể kết nối máy chủ thẩm định pháp lý (Backend offline).");
+    throw new Error("Không thể kết nối đến máy chủ tra cứu. Vui lòng thử lại sau.");
   }
 }

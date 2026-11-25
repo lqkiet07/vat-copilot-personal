@@ -19,8 +19,12 @@ _EXPLICIT_LEGAL_REF_RE = re.compile(
     re.IGNORECASE,
 )
 _FOLLOW_UP_CUE_RE = re.compile(
-    r"^(?:còn|vậy|nếu|thế|với lại|ngoài ra|tôi là|bên tôi|mình là|em là)\b"
+    r"^(?:còn|vậy|nếu|thế|với lại|ngoài ra|tôi là|bên tôi|mình là|em là|bổ sung)\b"
     r"|\b(?:thì sao|như vậy|trường hợp trên|quy định đó)\b",
+    re.IGNORECASE,
+)
+_COLLOQUIAL_BUSINESS_RE = re.compile(
+    r"\b(?:quán|tiệm|online|tại nhà|cửa hàng|bán lẻ|chợ|bán hàng|bán quần áo|bán đồ|mở quán|mở tiệm)\b",
     re.IGNORECASE,
 )
 _FORMAL_VAT_TERMS = (
@@ -82,7 +86,7 @@ def _has_prior_user_turn(history: list[dict] | list[tuple[str, str]] | None) -> 
 
 
 def needs_query_understanding(question: str, history: list[dict] | None = None) -> bool:
-    """Bypass extra LLM understanding for standalone formal VAT or explicit-statute queries."""
+    """Bypass extra LLM understanding only for standalone formal legal or explicit-statute queries."""
     q_clean = (question or "").strip()
     if not q_clean:
         return False
@@ -93,6 +97,12 @@ def needs_query_understanding(question: str, history: list[dict] | None = None) 
         return True
     if _EXPLICIT_LEGAL_REF_RE.search(q_clean):
         return False
+    if (
+        _COLLOQUIAL_BUSINESS_RE.search(lowered)
+        and "hộ kinh doanh" not in lowered
+        and "cá nhân kinh doanh" not in lowered
+    ):
+        return True
     return not any(term in lowered for term in _FORMAL_VAT_TERMS)
 
 
@@ -140,7 +150,9 @@ def _build_understanding_prompt(question: str, history_pairs: list[tuple[str, st
         "1. scope = greeting nếu chỉ là lời chào ngắn; out_of_scope nếu hoàn toàn ngoài pháp luật/nghiệp vụ thuế GTGT; "
         "còn lại chọn vat (bao gồm mọi hoạt động kinh doanh, hộ cá thể, dịch vụ, hàng hóa, hóa đơn).\n"
         "2. legal_query: viết lại thành MỘT câu truy vấn pháp lý tiếng Việt chuẩn xác, không telex/viết tắt, "
-        "gộp đầy đủ ngữ cảnh hội thoại trước (nếu có) để tìm kiếm văn bản luật Thuế GTGT.\n"
+        "gộp đầy đủ ngữ cảnh hội thoại trước (nếu có) để tìm kiếm văn bản luật Thuế GTGT. "
+        "Nếu người dùng nói về mô hình bán hàng/kinh doanh đời thường (quán net, bán quần áo online, tiệm tạp hóa, quán ăn...) "
+        "mà chưa nói rõ tư cách pháp lý, hãy diễn đạt rõ bao gồm chủ thể 'hộ kinh doanh, cá nhân kinh doanh hoặc doanh nghiệp'.\n"
         "3. TUYỆT ĐỐI KHÔNG tự bịa thêm con số, mức doanh thu, thuế suất %, hay số hiệu Luật/Nghị định/Điều/Khoản "
         "không có trong câu hỏi hoặc lịch sử.\n"
         "4. missing_facts: liệt kê tối đa 3 dữ kiện thực tế người dùng còn thiếu để xác định nghĩa vụ thuế, "

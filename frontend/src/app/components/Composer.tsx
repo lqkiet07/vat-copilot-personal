@@ -96,58 +96,50 @@ export function Composer({
               />
             </label>
 
-            <Popover open={pipelineMenuOpen} onOpenChange={onPipelineMenuChange}>
-              <PopoverTrigger asChild>
-                <button
-                  type="button"
-                  className="flex min-h-[36px] items-center gap-1.5 rounded-full border border-[#CBD5E1] bg-white px-3 py-1 text-[11.5px] font-semibold text-[#1E3A8A] shadow-2xs hover:bg-[#F8FAFC] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#1E3A8A]/40"
-                  title="Chế độ tra cứu pháp luật"
-                  aria-label="Chọn chế độ tra cứu pháp luật"
+            {!isStaging && (
+              <Popover open={pipelineMenuOpen} onOpenChange={onPipelineMenuChange}>
+                <PopoverTrigger asChild>
+                  <button
+                    type="button"
+                    className="flex min-h-[36px] items-center gap-1.5 rounded-full border border-[#CBD5E1] bg-white px-3 py-1 text-[11.5px] font-semibold text-[#1E3A8A] shadow-2xs hover:bg-[#F8FAFC] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#1E3A8A]/40"
+                    title="Chế độ tra cứu pháp luật"
+                    aria-label="Chọn chế độ tra cứu pháp luật"
+                  >
+                    <span>
+                      Chế độ: {PIPELINES.find((p) => p.key === pipeline)?.badge}
+                    </span>
+                    <ChevronDown className="h-3.5 w-3.5 text-[#64748B]" />
+                  </button>
+                </PopoverTrigger>
+                <PopoverContent
+                  align="start"
+                  className="w-[290px] rounded-2xl border border-[#CBD5E1] bg-white p-1.5 shadow-xl"
                 >
-                  <span>
-                    Chế độ: {PIPELINES.find((p) => p.key === pipeline)?.badge}
-                  </span>
-                  <ChevronDown className="h-3.5 w-3.5 text-[#64748B]" />
-                </button>
-              </PopoverTrigger>
-              <PopoverContent
-                align="start"
-                className="w-[290px] rounded-2xl border border-[#CBD5E1] bg-white p-1.5 shadow-xl"
-              >
-                <div className="px-2 py-1.5 text-[11px] font-bold uppercase tracking-wider text-[#64748B]">
-                  Chọn chế độ tra cứu
-                </div>
-                {PIPELINES.map((p) => {
-                  const disabled = isStaging && p.key !== "P3";
-                  return (
-                    <button
-                      type="button"
-                      key={p.key}
-                      disabled={disabled}
-                      onClick={() => {
-                        if (!disabled) {
+                  <div className="px-2 py-1.5 text-[11px] font-bold uppercase tracking-wider text-[#64748B]">
+                    Chọn chế độ tra cứu
+                  </div>
+                  {PIPELINES.map((p) => {
+                    return (
+                      <button
+                        type="button"
+                        key={p.key}
+                        onClick={() => {
                           onPipelineChange(p.key);
                           onPipelineMenuChange(false);
-                        }
-                      }}
-                      className={`flex w-full flex-col rounded-xl px-3 py-2 text-left transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#1E3A8A]/40 ${
-                        disabled
-                          ? "cursor-not-allowed text-[#94A3B8] opacity-45"
-                          : pipeline === p.key
+                        }}
+                        className={`flex w-full flex-col rounded-xl px-3 py-2 text-left transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#1E3A8A]/40 ${pipeline === p.key
                             ? "bg-[#EFF6FF] text-[#1E3A8A]"
                             : "text-[#0F172A] hover:bg-[#F8FAFC]"
-                      }`}
-                    >
-                      <span className="text-[12.5px] font-bold">
-                        {p.label}
-                        {disabled ? " (chưa bật)" : ""}
-                      </span>
-                      <span className="text-[11px] text-[#64748B]">{p.desc}</span>
-                    </button>
-                  );
-                })}
-              </PopoverContent>
-            </Popover>
+                          }`}
+                      >
+                        <span className="text-[12.5px] font-bold">{p.label}</span>
+                        <span className="text-[11px] text-[#64748B]">{p.desc}</span>
+                      </button>
+                    );
+                  })}
+                </PopoverContent>
+              </Popover>
+            )}
           </div>
 
           <div className="flex items-center gap-1.5">
@@ -211,20 +203,18 @@ export function Composer({
                 />
               </label>
 
-              <select
-                value={pipeline}
-                onChange={(e) => onPipelineChange(e.target.value as Pipeline)}
-                aria-label="Chọn chế độ tra cứu"
-                className="min-h-[34px] cursor-pointer rounded-full border border-[#CBD5E1] bg-white px-2.5 py-1 text-[11px] font-semibold text-[#1E3A8A] shadow-2xs focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#1E3A8A]/40"
-              >
-                <option value="P3">Đầy đủ</option>
-                <option value="P2" disabled={isStaging}>
-                  Theo mốc{isStaging ? " (chưa bật)" : ""}
-                </option>
-                <option value="P1" disabled={isStaging}>
-                  Tìm nhanh{isStaging ? " (chưa bật)" : ""}
-                </option>
-              </select>
+              {!isStaging && (
+                <select
+                  value={pipeline}
+                  onChange={(e) => onPipelineChange(e.target.value as Pipeline)}
+                  aria-label="Chọn chế độ tra cứu"
+                  className="min-h-[34px] cursor-pointer rounded-full border border-[#CBD5E1] bg-white px-2.5 py-1 text-[11px] font-semibold text-[#1E3A8A] shadow-2xs focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#1E3A8A]/40"
+                >
+                  <option value="P3">Đầy đủ</option>
+                  <option value="P2">Theo mốc</option>
+                  <option value="P1">Tìm nhanh</option>
+                </select>
+              )}
             </div>
 
             {loading ? (

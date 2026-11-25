@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { AlertTriangle, BookOpen, Copy, ExternalLink, GitBranch } from "lucide-react";
+import { AlertTriangle, BookOpen, Copy, ExternalLink } from "lucide-react";
 import drum from "@/imports/img_6-hinh-nen-powerpoint-trong-dong.jpg";
 import { type Citation, DOCS, type LawDoc, type ResolvedProvisionMeta } from "./data";
 import { apiDocToLawDoc, citationBodyMessage, DOCUMENT_LABELS, findCitationBody, parseCitationId } from "./api";
@@ -154,7 +154,7 @@ export function App() {
       liveSummaries.some((s) => s.id === prev)
         ? prev
         : liveSummaries.find((s) => DOCUMENT_LABELS[s.id]?.libraryDocId === prev)?.id ||
-          liveSummaries[0].id
+        liveSummaries[0].id
     );
   }, [liveSummaries]);
 
@@ -312,11 +312,11 @@ export function App() {
         return prev
           ? { ...prev, citations: nextCitations }
           : {
-              msgId: activeMsg?.id ?? 0,
-              citations: nextCitations,
-              resolvedProvisions: activeResolvedProvisions,
-              highlightContext: activeHighlightContext,
-            };
+            msgId: activeMsg?.id ?? 0,
+            citations: nextCitations,
+            resolvedProvisions: activeResolvedProvisions,
+            highlightContext: activeHighlightContext,
+          };
       });
       setLibraryCategory("all");
       setLibrarySearch("");
@@ -499,7 +499,6 @@ export function App() {
         onFocusCitation={setFocusedCitation}
         onJumpToProvision={handleJumpToProvision}
         onRetryDoc={retryDocument}
-        onOpenRelated={() => setRightPanel("related")}
         onClose={() => setRightPanel("none")}
       />
 
@@ -557,6 +556,7 @@ export function App() {
                     article={targetArticle}
                     citation={c}
                     openActionLabel={actionLabel}
+                    resolvedProvisions={activeResolvedProvisions}
                   />
                 ) : (
                   <p className="mt-2 text-[12px] text-[#64748B]">{citationBodyMessage(c)}</p>
@@ -597,7 +597,6 @@ type AnswerProps = {
 function Answer({ msg, onClickCitation, onOpenRelated, onRetry, onEditQuery, onSelectMissingFact }: AnswerProps) {
   const r = msg.result!;
   const [copied, setCopied] = useState(false);
-  const [showTrace, setShowTrace] = useState(false);
   const copyTimerRef = useRef<number | null>(null);
 
   useEffect(() => {
@@ -605,12 +604,6 @@ function Answer({ msg, onClickCitation, onOpenRelated, onRetry, onEditQuery, onS
       if (copyTimerRef.current !== null) window.clearTimeout(copyTimerRef.current);
     };
   }, []);
-
-  const canonicalIds = r.citations.flatMap((c) => {
-    if (!c.id) return [];
-    const parsed = parseCitationId(c.id);
-    return parsed.label !== parsed.id ? [parsed.id] : [];
-  });
 
   const isErrorCard = r.score === 100 && r.citations.length === 0;
 
@@ -659,7 +652,7 @@ function Answer({ msg, onClickCitation, onOpenRelated, onRetry, onEditQuery, onS
         />
       )}
 
-      <AnswerAuditSection audit={r.audit} />
+      <AnswerAuditSection audit={r.audit} answerStatus={r.answer_status} />
 
       {!r.is_out_of_domain && !r.is_greeting && r.citations && r.citations.length > 0 && (
         <div className="mt-4 flex flex-wrap items-center gap-1.5 border-t border-[#F1F5F9] pt-3">
@@ -684,45 +677,6 @@ function Answer({ msg, onClickCitation, onOpenRelated, onRetry, onEditQuery, onS
           >
             Xem bản tóm tắt trích dẫn
           </button>
-        </div>
-      )}
-
-      {!r.is_out_of_domain && !r.is_greeting && r.citations && r.citations.length > 0 && (
-        <div className="mt-3 border-t border-[#F1F5F9] pt-2.5">
-          <button
-            type="button"
-            aria-expanded={showTrace}
-            onClick={() => setShowTrace(!showTrace)}
-            className="flex items-center gap-1.5 text-[12px] font-medium text-[#1E3A8A] hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#1E3A8A]/40"
-          >
-            <GitBranch className="h-3.5 w-3.5" />
-            <span>
-              {showTrace
-                ? "Ẩn mô phỏng trích dẫn"
-                : "Xem mô phỏng trích dẫn (không phải kết quả xác minh)"}
-            </span>
-          </button>
-
-          {showTrace && (
-            <div className="font-mono-num mt-2 space-y-1.5 rounded-2xl border border-[#CBD5E1] bg-[#0F172A] p-3.5 text-[11.5px] text-[#E2E8F0] shadow-inner">
-              <div className="font-bold text-[#94A3B8]">
-                Mô phỏng Cypher — không thực thi, không phải kết quả xác minh
-              </div>
-              <div className="text-[#38BDF8]">{"MATCH (citation)"}</div>
-              <div className="text-[#FBBF24]">{`WHERE citation.id IN ${JSON.stringify(canonicalIds)}`}</div>
-              <div className="text-[#FBBF24]">{"RETURN citation.id"}</div>
-              <div className="text-[#38BDF8]">{`Mốc yêu cầu: ${fmtDate(msg.date)}; không mô phỏng kết quả hiệu lực.`}</div>
-              <div className="text-[#38BDF8]">
-                {`${r.citations.length - canonicalIds.length} trích dẫn chưa có ID chuẩn được nhận diện; không suy ID từ nhãn hoặc neo thư viện.`}
-              </div>
-              <div className="mt-2 border-t border-slate-700/60 pt-2 text-[#4ADE80]">
-                {`[Mô phỏng]: ${canonicalIds.length} ID chuẩn từ phản hồi; chưa xác minh nội dung hoặc hiệu lực.`}
-              </div>
-              <div className="text-[#94A3B8]">
-                {`→ Căn cứ viện dẫn: ${r.citations.map((c) => c.label).join(", ")}`}
-              </div>
-            </div>
-          )}
         </div>
       )}
 
