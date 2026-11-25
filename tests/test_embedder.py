@@ -209,3 +209,30 @@ def test_ollama_rejects_invalid_raw_batch_without_retry(monkeypatch, vectors):
         OllamaEmbedder().embed_texts(["text"])
     assert request.call_count == 1
 
+
+def test_ollama_embedder_sets_keep_alive_zero_under_ollama_llm_provider(monkeypatch):
+    from unittest.mock import Mock
+    from src.engine.embedder import OllamaEmbedder
+
+    captured_payloads = []
+
+    def fake_urlopen(req, timeout=None):
+        captured_payloads.append(json.loads(req.data.decode("utf-8")))
+        resp = Mock()
+        resp.__enter__ = Mock(return_value=resp)
+        resp.__exit__ = Mock(return_value=False)
+        resp.read.return_value = json.dumps({"embeddings": [[1.0] * 1024]}).encode()
+        return resp
+
+    monkeypatch.setattr("urllib.request.urlopen", fake_urlopen)
+    monkeypatch.delenv("OLLAMA_EMBED_KEEP_ALIVE", raising=False)
+
+    monkeypatch.setenv("LLM_PROVIDER", "ollama")
+    OllamaEmbedder().embed_texts(["tiệm net"])
+    assert captured_payloads[-1].get("keep_alive") == 0
+
+    monkeypatch.setenv("LLM_PROVIDER", "gemini")
+    OllamaEmbedder().embed_texts(["tiệm net"])
+    assert "keep_alive" not in captured_payloads[-1]
+
+

@@ -352,7 +352,8 @@ export function formatTechnicalDiagnosticText(raw: string): string {
       "Văn bản hợp nhất chỉ mang tính tham khảo, không thay thế căn cứ gốc có hiệu lực"
     )
     .replace(/missing explicit authority/gi, "không tìm thấy văn bản được nêu trong cơ sở dữ liệu")
-    .replace(/missing explicit unit/gi, "không tìm thấy điều khoản được nêu trong cơ sở dữ liệu");
+    .replace(/missing explicit unit/gi, "không tìm thấy điều khoản được nêu trong cơ sở dữ liệu")
+    .replace(/LLM_PROVIDER_UNAVAILABLE:\s*/g, "");
 
   formatted = formatted.replace(CANONICAL_DB_ID_RE, (token) => {
     const parsed = parseCitationId(token);
@@ -372,6 +373,14 @@ export function formatTechnicalDiagnosticText(raw: string): string {
   );
 
   return formatted;
+}
+
+/** Extract user-facing notice when the active LLM provider returned no output or hit quota limits. */
+export function extractProviderNotice(audit?: readonly { text: string }[]): string | null {
+  if (!audit || audit.length === 0) return null;
+  const hit = audit.some((item) => item.text.includes("LLM_PROVIDER_UNAVAILABLE"));
+  if (!hit) return null;
+  return "Mô hình AI tạm thời không phản hồi hoặc hết hạn mức. Bên dưới là trích đoạn chứng cứ pháp lý gốc đã xác minh từ đồ thị Neo4j.";
 }
 
 export const store = {

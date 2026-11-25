@@ -29,7 +29,15 @@ def gemini_clock(monkeypatch):
 
 @pytest.fixture(autouse=True)
 def clear_provider_env(monkeypatch):
-    for name in ("LLM_PROVIDER", "GEMINI_API_KEY", "OPENAI_API_KEY"):
+    for name in (
+        "LLM_PROVIDER",
+        "OLLAMA_MODEL",
+        "GEMINI_API_KEY",
+        "GEMINI_API_KEYS",
+        "GEMINI_MODEL",
+        "GEMINI_FALLBACK_MODELS",
+        "OPENAI_API_KEY",
+    ):
         monkeypatch.delenv(name, raising=False)
 
 
@@ -637,3 +645,99 @@ def test_generate_llm_response_sends_correct_payload():
             "prompt": "Hello",
             "stream": False,
         }
+
+
+def test_ollama_model_env_overrides_default_and_disables_qwen3_thinking(monkeypatch):
+    monkeypatch.setenv("LLM_PROVIDER", "ollama")
+    monkeypatch.setenv("OLLAMA_MODEL", "qwen3:4b")
+    response = MagicMock()
+    response.__enter__.return_value = response
+    response.read.return_value = b'{"response": "OK", "done": true}'
+
+    with patch("urllib.request.urlopen", return_value=response) as mock_urlopen:
+        out = generate_llm_response(prompt="Hello", model="qwen2.5:7b")
+    assert out == "OK"
+    body = json.loads(mock_urlopen.call_args.args[0].data.decode("utf-8"))
+    assert body["model"] == "qwen3:4b"
+    assert body["think"] is False
+
+    monkeypatch.setenv("OLLAMA_MODEL", "qwen3:4b-instruct-2507-q4_K_M")
+    with patch("urllib.request.urlopen", return_value=response) as mock_urlopen:
+        out_inst = generate_llm_response(prompt="Hello", model="qwen2.5:7b")
+    assert out_inst == "OK"
+    inst_body = json.loads(mock_urlopen.call_args.args[0].data.decode("utf-8"))
+    assert inst_body["model"] == "qwen3:4b-instruct-2507-q4_K_M"
+    assert "think" not in inst_body
+
+
+def test_auto_ollama_fallback_forwards_generation_config(monkeypatch):
+    monkeypatch.setenv("LLM_PROVIDER", "auto")
+    monkeypatch.setenv("OLLAMA_MODEL", "qwen3:4b")
+    response = MagicMock()
+    response.__enter__.return_value = response
+    response.read.return_value = b'{"response": "{\\"scope\\": \\"vat\\"}", "done": true}'
+    gen_cfg = {"temperature": 0.0, "maxOutputTokens": 256, "responseJsonSchema": {"type": "object"}}
+
+    with patch("urllib.request.urlopen", return_value=response) as mock_urlopen:
+        out = generate_llm_response("Hello", generation_config=gen_cfg)
+    assert out == '{"scope": "vat"}'
+    body = json.loads(mock_urlopen.call_args.args[0].data.decode("utf-8"))
+    assert body["model"] == "qwen3:4b"
+    assert body["format"] == {"type": "object"}
+    assert body["think"] is False
+
+
+def test_gemini_opt_in_fallback_switches_model_on_429_without_leaking_keys(monkeypatch, capsys):
+    monkeypatch.setenv("LLM_PROVIDER", "gemini")
+    monkeypatch.setenv("GEMINI_API_KEY", "primary-secret-key")
+    monkeypatch.setenv("GEMINI_FALLBACK_MODELS", "gemini-3.5-flash-lite, gemini-3.1-flash-lite")
+
+    ok_resp = MagicMock()
+    ok_resp.__enter__.return_value = ok_resp
+    ok_resp.read.return_value = json.dumps(
+        {"candidates": [{"content": {"parts": [{"text": "Fallback OK"}]}}]}
+    ).encode("utf-8")
+
+    err_429 = HTTPError(
+        "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent",
+        429,
+        "Too Many Requests",
+        {},
+        BytesIO(b'{"error":{"code":429,"status":"RESOURCE_EXHAUSTED"}}'),
+    )
+    events = []
+    with patch("urllib.request.urlopen", side_effect=[err_429, ok_resp]) as request:
+        with patch("src.engine.llm_client.emit_trace", side_effect=events.append):
+            out = generate_llm_response("prompt", model="gemini-2.5-flash", timeout=20)
+    assert out == "Fallback OK"
+    urls = [call.args[0].full_url for call in request.call_args_list]
+    assert "models/gemini-2.5-flash:generateContent" in urls[0]
+    assert "models/gemini-3.5-flash-lite:generateContent" in urls[1]
+    assert "primary-secret-key" not in json.dumps(events)
+    assert capsys.readouterr() == ("", "")
+
+
+def test_gemini_multi_key_rotation_on_429(monkeypatch):
+    monkeypatch.setenv("LLM_PROVIDER", "gemini")
+    monkeypatch.setenv("GEMINI_API_KEY", "key-one")
+    monkeypatch.setenv("GEMINI_API_KEYS", "key-two")
+
+    ok_resp = MagicMock()
+    ok_resp.__enter__.return_value = ok_resp
+    ok_resp.read.return_value = json.dumps(
+        {"candidates": [{"content": {"parts": [{"text": "Second key OK"}]}}]}
+    ).encode("utf-8")
+
+    err_429 = HTTPError(
+        "https://example.invalid",
+        429,
+        "Too Many Requests",
+        {},
+        BytesIO(b'{"error":{"code":429,"status":"RESOURCE_EXHAUSTED"}}'),
+    )
+    with patch("urllib.request.urlopen", side_effect=[err_429, ok_resp]) as request:
+        out = generate_llm_response("prompt", model="gemini-2.5-flash", timeout=20)
+    assert out == "Second key OK"
+    assert request.call_args_list[0].args[0].get_header("X-goog-api-key") == "key-one"
+    assert request.call_args_list[1].args[0].get_header("X-goog-api-key") == "key-two"
+

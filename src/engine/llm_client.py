@@ -361,14 +361,18 @@ def _call_ollama(
     generation_config: dict | None = None,
 ) -> str | None:
     """Generate a response from Ollama API using the specified prompt and model."""
+    resolved_model = resolve_ollama_model(model)
     url = f"{host}/api/generate"
     payload_dict: dict = {
-        "model": model,
+        "model": resolved_model,
         "prompt": prompt,
         "stream": False,
     }
+    if resolved_model.lower().startswith("qwen3") and "instruct" not in resolved_model.lower():
+        # Disable hidden reasoning tokens on Qwen3 thinking checkpoints so local 4 GB VRAM runs stay fast and JSON-clean.
+        payload_dict["think"] = False
     if _ASSESSMENT_REQUEST.get() or generation_config:
-        config = _gemini_config(model, generation_config)
+        config = _gemini_config(resolved_model, generation_config)
         payload_dict["format"] = config["responseJsonSchema"]
         options = {"temperature": config["temperature"], "num_predict": config["maxOutputTokens"], **(options or {})}
     if options:
@@ -380,7 +384,7 @@ def _call_ollama(
         headers={"Content-Type": "application/json"},
         method="POST",
     )
-    event = {"event": "ollama_response", "provider": "ollama", "model": model,
+    event = {"event": "ollama_response", "provider": "ollama", "model": resolved_model,
              "operation": "assessment" if _ASSESSMENT_REQUEST.get() else "generation",
              "prompt_sha256": text_sha256(prompt), "prompt_chars": len(prompt),
              "num_ctx": (options or {}).get("num_ctx"), "num_predict": (options or {}).get("num_predict", 0),
@@ -443,6 +447,65 @@ def _llm_provider() -> str:
     return provider
 
 
+def resolve_ollama_model(model: str | None = None) -> str:
+    """Resolve active Ollama model, honoring OLLAMA_MODEL when caller leaves legacy default."""
+    env_model = os.getenv("OLLAMA_MODEL", "").strip()
+    requested = (model or "").strip()
+    if env_model and requested in {"", "qwen2.5:7b"}:
+        return env_model
+    return requested or "qwen2.5:7b"
+
+
+def _resolve_gemini_models(model: str) -> list[str]:
+    env_primary = os.getenv("GEMINI_MODEL", "").strip()
+    primary = model if model.startswith("gemini-") else (env_primary or "gemini-2.5-flash")
+    raw_fallbacks = os.getenv("GEMINI_FALLBACK_MODELS", "")
+    extras = [m.strip() for m in raw_fallbacks.split(",") if m.strip()]
+    return list(dict.fromkeys([primary, *extras]))
+
+
+def _resolve_gemini_keys() -> list[str]:
+    primary = os.getenv("GEMINI_API_KEY", "").strip()
+    raw_extra = os.getenv("GEMINI_API_KEYS", "")
+    extras = [k.strip() for k in raw_extra.split(",") if k.strip()]
+    keys = [k for k in (primary, *extras) if k]
+    return list(dict.fromkeys(keys))
+
+
+def _call_gemini_chain(
+    prompt: str,
+    models: list[str],
+    keys: list[str],
+    timeout: float = 30.0,
+    generation_config: dict | None = None,
+) -> str | None:
+    """Iterate opt-in Gemini model/key fallbacks until one succeeds or budget expires."""
+    deadline = time.monotonic() + timeout
+    last_assessment_err: AssessmentProviderError | None = None
+    for key in keys:
+        for candidate_model in models:
+            remaining = deadline - time.monotonic()
+            if remaining <= 0:
+                if last_assessment_err is not None:
+                    raise last_assessment_err
+                return None
+            try:
+                out = _call_gemini_api(
+                    prompt,
+                    api_key=key,
+                    model=candidate_model,
+                    timeout=remaining,
+                    generation_config=generation_config,
+                )
+                if out:
+                    return out
+            except AssessmentProviderError as exc:
+                last_assessment_err = exc
+    if last_assessment_err is not None:
+        raise last_assessment_err
+    return None
+
+
 def generate_llm_response(
     prompt: str,
     model: str = "qwen2.5:7b",
@@ -454,17 +517,32 @@ def generate_llm_response(
     """Generate a response using Ollama API, with optional Gemini/OpenAI cloud provider."""
     provider = _llm_provider()
     if provider == "ollama":
-        return _provider_call("ollama", model, prompt, _call_ollama, host=host, timeout=timeout,
+        resolved_ollama = resolve_ollama_model(model)
+        return _provider_call("ollama", resolved_ollama, prompt, _call_ollama, host=host, timeout=timeout,
                               options=options, generation_config=generation_config)
-    gemini_model = model if model.startswith("gemini-") else "gemini-2.5-flash"
-    gemini_key = os.getenv("GEMINI_API_KEY", "").strip()
+    gemini_models = _resolve_gemini_models(model)
+    gemini_keys = _resolve_gemini_keys()
     config_kwargs = {"generation_config": generation_config} if generation_config is not None else {}
+
+    def _invoke_gemini() -> str | None:
+        if len(gemini_models) == 1 and len(gemini_keys) == 1:
+            return _provider_call("gemini", gemini_models[0], prompt, _call_gemini_api,
+                                  api_key=gemini_keys[0], timeout=timeout, **config_kwargs)
+        return _provider_call(
+            "gemini",
+            gemini_models[0],
+            prompt,
+            lambda p, model, **kw: _call_gemini_chain(p, models=gemini_models, keys=gemini_keys, **kw),
+            timeout=timeout,
+            **config_kwargs,
+        )
+
     if provider == "gemini":
-        if not gemini_key:
+        if not gemini_keys:
             raise ValueError("GEMINI_API_KEY is required when LLM_PROVIDER=gemini")
-        return _provider_call("gemini", gemini_model, prompt, _call_gemini_api, api_key=gemini_key, timeout=timeout, **config_kwargs)
-    if gemini_key:
-        res = _provider_call("gemini", gemini_model, prompt, _call_gemini_api, api_key=gemini_key, timeout=timeout, **config_kwargs)
+        return _invoke_gemini()
+    if gemini_keys:
+        res = _invoke_gemini()
         if res:
             return res
 
@@ -474,7 +552,9 @@ def generate_llm_response(
         if res:
             return res
 
-    return _provider_call("ollama", model, prompt, _call_ollama, host=host, timeout=timeout, options=options)
+    resolved_ollama = resolve_ollama_model(model)
+    return _provider_call("ollama", resolved_ollama, prompt, _call_ollama, host=host, timeout=timeout,
+                          options=options, generation_config=generation_config)
 
 
 def generate_llm_response_stream(
@@ -490,14 +570,16 @@ def generate_llm_response_stream(
         if response:
             yield response
         return
+    resolved_ollama = resolve_ollama_model(model)
     url = f"{host}/api/generate"
-    payload = json.dumps(
-        {
-            "model": model,
-            "prompt": prompt,
-            "stream": True,
-        }
-    ).encode("utf-8")
+    stream_body: dict = {
+        "model": resolved_ollama,
+        "prompt": prompt,
+        "stream": True,
+    }
+    if resolved_ollama.lower().startswith("qwen3") and "instruct" not in resolved_ollama.lower():
+        stream_body["think"] = False
+    payload = json.dumps(stream_body).encode("utf-8")
     req = urllib.request.Request(
         url,
         data=payload,

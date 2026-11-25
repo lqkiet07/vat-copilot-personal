@@ -4,10 +4,17 @@ from __future__ import annotations
 import logging
 import math
 import os
+import re
 import threading
 from typing import Any, Callable, Sequence
 
 from src.engine.models import ArticleNode
+
+_CPU_STOPWORDS = frozenset({
+    "tôi", "cho", "tại", "năm", "tháng", "ngày", "được", "theo", "quy", "định",
+    "với", "là", "bao", "nhiêu", "của", "và", "các", "có", "phải", "không", "thì",
+    "trên", "trong", "về", "một", "số", "khi", "ra", "sao", "gì", "nào",
+})
 
 
 def reranker_mode() -> str:
@@ -130,6 +137,55 @@ def warmup_reranker() -> None:
         logger.warning("Reranker warmup skipped: %s", exc)
 
 
+def _tokenize_for_prefilter(text: str) -> set[str]:
+    return {
+        tok for tok in re.findall(r"\w+", (text or "").lower())
+        if len(tok) >= 2 and tok not in _CPU_STOPWORDS
+    }
+
+
+def _prefilter_for_cpu(
+    query: str,
+    candidates: list[ArticleNode],
+    *,
+    vector_keep: int = 20,
+    lexical_keep: int = 15,
+    max_total: int = 35,
+) -> list[ArticleNode]:
+    """Keep top vector/graph candidates plus best lexical matches so CPU reranking stays fast."""
+    if len(candidates) <= max_total:
+        return list(candidates)
+
+    head = candidates[:vector_keep]
+    seen_ids = {art.id for art in head}
+    q_tokens = _tokenize_for_prefilter(query)
+
+    scored_tail: list[tuple[int, int, ArticleNode]] = []
+    for idx, art in enumerate(candidates[vector_keep:]):
+        if art.id in seen_ids:
+            continue
+        doc_tokens = _tokenize_for_prefilter(f"{art.title} {art.content}")
+        overlap = len(q_tokens & doc_tokens)
+        if overlap > 0:
+            scored_tail.append((overlap, -idx, art))
+
+    scored_tail.sort(key=lambda item: (item[0], item[1]), reverse=True)
+    kept = list(head)
+    for _, _, art in scored_tail[:lexical_keep]:
+        if len(kept) >= max_total:
+            break
+        kept.append(art)
+        seen_ids.add(art.id)
+
+    for art in candidates[vector_keep:]:
+        if len(kept) >= max_total:
+            break
+        if art.id not in seen_ids:
+            kept.append(art)
+            seen_ids.add(art.id)
+    return kept
+
+
 def rerank_provisions(
     query: str,
     provisions: Sequence[ArticleNode],
@@ -156,6 +212,9 @@ def rerank_provisions(
 
     if not candidates or remaining_slots == 0:
         return explicit[:top_n] if top_n > 0 else explicit
+
+    if scorer is None and reranker_device() == "cpu" and len(candidates) > 35:
+        candidates = _prefilter_for_cpu(query, candidates)
 
     pairs = [
         (query, f"{p.title}: {p.content}".strip(": ")[:_MAX_TEXT_CHARS])

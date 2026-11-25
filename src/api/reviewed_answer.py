@@ -5,6 +5,10 @@ import time
 
 
 GROUNDING_LIMITATION = "Đánh giá ngữ nghĩa và độ bao phủ bằng mô hình có thể sai, không phải bằng chứng chứng minh; điểm rủi ro chỉ phản ánh trích dẫn."
+PROVIDER_UNAVAILABLE_WARNING = (
+    "LLM_PROVIDER_UNAVAILABLE: Mô hình ngôn ngữ tạm thời không phản hồi hoặc hết hạn mức; "
+    "hệ thống đang hiển thị trích đoạn chứng cứ gốc đã xác minh từ đồ thị Neo4j."
+)
 
 
 def grounded_delivery(text, articles, report):
@@ -321,6 +325,8 @@ def reviewed_answer(question, query, day, pipeline, use_llm, model, history, tra
                          + ", ".join(omissions)] if omissions else [])
     if packing_failure:
         context_warnings.append("CONTEXT_BUDGET_EXCEEDED: chưa gọi mô hình vì context không chứa đủ căn cứ bắt buộc.")
+    if use_llm and trace.get("generation_disposition") == "provider_no_output":
+        context_warnings.append(PROVIDER_UNAVAILABLE_WARNING)
     warnings = list(dict.fromkeys(list(getattr(report, "warnings", [])) + blockers + context_warnings + [GROUNDING_LIMITATION]))
     delivered_ok = bool(
         trace.get("generated_delivered")

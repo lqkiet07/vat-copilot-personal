@@ -2,7 +2,7 @@ import { useState } from "react";
 import { AlertTriangle, CalendarDays, ChevronDown, ChevronUp, RotateCcw } from "lucide-react";
 import emblem from "@/imports/tai-xuong.png";
 import type { AuditItem, Citation, Result } from "../data";
-import { fmtDate, formatTechnicalDiagnosticText, splitTechnicalDiagnosticLines } from "../utils/citationMatch";
+import { extractProviderNotice, fmtDate, formatTechnicalDiagnosticText, splitTechnicalDiagnosticLines } from "../utils/citationMatch";
 import { MarkdownContent } from "./MarkdownContent";
 import type { Pipeline } from "./SettingsDialog";
 
@@ -85,6 +85,7 @@ export function AnswerConclusionBox({
 }) {
   const [showDiagnostics, setShowDiagnostics] = useState(false);
   const { primaryText, diagnosticLines } = splitTechnicalDiagnosticLines(result.conclusion);
+  const providerNotice = !isErrorCard ? extractProviderNotice(result.audit) : null;
 
   return (
     <div className="mt-3.5 rounded-2xl border border-[#E2E8F0] bg-[#F8FAFC] p-4">
@@ -100,6 +101,13 @@ export function AnswerConclusionBox({
           <span className="text-[#1E3A8A]">Kết luận pháp lý</span>
         )}
       </div>
+
+      {providerNotice && (
+        <div className="mt-2.5 flex items-start gap-2 rounded-xl border border-amber-200 bg-amber-50/80 px-3 py-2 text-[12.5px] font-medium text-amber-900">
+          <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-amber-600" />
+          <span>{providerNotice}</span>
+        </div>
+      )}
 
       <MarkdownContent
         text={primaryText}

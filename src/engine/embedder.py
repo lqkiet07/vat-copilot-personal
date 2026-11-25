@@ -103,6 +103,17 @@ class OllamaEmbedder:
         self._query_cache: OrderedDict[str, list[float]] = OrderedDict()
         self._cache_lock = threading.Lock()
 
+    @staticmethod
+    def _resolve_keep_alive() -> int | str | None:
+        raw = os.getenv("OLLAMA_EMBED_KEEP_ALIVE")
+        if raw is not None and raw.strip():
+            val = raw.strip()
+            return int(val) if val.isdigit() else val
+        if os.getenv("LLM_PROVIDER", "").strip().lower() == "ollama":
+            # Unload bge-m3 immediately after embedding so 4 GB VRAM stays free for local LLM.
+            return 0
+        return None
+
     def embed_text(self, text: str) -> list[float]:
         """Generate normalized semantic embedding vector for a single string with bounded LRU cache."""
         with self._cache_lock:
@@ -128,7 +139,11 @@ class OllamaEmbedder:
             return []
 
         url = f"{self.host}/api/embed"
-        payload = json.dumps({"model": self.model, "input": texts}).encode("utf-8")
+        body: dict[str, object] = {"model": self.model, "input": texts}
+        keep_alive = self._resolve_keep_alive()
+        if keep_alive is not None:
+            body["keep_alive"] = keep_alive
+        payload = json.dumps(body).encode("utf-8")
         req = urllib.request.Request(
             url,
             data=payload,
@@ -147,7 +162,10 @@ class OllamaEmbedder:
                 results: list[list[float]] = []
                 for t in texts:
                     single_url = f"{self.host}/api/embeddings"
-                    single_payload = json.dumps({"model": self.model, "prompt": t}).encode("utf-8")
+                    single_body: dict[str, object] = {"model": self.model, "prompt": t}
+                    if keep_alive is not None:
+                        single_body["keep_alive"] = keep_alive
+                    single_payload = json.dumps(single_body).encode("utf-8")
                     single_req = urllib.request.Request(
                         single_url,
                         data=single_payload,

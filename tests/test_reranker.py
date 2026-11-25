@@ -148,3 +148,25 @@ def test_resolve_reranker_device_prefers_cpu_for_ollama_and_cuda_for_gemini(monk
 
     monkeypatch.setattr(torch.cuda, "is_available", lambda: False)
     assert reranker_device() == "cpu"
+
+
+def test_prefilter_for_cpu_preserves_top_vector_and_rescues_lexical_matches():
+    from src.engine.reranker import _prefilter_for_cpu
+
+    candidates = [
+        _art(f"DOC_D1_K{i}", "Mục chung", f"Nội dung pháp lý thông thường số {i}")
+        for i in range(60)
+    ]
+    candidates[55] = _art(
+        "LUAT_48_2024_D5_K25",
+        "Đối tượng không chịu thuế",
+        "Hộ kinh doanh cá nhân kinh doanh tiệm net doanh thu dưới ngưỡng",
+    )
+
+    kept = _prefilter_for_cpu("mở tiệm net hộ kinh doanh doanh thu", candidates)
+    kept_ids = [item.id for item in kept]
+    assert len(kept) <= 35
+    assert len(set(kept_ids)) == len(kept_ids)
+    assert kept_ids[:20] == [f"DOC_D1_K{i}" for i in range(20)]
+    assert "LUAT_48_2024_D5_K25" in kept_ids
+

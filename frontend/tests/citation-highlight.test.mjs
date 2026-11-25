@@ -31,6 +31,7 @@ const {
   formatInlineCitationsToMarkdownLinks,
   formatInlineCitationsPlainText,
   formatTechnicalDiagnosticText,
+  extractProviderNotice,
 } = await load("../src/app/utils/citationMatch.ts");
 
 const inventory = JSON.parse(
@@ -231,6 +232,14 @@ test("mapApiQueryResponseToResult preserves missing_facts, rewritten_query, and 
   assert.deepEqual(mapped.missing_facts, ["Doanh thu hằng năm?"]);
   assert.equal(mapped.rewritten_query, "Hộ kinh doanh dịch vụ internet");
   assert.deepEqual(mapped.amended_citation_ids, ["ND_68_2026_D3_K1"]);
+});
+
+test("extractProviderNotice detects LLM_PROVIDER_UNAVAILABLE audit items cleanly", () => {
+  assert.equal(extractProviderNotice([{ text: "Đã kiểm tra xong" }]), null);
+  const notice = extractProviderNotice([
+    { text: "LLM_PROVIDER_UNAVAILABLE: Mô hình ngôn ngữ tạm thời không phản hồi" },
+  ]);
+  assert.match(notice || "", /Mô hình AI tạm thời không phản hồi/i);
 });
 
 

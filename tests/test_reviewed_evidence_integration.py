@@ -406,3 +406,11 @@ def test_reviewed_chat_accepts_verified_plain_text_and_separates_trace(reviewed,
     assert events[-1][1]["answer_status"] == "ANSWERED"
     assert events[-1][1]["citations"] == [SAFE]
     assert any("Hệ thống" in w and BLOCKED in w for w in events[-1][1]["warnings"])
+
+
+def test_provider_no_output_emits_unavailable_warning(reviewed):
+    trace = {}
+    result = answer(reviewed, use_llm=True, llm_fn=lambda *a, **k: None, trace=trace)
+    assert trace["generation_disposition"] == "provider_no_output"
+    assert any("LLM_PROVIDER_UNAVAILABLE" in w for w in result.warnings)
+
