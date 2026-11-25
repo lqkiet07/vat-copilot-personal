@@ -11,7 +11,7 @@ import {
 } from "lucide-react";
 import emblem from "@/imports/tai-xuong.png";
 import { SCENARIOS } from "../data";
-import { REASONING_STEPS } from "../hooks/useChatSession";
+import { DONE_REASONING_STEPS, PENDING_REASONING_STEPS, REASONING_STEPS } from "../hooks/useChatSession";
 import { fmtDate } from "../utils/citationMatch";
 import { Composer } from "./Composer";
 import type { Pipeline } from "./SettingsDialog";
@@ -76,8 +76,8 @@ export function PortalHeader({
           aria-expanded={relatedOpen}
           aria-label="Mở danh sách văn bản liên quan"
           className={`flex min-h-[36px] shrink-0 items-center gap-1.5 rounded-full px-3 py-1.5 text-[12px] font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#1E3A8A]/40 ${relatedOpen
-              ? "bg-[#1E3A8A] text-white shadow-xs"
-              : "border border-[#BFDBFE] bg-[#EFF6FF] text-[#1E3A8A] hover:bg-[#DBEAFE]"
+            ? "bg-[#1E3A8A] text-white shadow-xs"
+            : "border border-[#BFDBFE] bg-[#EFF6FF] text-[#1E3A8A] hover:bg-[#DBEAFE]"
             }`}
           title="Mở danh sách điều khoản được trích dẫn trong câu trả lời"
         >
@@ -243,18 +243,27 @@ export function ReasoningProgressCard({
         </button>
       </div>
       <ul className="space-y-2 text-[12.5px]">
-        {REASONING_STEPS.map((l, i) => (
-          <li key={l} className={`flex items-center gap-2.5 ${i <= step ? "text-[#0F172A]" : "text-[#94A3B8]"}`}>
-            {i < step ? (
-              <CheckCircle2 className="h-4 w-4 shrink-0 text-[#059669]" />
-            ) : i === step ? (
-              <Loader2 className="h-4 w-4 shrink-0 animate-spin will-change-transform text-[#1E3A8A]" />
-            ) : (
-              <span className="h-4 w-4 shrink-0 rounded-full border border-[#CBD5E1]" />
-            )}
-            <span>{stageMessages?.[i] || l}</span>
-          </li>
-        ))}
+        {REASONING_STEPS.map((runningLabel, i) => {
+          const override = stageMessages?.[i]?.trim() || "";
+          const label =
+            i < step
+              ? (/^Đã\b/i.test(override) ? override : DONE_REASONING_STEPS[i])
+              : i === step
+                ? (/^Đang\b/i.test(override) ? override : runningLabel)
+                : PENDING_REASONING_STEPS[i];
+          return (
+            <li key={runningLabel} className={`flex items-center gap-2.5 ${i <= step ? "text-[#0F172A]" : "text-[#94A3B8]"}`}>
+              {i < step ? (
+                <CheckCircle2 className="h-4 w-4 shrink-0 text-[#059669]" />
+              ) : i === step ? (
+                <Loader2 className="h-4 w-4 shrink-0 animate-spin will-change-transform text-[#1E3A8A]" />
+              ) : (
+                <span className="h-4 w-4 shrink-0 rounded-full border border-[#CBD5E1]" />
+              )}
+              <span>{label}</span>
+            </li>
+          );
+        })}
       </ul>
     </div>
   );

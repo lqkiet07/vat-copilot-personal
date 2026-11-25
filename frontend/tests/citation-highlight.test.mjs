@@ -339,4 +339,31 @@ test("formatInlineCitationsToMarkdownLinks and PlainText expand comma/semicolon-
   );
 });
 
+test("apiDocToLawDoc and mapApiQueryResponseToResult format remaining dates as DD/MM/YYYY", () => {
+  const limited = apiDocToLawDoc({
+    id: "LUAT_13_2008",
+    code: "13/2008/QH12",
+    title: "Luật Thuế GTGT",
+    valid_from: "2009-01-01",
+    valid_to: "2025-06-30",
+    status: "EXPIRED",
+    chapters: [],
+    articles: [],
+  });
+  assert.equal(limited.badge.text, "Hiệu lực đến 30/06/2025");
+
+  const res = mapApiQueryResponseToResult(
+    {
+      citations: ["ND_68_2026_D3_K1"],
+      risk_score: 0,
+      risk_level: "LOW",
+      warnings: [],
+      irac_sections: { issue: "I", rule: "R", application: "A", conclusion: "C" },
+    },
+    "thuế",
+    "2026-03-20"
+  );
+  assert.match(res.audit.map((a) => a.text).join(" "), /mốc 20\/03\/2026/);
+});
+
 

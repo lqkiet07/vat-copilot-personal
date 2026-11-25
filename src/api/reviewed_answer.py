@@ -303,6 +303,11 @@ def _articles_match_resolution(raw_articles, resolution):
     return all(a.id in provisions and a.content == provisions[a.id].text for a in raw_articles)
 
 
+def _fmt_vn_date(iso_day: str) -> str:
+    parts = (iso_day or "").split("-")
+    return f"{parts[2]}/{parts[1]}/{parts[0]}" if len(parts) == 3 else iso_day
+
+
 def reviewed_answer(question, query, day, pipeline, use_llm, model, history, trace,
                     fetch_fn, retriever, verifier, scorer, llm, corpus_path, review_path,
                     progress_cb=None):
@@ -333,7 +338,8 @@ def reviewed_answer(question, query, day, pipeline, use_llm, model, history, tra
         progress_cb,
         1,
         "retrieve",
-        f"Đang tra cứu các điều khoản còn hiệu lực tại ngày {day} (tìm thấy {len(articles)} căn cứ)...",
+        f"Đã tìm thấy {len(articles)} điều khoản còn hiệu lực tại ngày {_fmt_vn_date(day)}.",
+        status="done",
     )
     trace.update(all_blockers=resolution.blocked)
     from src.ui.corpus_viewer import load_corpus_index
@@ -385,7 +391,8 @@ def reviewed_answer(question, query, day, pipeline, use_llm, model, history, tra
         progress_cb,
         2,
         "rerank",
-        f"Đang chọn lọc và đối chiếu hiệu lực {len(articles)} căn cứ trọng tâm...",
+        f"Đã chọn lọc và đối chiếu hiệu lực {len(articles)} căn cứ trọng tâm.",
+        status="done",
     )
     sections = evidence_sections(question, day, articles, resolution, metadata)
     if packing_failure:
@@ -401,6 +408,7 @@ def reviewed_answer(question, query, day, pipeline, use_llm, model, history, tra
             3,
             "generate",
             "Đang tổng hợp câu trả lời và kiểm tra trích dẫn...",
+            status="running",
         )
         generated, report, raw_response = _generate(
             query, day, articles, resolution, llm, scorer,

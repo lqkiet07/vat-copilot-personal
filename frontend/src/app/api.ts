@@ -36,6 +36,12 @@ export type ApiDocumentDetail = ApiDocumentSummary & {
 
 class HttpApiError extends Error { }
 
+function formatIsoDateVn(iso: string): string {
+  if (!iso || !iso.includes("-")) return iso;
+  const parts = iso.split("-");
+  return parts.length === 3 ? `${parts[2]}/${parts[1]}/${parts[0]}` : iso;
+}
+
 export function parseCitationId(cid: string): Citation {
   if (!cid || typeof cid !== "string") {
     return { id: cid || "", label: cid || "", doc: null, art: null };
@@ -171,7 +177,7 @@ export function apiDocToLawDoc(doc: ApiDocumentDetail): LawDoc {
     tab: meta?.label || doc.code || doc.id,
     full: doc.title ? `${doc.code} — ${doc.title}` : doc.code || doc.id,
     badge: {
-      text: isLimited ? `Hiệu lực đến ${doc.valid_to}` : "Đang áp dụng",
+      text: isLimited ? `Hiệu lực đến ${formatIsoDateVn(doc.valid_to)}` : "Đang áp dụng",
       tone: isLimited ? "amber" : "green",
     },
     effective: doc.valid_from || "",
@@ -216,6 +222,7 @@ export type QueryStageEvent = {
   step: number;
   stage: string;
   message: string;
+  status?: "running" | "done";
 };
 
 /** Map raw FastAPI QueryResponse JSON payload into the UI Result structure. */
@@ -308,12 +315,12 @@ export function mapApiQueryResponseToResult(
   if (citations.length > 0 && !hasNoCitationWarning) {
     audit.push({
       tone: "ok",
-      text: `Đã nhận ${citations.length} mã trích dẫn từ API cho mốc ${asOfDate}; việc hiển thị chưa xác minh hiệu lực hoặc nội dung.`,
+      text: `Đã nhận ${citations.length} mã trích dẫn từ API cho mốc ${formatIsoDateVn(asOfDate)}; việc hiển thị chưa xác minh hiệu lực hoặc nội dung.`,
     });
   } else if (citations.length === 0) {
     audit.push({
       tone: "warn",
-      text: `Chưa xác định được điều khoản pháp luật thuế GTGT điều chỉnh trực tiếp tại mốc ${asOfDate}.`,
+      text: `Chưa xác định được điều khoản pháp luật thuế GTGT điều chỉnh trực tiếp tại mốc ${formatIsoDateVn(asOfDate)}.`,
     });
   }
 

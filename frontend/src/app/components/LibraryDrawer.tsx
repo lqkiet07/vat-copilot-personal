@@ -428,7 +428,7 @@ export function LibraryDrawer({
                 <div className="font-bold text-[#1E3A8A]">{activeDocData.full}</div>
                 <div className="mt-1 flex flex-wrap items-center gap-2">
                   <span className="font-mono-num font-semibold text-[#475569]">
-                    Hiệu lực: {activeDocData.effective || "Chưa cập nhật"}
+                    Hiệu lực: {activeDocData.effective ? fmtDate(activeDocData.effective) : "Chưa cập nhật"}
                   </span>
                   {activeDocData.badge.text && (
                     <span

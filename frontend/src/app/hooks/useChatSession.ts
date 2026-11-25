@@ -9,11 +9,25 @@ import { saveConversations, store } from "../utils/citationMatch";
 export type Msg = { id: number; q: string; date: string; pipeline: Pipeline; result: Result | null };
 export type Conversation = { id: string; title: string; updated: number; messages: Msg[] };
 
+export const PENDING_REASONING_STEPS = [
+  "Phân tích câu hỏi và mốc ngày tra cứu",
+  "Tìm các điều khoản còn hiệu lực tại ngày đã chọn",
+  "Chọn lọc và đối chiếu văn bản sửa đổi liên quan",
+  "Tổng hợp câu trả lời và kiểm tra trích dẫn",
+];
+
 export const REASONING_STEPS = [
   "Đang phân tích câu hỏi và mốc ngày tra cứu...",
   "Đang tìm các điều khoản còn hiệu lực tại ngày đã chọn...",
   "Đang chọn lọc và đối chiếu văn bản sửa đổi liên quan...",
   "Đang tổng hợp câu trả lời và kiểm tra trích dẫn...",
+];
+
+export const DONE_REASONING_STEPS = [
+  "Đã phân tích nội dung câu hỏi và xác định mốc thời gian tra cứu.",
+  "Đã tìm thấy các điều khoản còn hiệu lực tại ngày đã chọn.",
+  "Đã chọn lọc và đối chiếu văn bản sửa đổi liên quan.",
+  "Đã tổng hợp câu trả lời và kiểm tra trích dẫn.",
 ];
 
 type UseChatSessionArgs = {
@@ -169,11 +183,11 @@ export function useChatSession({
         return prev.map((c) =>
           c.id === originId
             ? {
-                ...c,
-                title: c.messages.length === 0 ? title : c.title,
-                updated: Date.now(),
-                messages: nextMsgs,
-              }
+              ...c,
+              title: c.messages.length === 0 ? title : c.title,
+              updated: Date.now(),
+              messages: nextMsgs,
+            }
             : c
         );
       });
@@ -198,7 +212,11 @@ export function useChatSession({
           undefined,
           controller.signal,
           (stageEv) => {
-            setStep((prev) => Math.max(prev, stageEv.step));
+            const isDone = stageEv.status === "done" || /^Đã\b/i.test(stageEv.message.trim());
+            const nextStep = isDone
+              ? Math.min(REASONING_STEPS.length - 1, stageEv.step + 1)
+              : stageEv.step;
+            setStep((prev) => Math.max(prev, nextStep));
             setStageMessages((prev) => ({ ...prev, [stageEv.step]: stageEv.message }));
           }
         );

@@ -205,6 +205,8 @@ def test_answer_query_understand_progress_hides_raw_rewritten_query():
     )
     understand_events = [e for e in events if e.get("stage") == "understand"]
     assert len(understand_events) == 1
+    assert understand_events[0].get("status") == "done"
+    assert understand_events[0]["message"].startswith("Đã ")
     assert "«" not in understand_events[0]["message"]
     assert "Đã chuẩn hóa câu hỏi" not in understand_events[0]["message"]
 

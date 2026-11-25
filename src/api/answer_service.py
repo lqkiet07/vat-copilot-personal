@@ -69,11 +69,17 @@ class AnswerResult:
         }
 
 
-def _emit_progress(progress_cb: Any, step: int, stage: str, message: str) -> None:
+def _emit_progress(
+    progress_cb: Any,
+    step: int,
+    stage: str,
+    message: str,
+    status: str = "running",
+) -> None:
     if not callable(progress_cb):
         return
     try:
-        progress_cb({"step": step, "stage": stage, "message": message})
+        progress_cb({"step": step, "stage": stage, "message": message, "status": status})
     except Exception:
         pass
 
@@ -531,9 +537,21 @@ def answer_query(
                 reason_override=EmptyReason.OUT_OF_SCOPE,
             )
         effective_query = understanding.legal_query
-        _emit_progress(progress_cb, 0, "understand", "Đã phân tích nội dung câu hỏi và xác định mốc thời gian tra cứu.")
+        _emit_progress(
+            progress_cb,
+            0,
+            "understand",
+            "Đã phân tích nội dung câu hỏi và xác định mốc thời gian tra cứu.",
+            status="done",
+        )
     else:
-        _emit_progress(progress_cb, 0, "understand", "Đã phân tích nội dung câu hỏi và xác định mốc thời gian tra cứu.")
+        _emit_progress(
+            progress_cb,
+            0,
+            "understand",
+            "Đã phân tích nội dung câu hỏi và xác định mốc thời gian tra cứu.",
+            status="done",
+        )
 
     if reviewed_amendment_path is not None and pipeline not in {"P1_FlatRAG", "P2", "P2_TemporalGraphRAG"}:
         from src.api.reviewed_answer import reviewed_answer
