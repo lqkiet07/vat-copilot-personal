@@ -28,14 +28,14 @@ export function SettingsDialog({ open, onOpenChange, isStaging, settings, onUpda
             <span>Cài đặt hệ thống</span>
           </DialogTitle>
           <DialogDescription className="text-[12.5px] text-[#64748B]">
-            Thiết lập mô hình suy luận, mốc thời gian mặc định và chế độ tổng hợp LLM
+            Thiết lập chế độ tra cứu, mốc ngày mặc định và hỗ trợ diễn giải bằng AI
           </DialogDescription>
         </DialogHeader>
 
         <div className="space-y-4 pt-2 text-[13px]">
           <div>
             <label htmlFor="settings-pipeline" className="mb-1 block font-bold text-[#0F172A]">
-              1. Mô hình suy luận (Pipeline AI)
+              1. Chế độ tra cứu
             </label>
             <select
               id="settings-pipeline"
@@ -47,24 +47,24 @@ export function SettingsDialog({ open, onOpenChange, isStaging, settings, onUpda
               }}
               className="w-full rounded-xl border border-[#CBD5E1] bg-[#F8FAFC] p-2.5 text-[13px] font-medium focus-visible:border-[#1E3A8A] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#1E3A8A]/25 disabled:opacity-60"
             >
-              <option value="P3">P3: Đầy đủ (Temporal GraphRAG + Rule Engine + RAG) [Khuyên dùng]</option>
+              <option value="P3">Đầy đủ &amp; đối chiếu hiệu lực [Khuyên dùng]</option>
               <option value="P2" disabled={isStaging}>
-                P2: Rule Engine + Neo4j Graph{isStaging ? " (chỉ canonical)" : ""}
+                Tra cứu theo mốc thời gian{isStaging ? " (chưa bật)" : ""}
               </option>
               <option value="P1" disabled={isStaging}>
-                P1: Vector Search RAG (Dễ dính bẫy niên đại){isStaging ? " (chỉ canonical)" : ""}
+                Tìm nhanh văn bản (không kiểm tra sửa đổi){isStaging ? " (chưa bật)" : ""}
               </option>
             </select>
             <p className="mt-1 text-[11px] text-[#64748B]">
               {isStaging
-                ? "Chế độ Staging chỉ hỗ trợ Pipeline P3."
-                : "Pipeline P3 tự động xử lý điểm cắt thời gian 01/07/2025 giữa Luật 13/2008 và Luật 48/2024."}
+                ? "Hệ thống đang chạy chế độ Đầy đủ & đối chiếu hiệu lực tự động."
+                : "Chế độ đầy đủ tự động kiểm tra mốc chuyển tiếp 01/07/2025 giữa Luật 13/2008 và Luật 48/2024."}
             </p>
           </div>
 
           <div>
             <label htmlFor="settings-default-date" className="mb-1 block font-bold text-[#0F172A]">
-              2. Mốc thời gian mặc định (T_eval)
+              2. Mốc ngày tra cứu mặc định
             </label>
             <input
               id="settings-default-date"
@@ -83,9 +83,9 @@ export function SettingsDialog({ open, onOpenChange, isStaging, settings, onUpda
 
           <div className="flex items-center justify-between gap-3 rounded-xl border border-[#CBD5E1] bg-[#F8FAFC] p-3">
             <label htmlFor="settings-use-llm" className="cursor-pointer">
-              <div className="text-[13px] font-bold text-[#0F172A]">3. Bật mô hình ngôn ngữ lớn (LLM)</div>
+              <div className="text-[13px] font-bold text-[#0F172A]">3. Bật trợ lý AI diễn giải</div>
               <div className="text-[11.5px] text-[#64748B]">
-                Tổng hợp lập luận IRAC bằng AI (Ollama / Gemini API)
+                Tổng hợp câu trả lời dễ hiểu từ các điều khoản đã đối chiếu hiệu lực
               </div>
             </label>
             <input

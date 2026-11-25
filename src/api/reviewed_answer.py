@@ -6,9 +6,54 @@ import time
 
 GROUNDING_LIMITATION = "Đánh giá ngữ nghĩa và độ bao phủ bằng mô hình có thể sai, không phải bằng chứng chứng minh; điểm rủi ro chỉ phản ánh trích dẫn."
 PROVIDER_UNAVAILABLE_WARNING = (
-    "LLM_PROVIDER_UNAVAILABLE: Mô hình ngôn ngữ tạm thời không phản hồi hoặc hết hạn mức; "
-    "hệ thống đang hiển thị trích đoạn chứng cứ gốc đã xác minh từ đồ thị Neo4j."
+    "LLM_PROVIDER_UNAVAILABLE: Mô hình AI tạm thời không phản hồi hoặc hết hạn mức; "
+    "hệ thống đang hiển thị trích đoạn điều khoản pháp luật gốc đã được đối chiếu hiệu lực."
 )
+
+
+def _extract_amendment_links(provenance) -> list[dict]:
+    """Collect one unique amending statute reference per source_unit from provision provenance."""
+    merged: dict[str, dict] = {}
+
+    def walk(node) -> None:
+        if isinstance(node, dict):
+            source_unit = node.get("source_unit")
+            if isinstance(source_unit, str) and source_unit.strip():
+                unit = source_unit.strip()
+                effective_on = str(node.get("effective_on") or "").strip()
+                op = node.get("operation")
+                op_action = op.get("action") if isinstance(op, dict) else node.get("action")
+                action = str(op_action or "").strip()
+                cand = {"source_unit": unit, "effective_on": effective_on, "action": action}
+                prev = merged.get(unit)
+                cand_score = (bool(effective_on), bool(action))
+                prev_score = (bool(prev["effective_on"]), bool(prev["action"])) if prev else (False, False)
+                if prev is None or cand_score > prev_score:
+                    merged[unit] = cand
+            for child in node.values():
+                walk(child)
+        elif isinstance(node, (list, tuple)):
+            for child in node:
+                walk(child)
+
+    walk(provenance)
+    return list(merged.values())
+
+
+def _build_resolved_provisions(resolution, cited_ids: set[str]) -> dict[str, dict]:
+    """Map cited provision IDs to operative text, status, and amendment provenance."""
+    if resolution is None or not cited_ids:
+        return {}
+    resolved: dict[str, dict] = {}
+    for item in getattr(resolution, "items", ()) or ():
+        for provision in getattr(item, "provisions", ()) or ():
+            if provision.id in cited_ids:
+                resolved[provision.id] = {
+                    "text": provision.text,
+                    "status": provision.status,
+                    "amended_by": _extract_amendment_links(getattr(provision, "provenance", None)),
+                }
+    return resolved
 
 
 def grounded_delivery(text, articles, report):
@@ -244,7 +289,7 @@ def reviewed_answer(question, query, day, pipeline, use_llm, model, history, tra
         progress_cb,
         1,
         "retrieve",
-        f"Đồ thị Neo4j: tìm thấy {len(articles)} khoản/điểm còn hiệu lực tại {day}.",
+        f"Đang tra cứu các điều khoản còn hiệu lực tại ngày {day} (tìm thấy {len(articles)} căn cứ)...",
     )
     trace.update(all_blockers=resolution.blocked)
     from src.ui.corpus_viewer import load_corpus_index
@@ -286,7 +331,7 @@ def reviewed_answer(question, query, day, pipeline, use_llm, model, history, tra
         progress_cb,
         2,
         "rerank",
-        f"Reranker & xác minh hiệu lực: giữ lại {len(articles)} căn cứ trọng tâm.",
+        f"Đang chọn lọc và đối chiếu hiệu lực {len(articles)} căn cứ trọng tâm...",
     )
     sections = evidence_sections(question, day, articles, resolution, metadata)
     if packing_failure:
@@ -301,7 +346,7 @@ def reviewed_answer(question, query, day, pipeline, use_llm, model, history, tra
             progress_cb,
             3,
             "generate",
-            "Đang tổng hợp lập luận IRAC và kiểm định trích dẫn...",
+            "Đang tổng hợp câu trả lời và kiểm tra trích dẫn...",
         )
         generated, report, raw_response = _generate(query, day, articles, resolution, llm, scorer,
                                                     model, history, (corpus_path, review_path), trace)
@@ -343,6 +388,7 @@ def reviewed_answer(question, query, day, pipeline, use_llm, model, history, tra
         a.id for a in articles
         if getattr(a, "status", "") == "AMENDED" and a.id in final_cite_set
     })
+    resolved_provisions = _build_resolved_provisions(resolution, final_cite_set)
     return AnswerResult(
         query=question, as_of_date=day, pipeline=pipeline, citations=final_citations,
         active_article_ids=[a.id for a in articles], risk_score=getattr(report, "risk_score", 50),
@@ -352,4 +398,5 @@ def reviewed_answer(question, query, day, pipeline, use_llm, model, history, tra
         articles=articles, resolved_evidence=resolution,
         missing_facts=missing_facts, rewritten_query=trace.get("rewritten_query"),
         amended_citation_ids=amended_citation_ids,
+        resolved_provisions=resolved_provisions,
     )

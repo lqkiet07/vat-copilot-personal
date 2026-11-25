@@ -8,13 +8,12 @@ import type { Pipeline } from "./SettingsDialog";
 
 /** Render answer card top metadata strip with validity status badge and evaluation date. */
 export function AnswerHeader({
-  pipeline,
   date,
   answerStatus,
   isGreeting,
   amendedCount = 0,
 }: {
-  pipeline: Pipeline;
+  pipeline?: Pipeline;
   date: string;
   answerStatus?: Result["answer_status"];
   isGreeting?: boolean;
@@ -26,10 +25,7 @@ export function AnswerHeader({
         <div className="flex h-7 w-7 items-center justify-center rounded-lg border border-[#BFDBFE] bg-[#EFF6FF]">
           <img src={emblem} alt="Quốc huy" className="h-4 w-auto" />
         </div>
-        <span className="text-[14px] font-bold text-[#1E3A8A]">Thẩm định Pháp lý Thuế GTGT</span>
-        <span className="font-mono-num rounded-full border border-[#BFDBFE] bg-[#EFF6FF] px-2 py-0.5 text-[10.5px] font-semibold text-[#1E3A8A]">
-          {pipeline}
-        </span>
+        <span className="text-[14px] font-bold text-[#1E3A8A]">Trợ lý Thuế GTGT</span>
         {answerStatus && !isGreeting && (
           <span
             className={`rounded-full border px-2 py-0.5 text-[10.5px] font-semibold ${
@@ -50,7 +46,7 @@ export function AnswerHeader({
         {amendedCount > 0 && !isGreeting && (
           <span
             className="rounded-full border border-indigo-200 bg-indigo-50 px-2 py-0.5 text-[10.5px] font-semibold text-indigo-800"
-            title="Có trích dẫn điều khoản đã được văn bản khác sửa đổi, bổ sung có hiệu lực tại mốc thẩm định"
+            title="Có trích dẫn điều khoản đã được văn bản khác sửa đổi, bổ sung có hiệu lực tại ngày tra cứu"
           >
             Có điều khoản sửa đổi ({amendedCount})
           </span>
@@ -60,14 +56,14 @@ export function AnswerHeader({
       <div className="flex items-center gap-1.5 rounded-full border border-[#E2E8F0] bg-[#F8FAFC] px-3 py-1 text-[11px] font-semibold text-[#475569]">
         <CalendarDays className="h-3 w-3 text-[#1E3A8A]" />
         <span>
-          Thời điểm thẩm định: <strong className="font-mono-num">{fmtDate(date)}</strong>
+          Áp dụng tại ngày: <strong className="font-mono-num">{fmtDate(date)}</strong>
         </span>
       </div>
     </div>
   );
 }
 
-/** Render main conclusion markdown, collapsible diagnostic lines, rule basis, and retry actions. */
+/** Render main conclusion markdown, collapsible effective-date lines, missing-fact chips, and retry actions. */
 export function AnswerConclusionBox({
   result,
   isErrorCard,
@@ -98,7 +94,7 @@ export function AnswerConclusionBox({
         ) : result.is_greeting ? (
           <span className="text-[#1E3A8A]">Chào mừng &amp; Hướng dẫn tra cứu</span>
         ) : (
-          <span className="text-[#1E3A8A]">Kết luận pháp lý</span>
+          <span className="text-[#1E3A8A]">Kết luận</span>
         )}
       </div>
 
@@ -126,8 +122,8 @@ export function AnswerConclusionBox({
             {showDiagnostics ? <ChevronUp className="h-3.5 w-3.5" /> : <ChevronDown className="h-3.5 w-3.5" />}
             <span>
               {showDiagnostics
-                ? "Thu gọn chi tiết chứng cứ kỹ thuật"
-                : `Xem chi tiết chứng cứ kỹ thuật (${diagnosticLines.length} dòng)`}
+                ? "Thu gọn chi tiết đối chiếu hiệu lực"
+                : `Xem chi tiết đối chiếu hiệu lực (${diagnosticLines.length} dòng)`}
             </span>
           </button>
           {showDiagnostics && (
@@ -143,7 +139,7 @@ export function AnswerConclusionBox({
       {!result.is_out_of_domain && !result.is_greeting && result.missing_facts && result.missing_facts.length > 0 && (
         <div className="mt-3 rounded-xl border border-amber-200 bg-amber-50/70 p-3">
           <div className="text-[11.5px] font-bold text-amber-900">
-            Cần bổ sung dữ kiện để kết luận chính xác hơn:
+            Bạn có thể bổ sung thêm để nhận kết luận chính xác hơn:
           </div>
           <div className="mt-2 flex flex-wrap gap-1.5">
             {result.missing_facts.map((fact, idx) => (
@@ -157,18 +153,6 @@ export function AnswerConclusionBox({
               </button>
             ))}
           </div>
-        </div>
-      )}
-
-      {!result.is_out_of_domain && !result.is_greeting && result.rule && (
-        <div className="mt-2.5 border-t border-[#E2E8F0]/80 pt-2.5 text-[13px] leading-relaxed text-[#475569]">
-          <div className="mb-1 text-[11.5px] font-bold uppercase tracking-wider text-[#64748B]">
-            Căn cứ pháp lý viện dẫn:
-          </div>
-          <MarkdownContent
-            text={result.rule.replace(/^Căn cứ(?:\s+pháp\s+lý\s+viện\s+dẫn)?:\s*/i, "")}
-            onCitationClick={onCitationClick}
-          />
         </div>
       )}
 
@@ -195,7 +179,75 @@ export function AnswerConclusionBox({
   );
 }
 
-/** Render collapsible technical audit checklist when warnings are lengthy. */
+/** Collapsed-by-default accordion grouping cited rule basis and temporal reasoning steps. */
+export function AnswerAnalysisAccordion({
+  rule,
+  application,
+  onCitationClick,
+}: {
+  rule?: string;
+  application?: string[];
+  onCitationClick?: (citation: Citation) => void;
+}) {
+  const [expanded, setExpanded] = useState(false);
+  const cleanRule = rule?.replace(/^Căn cứ(?:\s+pháp\s+lý\s+viện\s+dẫn)?:\s*/i, "").trim() || "";
+  const cleanApp = (application || []).filter((item) => item.trim().length > 0);
+
+  if (!cleanRule && cleanApp.length === 0) return null;
+
+  return (
+    <div className="mt-3 rounded-2xl border border-[#E2E8F0] bg-[#F8FAFC]/80 px-3.5 py-2.5">
+      <button
+        type="button"
+        aria-expanded={expanded}
+        onClick={() => setExpanded((v) => !v)}
+        className="flex w-full items-center justify-between gap-2 text-left text-[12.5px] font-semibold text-[#1E3A8A] hover:text-[#1E40AF] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#1E3A8A]/40"
+      >
+        <span>
+          {expanded
+            ? "Thu gọn phân tích chi tiết"
+            : "Xem phân tích chi tiết (căn cứ & đối chiếu)"}
+        </span>
+        {expanded ? <ChevronUp className="h-4 w-4 shrink-0" /> : <ChevronDown className="h-4 w-4 shrink-0" />}
+      </button>
+
+      {expanded && (
+        <div className="mt-3 space-y-3 border-t border-[#E2E8F0] pt-3">
+          {cleanRule && (
+            <div className="text-[13px] leading-relaxed text-[#475569]">
+              <div className="mb-1 text-[11.5px] font-bold uppercase tracking-wider text-[#64748B]">
+                Quy định áp dụng:
+              </div>
+              <MarkdownContent text={cleanRule} onCitationClick={onCitationClick} />
+            </div>
+          )}
+
+          {cleanApp.length > 0 && (
+            <div className="space-y-1.5 border-t border-[#E2E8F0]/70 pt-2.5">
+              <div className="text-[11.5px] font-bold uppercase tracking-wider text-[#64748B]">
+                Diễn giải theo mốc thời gian:
+              </div>
+              <ul className="space-y-1.5 text-[13px] text-[#334155]">
+                {cleanApp.map((app, i) => (
+                  <li key={i} className="flex items-start gap-2">
+                    <span className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-[#1E3A8A]" />
+                    <MarkdownContent
+                      text={app.replace(/^[•\-\*]\s*/, "")}
+                      onCitationClick={onCitationClick}
+                      className="min-w-0 flex-1"
+                    />
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
+/** Render collapsible verification checklist when warnings are lengthy. */
 export function AnswerAuditSection({ audit }: { audit: AuditItem[] }) {
   const [expanded, setExpanded] = useState(false);
   const shouldCollapse = audit.length > 2 || audit.some((item) => item.text.length > 150);
@@ -204,7 +256,7 @@ export function AnswerAuditSection({ audit }: { audit: AuditItem[] }) {
     return (
       <div className="mt-3.5 space-y-1.5">
         <div className="text-[11.5px] font-bold uppercase tracking-wider text-[#64748B]">
-          Thông tin và lưu ý từ phản hồi:
+          Lưu ý đối chiếu:
         </div>
         <ul className="space-y-1.5 text-[13px]">
           {audit.map((a, i) => (
@@ -230,7 +282,7 @@ export function AnswerAuditSection({ audit }: { audit: AuditItem[] }) {
         onClick={() => setExpanded((v) => !v)}
         className="flex w-full items-center justify-between gap-2 text-left text-[12px] font-semibold text-[#475569] hover:text-[#1E3A8A] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#1E3A8A]/40"
       >
-        <span>Thông tin và lưu ý kiểm định kỹ thuật ({audit.length} mục)</span>
+        <span>Lưu ý đối chiếu hiệu lực ({audit.length} mục)</span>
         {expanded ? <ChevronUp className="h-4 w-4 shrink-0" /> : <ChevronDown className="h-4 w-4 shrink-0" />}
       </button>
       {expanded && (

@@ -1,9 +1,10 @@
-import { useEffect, useMemo, useRef } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   AlertTriangle,
   BookOpen,
   ChevronLeft,
   ChevronRight,
+  ExternalLink,
   FileText,
   FolderKanban,
   Landmark,
@@ -14,16 +15,19 @@ import {
   Search,
   X,
 } from "lucide-react";
-import type { ApiDocumentSummary } from "../api";
-import type { Citation, LawDoc } from "../data";
+import { parseCitationId, type ApiDocumentSummary } from "../api";
+import type { Citation, LawDoc, ResolvedProvisionMeta } from "../data";
 import {
   collectDocCitationMatches,
   doesArticleMatchCitation,
   doesCitationMatchDoc,
   doesClauseMatchCitation,
   doesPointMatchCitation,
+  fmtDate,
   getDocCategory,
+  highlightOperativeSpans,
   parseCitationTarget,
+  stripLeadingClauseNumber,
   type DocCategory,
 } from "../utils/citationMatch";
 
@@ -40,10 +44,14 @@ type Props = {
   librarySearch: string;
   highlightedCitations: Citation[];
   focusedCitation: Citation | null;
+  resolvedProvisions?: Record<string, ResolvedProvisionMeta>;
+  highlightContext?: string;
+  openedFromCitation?: boolean;
   onCategoryChange: (cat: DocCategory) => void;
   onSelectDoc: (docId: string) => void;
   onSearchChange: (q: string) => void;
   onFocusCitation: (c: Citation) => void;
+  onJumpToProvision?: (unitId: string) => void;
   onRetryDoc: (docId: string) => void;
   onOpenRelated: () => void;
   onClose: () => void;
@@ -61,7 +69,7 @@ const CATEGORY_TABS: Array<{
   { key: "other", label: "Khác", Icon: FolderKanban },
 ];
 
-/** Right drawer rendering full legal documents with category filtering, search, and provision-level highlight. */
+/** Right drawer rendering legal documents with Citation Focus Mode, operative amendments, and key-phrase highlighting. */
 export function LibraryDrawer({
   open,
   isDesktop,
@@ -75,15 +83,28 @@ export function LibraryDrawer({
   librarySearch,
   highlightedCitations,
   focusedCitation,
+  resolvedProvisions,
+  highlightContext = "",
+  openedFromCitation = false,
   onCategoryChange,
   onSelectDoc,
   onSearchChange,
   onFocusCitation,
+  onJumpToProvision,
   onRetryDoc,
   onOpenRelated,
   onClose,
 }: Props) {
   const scrollContainerRef = useRef<HTMLDivElement>(null);
+  const [browseAllMode, setBrowseAllMode] = useState<boolean>(
+    () => !(openedFromCitation && highlightedCitations.length > 0)
+  );
+  const [showOriginalMap, setShowOriginalMap] = useState<Record<string, boolean>>({});
+
+  useEffect(() => {
+    if (!open) return;
+    setBrowseAllMode(!(openedFromCitation && highlightedCitations.length > 0));
+  }, [open, openedFromCitation, focusedCitation?.id, highlightedCitations.length]);
 
   const categoryCounts = useMemo(() => {
     const counts: Record<DocCategory, number> = {
@@ -214,119 +235,134 @@ export function LibraryDrawer({
           <div className="flex min-w-0 items-center gap-2">
             <BookOpen className="h-4 w-4 shrink-0 text-[#1E3A8A]" />
             <span className="truncate text-[14px] font-bold text-[#1E3A8A]">
-              Kho Văn Bản Pháp Luật GTGT
+              {activeDocData && !browseAllMode ? activeDocData.tab : "Kho Văn Bản Pháp Luật GTGT"}
             </span>
           </div>
-          <button
-            type="button"
-            onClick={onClose}
-            className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-[#64748B] transition-colors hover:bg-[#F1F5F9] hover:text-[#0F172A] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#1E3A8A]/40"
-            title="Đóng thư viện"
-            aria-label="Đóng thư viện"
-          >
-            <X className="h-4 w-4" />
-          </button>
+          <div className="flex shrink-0 items-center gap-1.5">
+            <button
+              type="button"
+              onClick={() => setBrowseAllMode((v) => !v)}
+              className="flex h-8 shrink-0 items-center gap-1 rounded-full border border-[#CBD5E1] bg-[#F8FAFC] px-2.5 text-[11px] font-semibold text-[#1E3A8A] transition-colors hover:bg-[#EFF6FF] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#1E3A8A]/40"
+              title={browseAllMode ? "Thu gọn bộ lọc để tập trung vào điều khoản đang xem" : "Mở danh sách và tìm kiếm toàn bộ văn bản"}
+            >
+              <Layers className="h-3 w-3 shrink-0" />
+              <span>{browseAllMode ? "Thu gọn" : `Duyệt kho (${libraryDocs.length} VB)`}</span>
+            </button>
+            <button
+              type="button"
+              onClick={onClose}
+              className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-[#64748B] transition-colors hover:bg-[#F1F5F9] hover:text-[#0F172A] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#1E3A8A]/40"
+              title="Đóng thư viện"
+              aria-label="Đóng thư viện"
+            >
+              <X className="h-4 w-4" />
+            </button>
+          </div>
         </div>
 
-        {/* Category Tabs */}
-        <div
-          role="tablist"
-          aria-label="Phân loại văn bản pháp luật"
-          className="flex shrink-0 gap-1 overflow-x-auto border-b border-[#CBD5E1] bg-white px-3 pt-2 text-[12px]"
-        >
-          {CATEGORY_TABS.map(({ key, label, Icon }) => {
-            const count = categoryCounts[key];
-            if (key === "other" && count === 0) return null;
-            const active = libraryCategory === key;
-            return (
-              <button
-                type="button"
-                role="tab"
-                aria-selected={active}
-                key={key}
-                onClick={() => onCategoryChange(key)}
-                className={`flex shrink-0 items-center gap-1.5 rounded-t-lg px-2.5 py-2 font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#1E3A8A]/40 ${
-                  active
-                    ? "border-b-2 border-[#1E3A8A] bg-[#EFF6FF] text-[#1E3A8A]"
-                    : "text-[#64748B] hover:bg-[#F8FAFC] hover:text-[#0F172A]"
-                }`}
-              >
-                <Icon className="h-3.5 w-3.5 shrink-0" />
-                <span>
-                  {label} ({count})
+        {browseAllMode && (
+          <>
+            {/* Category Tabs */}
+            <div
+              role="tablist"
+              aria-label="Phân loại văn bản pháp luật"
+              className="flex shrink-0 gap-1 overflow-x-auto border-b border-[#CBD5E1] bg-white px-3 pt-2 text-[12px]"
+            >
+              {CATEGORY_TABS.map(({ key, label, Icon }) => {
+                const count = categoryCounts[key];
+                if (key === "other" && count === 0) return null;
+                const active = libraryCategory === key;
+                return (
+                  <button
+                    type="button"
+                    role="tab"
+                    aria-selected={active}
+                    key={key}
+                    onClick={() => onCategoryChange(key)}
+                    className={`flex shrink-0 items-center gap-1.5 rounded-t-lg px-2.5 py-2 font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#1E3A8A]/40 ${
+                      active
+                        ? "border-b-2 border-[#1E3A8A] bg-[#EFF6FF] text-[#1E3A8A]"
+                        : "text-[#64748B] hover:bg-[#F8FAFC] hover:text-[#0F172A]"
+                    }`}
+                  >
+                    <Icon className="h-3.5 w-3.5 shrink-0" />
+                    <span>
+                      {label} ({count})
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+
+            {/* Search */}
+            <div className="shrink-0 border-b border-[#CBD5E1] bg-[#F1F5F9] p-3">
+              <div className="relative flex items-center">
+                <Search className="pointer-events-none absolute left-3 h-3.5 w-3.5 text-[#94A3B8]" />
+                <input
+                  type="text"
+                  value={librarySearch}
+                  onChange={(e) => onSearchChange(e.target.value)}
+                  aria-label="Tìm kiếm trong kho văn bản"
+                  placeholder="Tìm kiếm điều, khoản, tên hoặc mã văn bản..."
+                  className="w-full rounded-xl border border-[#CBD5E1] bg-white py-1.5 pl-8 pr-8 text-[12.5px] focus-visible:border-[#1E3A8A] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#1E3A8A]/25"
+                />
+                {librarySearch && (
+                  <button
+                    type="button"
+                    onClick={() => onSearchChange("")}
+                    className="absolute right-1.5 flex h-6 w-6 items-center justify-center rounded-full text-[#64748B] hover:bg-[#E2E8F0] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#1E3A8A]/40"
+                    title="Xóa từ khóa tìm kiếm"
+                    aria-label="Xóa từ khóa tìm kiếm"
+                  >
+                    <X className="h-3.5 w-3.5" />
+                  </button>
+                )}
+              </div>
+              {liveSummaries && liveSummaries.some((s) => !liveDocDetails[s.id]) && librarySearch.trim() && (
+                <p className="mt-1.5 text-[11px] text-[#64748B]">
+                  Tìm kiếm quét tên/mã mọi văn bản và toàn văn các văn bản đã tải.
+                </p>
+              )}
+            </div>
+
+            {/* Document Pills Strip */}
+            <div className="scroll-quiet flex shrink-0 gap-1.5 overflow-x-auto border-b border-[#CBD5E1] bg-white p-2 text-[11.5px]">
+              {categorizedDocs.length === 0 ? (
+                <span className="px-2 py-1 text-[11.5px] italic text-[#64748B]">
+                  Không có văn bản khớp bộ lọc
                 </span>
-              </button>
-            );
-          })}
-        </div>
-
-        {/* Search */}
-        <div className="shrink-0 border-b border-[#CBD5E1] bg-[#F1F5F9] p-3">
-          <div className="relative flex items-center">
-            <Search className="pointer-events-none absolute left-3 h-3.5 w-3.5 text-[#94A3B8]" />
-            <input
-              type="text"
-              value={librarySearch}
-              onChange={(e) => onSearchChange(e.target.value)}
-              aria-label="Tìm kiếm trong kho văn bản"
-              placeholder="Tìm kiếm điều, khoản, tên hoặc mã văn bản..."
-              className="w-full rounded-xl border border-[#CBD5E1] bg-white py-1.5 pl-8 pr-8 text-[12.5px] focus-visible:border-[#1E3A8A] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#1E3A8A]/25"
-            />
-            {librarySearch && (
-              <button
-                type="button"
-                onClick={() => onSearchChange("")}
-                className="absolute right-1.5 flex h-6 w-6 items-center justify-center rounded-full text-[#64748B] hover:bg-[#E2E8F0] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#1E3A8A]/40"
-                title="Xóa từ khóa tìm kiếm"
-                aria-label="Xóa từ khóa tìm kiếm"
-              >
-                <X className="h-3.5 w-3.5" />
-              </button>
-            )}
-          </div>
-          {liveSummaries && liveSummaries.some((s) => !liveDocDetails[s.id]) && librarySearch.trim() && (
-            <p className="mt-1.5 text-[11px] text-[#64748B]">
-              Tìm kiếm quét tên/mã mọi văn bản và toàn văn các văn bản đã tải.
-            </p>
-          )}
-        </div>
-
-        {/* Document Pills Strip */}
-        <div className="scroll-quiet flex shrink-0 gap-1.5 overflow-x-auto border-b border-[#CBD5E1] bg-white p-2 text-[11.5px]">
-          {categorizedDocs.length === 0 ? (
-            <span className="px-2 py-1 text-[11.5px] italic text-[#64748B]">
-              Không có văn bản khớp bộ lọc
-            </span>
-          ) : (
-            categorizedDocs.map((d) => {
-              const isSelected = activeLibraryDoc === d.id;
-              const isCitedDoc = citedDocIds.has(d.id);
-              return (
-                <button
-                  type="button"
-                  key={d.id}
-                  onClick={() => onSelectDoc(d.id)}
-                  title={isCitedDoc ? "Văn bản có điều khoản đang được trích dẫn" : d.full}
-                  className={`flex shrink-0 items-center gap-1.5 rounded-full px-3 py-1.5 font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#1E3A8A]/40 ${
-                    isSelected
-                      ? "bg-[#1E3A8A] text-white shadow-xs"
-                      : isCitedDoc
-                        ? "border border-amber-300 bg-amber-50 text-amber-950 hover:bg-amber-100"
-                        : "bg-[#F1F5F9] text-[#475569] hover:bg-[#E2E8F0]"
-                  }`}
-                >
-                  {isCitedDoc && (
-                    <span
-                      className={`h-1.5 w-1.5 rounded-full ${isSelected ? "bg-amber-300" : "bg-amber-500"}`}
-                      aria-hidden="true"
-                    />
-                  )}
-                  <span>{d.tab}</span>
-                </button>
-              );
-            })
-          )}
-        </div>
+              ) : (
+                categorizedDocs.map((d) => {
+                  const isSelected = activeLibraryDoc === d.id;
+                  const isCitedDoc = citedDocIds.has(d.id);
+                  return (
+                    <button
+                      type="button"
+                      key={d.id}
+                      onClick={() => onSelectDoc(d.id)}
+                      title={isCitedDoc ? "Văn bản có điều khoản đang được trích dẫn" : d.full}
+                      className={`flex shrink-0 items-center gap-1.5 rounded-full px-3 py-1.5 font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#1E3A8A]/40 ${
+                        isSelected
+                          ? "bg-[#1E3A8A] text-white shadow-xs"
+                          : isCitedDoc
+                            ? "border border-amber-300 bg-amber-50 text-amber-950 hover:bg-amber-100"
+                            : "bg-[#F1F5F9] text-[#475569] hover:bg-[#E2E8F0]"
+                      }`}
+                    >
+                      {isCitedDoc && (
+                        <span
+                          className={`h-1.5 w-1.5 rounded-full ${isSelected ? "bg-amber-300" : "bg-amber-500"}`}
+                          aria-hidden="true"
+                        />
+                      )}
+                      <span>{d.tab}</span>
+                    </button>
+                  );
+                })
+              )}
+            </div>
+          </>
+        )}
 
         {/* Sticky Citation Navigator Bar when viewing a cited document */}
         {docMatches.length > 0 && (
@@ -523,6 +559,23 @@ export function LibraryDrawer({
                             );
                             const clauseKey = c.id || `${art.id}-c-${cIdx}-${c.n}`;
                             const clauseDisplay = c.label || String(c.n);
+                            const resolvedClauseMeta =
+                              (c.id ? resolvedProvisions?.[c.id] : undefined) ||
+                              clauseHits.map((h) => resolvedProvisions?.[h.id]).find(Boolean);
+                            const isClauseAmended = Boolean(
+                              resolvedClauseMeta &&
+                                resolvedClauseMeta.status === "AMENDED" &&
+                                resolvedClauseMeta.text
+                            );
+                            const showOriginalClause = Boolean(showOriginalMap[clauseKey]);
+                            const rawClauseBody =
+                              isClauseAmended && !showOriginalClause
+                                ? stripLeadingClauseNumber(resolvedClauseMeta!.text, clauseDisplay)
+                                : c.text;
+                            const clauseSegments =
+                              isClauseLevelHit && highlightContext
+                                ? highlightOperativeSpans(rawClauseBody, highlightContext)
+                                : [{ text: rawClauseBody, highlight: false }];
 
                             return (
                               <div
@@ -539,28 +592,107 @@ export function LibraryDrawer({
                                       : undefined
                                 }
                               >
-                                {isClauseLevelHit && (
-                                  <div className="font-sans-ui mb-1 inline-flex items-center gap-1 rounded-full bg-amber-200/90 px-2 py-0.5 text-[10px] font-bold text-amber-950">
-                                    Khoản được trích dẫn
+                                {(isClauseLevelHit || isClauseAmended) && (
+                                  <div className="font-sans-ui mb-1.5 flex flex-wrap items-center gap-1.5">
+                                    {isClauseLevelHit && (
+                                      <span className="inline-flex items-center gap-1 rounded-full bg-amber-200/90 px-2 py-0.5 text-[10px] font-bold text-amber-950">
+                                        Khoản được trích dẫn
+                                      </span>
+                                    )}
+                                    {isClauseAmended && (
+                                      <span className="inline-flex items-center rounded-full border border-indigo-200 bg-indigo-50 px-2 py-0.5 text-[10px] font-bold text-indigo-900">
+                                        {showOriginalClause
+                                          ? "Đang xem nguyên văn trước sửa đổi"
+                                          : "Nội dung đang có hiệu lực (đã sửa đổi)"}
+                                      </span>
+                                    )}
                                   </div>
                                 )}
                                 <div>
                                   <span className="font-semibold text-[#0F172A]">{clauseDisplay}. </span>
-                                  <span>{c.text}</span>
+                                  <span>
+                                    {clauseSegments.map((seg, segIdx) =>
+                                      seg.highlight ? (
+                                        <mark
+                                          key={segIdx}
+                                          className="rounded bg-amber-200/90 px-0.5 font-semibold text-[#0F172A]"
+                                        >
+                                          {seg.text}
+                                        </mark>
+                                      ) : (
+                                        <span key={segIdx}>{seg.text}</span>
+                                      )
+                                    )}
+                                  </span>
                                 </div>
+
+                                {isClauseAmended && resolvedClauseMeta && (
+                                  <div className="font-sans-ui mt-2 space-y-1 rounded-lg border border-indigo-200/80 bg-indigo-50/60 px-2.5 py-2 text-[11.5px] text-indigo-950">
+                                    {resolvedClauseMeta.amended_by.map((link, linkIdx) => {
+                                      const parsedLink = parseCitationId(link.source_unit);
+                                      const effDate = link.effective_on ? fmtDate(link.effective_on) : "";
+                                      return (
+                                        <button
+                                          type="button"
+                                          key={`${link.source_unit}-${linkIdx}`}
+                                          onClick={() => onJumpToProvision?.(link.source_unit)}
+                                          className="flex w-full items-center justify-between gap-1.5 text-left font-semibold text-indigo-800 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500/40"
+                                        >
+                                          <span>
+                                            Đã sửa đổi bởi {parsedLink.label}
+                                            {effDate ? ` (từ ${effDate})` : ""}
+                                          </span>
+                                          <ExternalLink className="h-3.5 w-3.5 shrink-0" />
+                                        </button>
+                                      );
+                                    })}
+                                    <button
+                                      type="button"
+                                      onClick={() =>
+                                        setShowOriginalMap((prev) => ({
+                                          ...prev,
+                                          [clauseKey]: !prev[clauseKey],
+                                        }))
+                                      }
+                                      className="text-[11px] font-medium text-[#475569] underline-offset-2 hover:text-[#1E3A8A] hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#1E3A8A]/40"
+                                    >
+                                      {showOriginalClause
+                                        ? "Xem nội dung đang có hiệu lực"
+                                        : "Xem nguyên văn trước sửa đổi"}
+                                    </button>
+                                  </div>
+                                )}
 
                                 {c.points && c.points.length > 0 && (
                                   <div className="mt-1.5 space-y-1.5 pl-4 text-[13.5px] text-[#475569]">
                                     {c.points.map((pt, pIdx) => {
-                                      const isPointHit = articleCitations.some((cit) =>
+                                      const pointHits = articleCitations.filter((cit) =>
                                         doesPointMatchCitation(pt, c, art, cit)
                                       );
+                                      const isPointHit = pointHits.length > 0;
                                       const isFocusedPoint = Boolean(
                                         focusedCitation &&
                                           focusedTarget?.level === "point" &&
                                           doesPointMatchCitation(pt, c, art, focusedCitation)
                                       );
                                       const pointKey = pt.id || `${clauseKey}-p-${pIdx}-${pt.l}`;
+                                      const resolvedPointMeta =
+                                        (pt.id ? resolvedProvisions?.[pt.id] : undefined) ||
+                                        pointHits.map((h) => resolvedProvisions?.[h.id]).find(Boolean);
+                                      const isPointAmended = Boolean(
+                                        resolvedPointMeta &&
+                                          resolvedPointMeta.status === "AMENDED" &&
+                                          resolvedPointMeta.text
+                                      );
+                                      const showOriginalPoint = Boolean(showOriginalMap[pointKey]);
+                                      const rawPointBody =
+                                        isPointAmended && !showOriginalPoint
+                                          ? stripLeadingClauseNumber(resolvedPointMeta!.text, pt.l)
+                                          : pt.text;
+                                      const pointSegments =
+                                        isPointHit && highlightContext
+                                          ? highlightOperativeSpans(rawPointBody, highlightContext)
+                                          : [{ text: rawPointBody, highlight: false }];
 
                                       return (
                                         <div
@@ -580,8 +712,62 @@ export function LibraryDrawer({
                                               Điểm được trích dẫn
                                             </span>
                                           )}
+                                          {isPointAmended && (
+                                            <span className="font-sans-ui mr-1.5 inline-flex items-center rounded-full border border-indigo-200 bg-indigo-50 px-2 py-0.5 text-[10px] font-bold text-indigo-900">
+                                              {showOriginalPoint ? "Nguyên văn cũ" : "Đã sửa đổi"}
+                                            </span>
+                                          )}
                                           <span className="font-semibold text-[#1E3A8A]">{pt.l}) </span>
-                                          <span>{pt.text}</span>
+                                          <span>
+                                            {pointSegments.map((seg, segIdx) =>
+                                              seg.highlight ? (
+                                                <mark
+                                                  key={segIdx}
+                                                  className="rounded bg-amber-200/90 px-0.5 font-semibold text-[#0F172A]"
+                                                >
+                                                  {seg.text}
+                                                </mark>
+                                              ) : (
+                                                <span key={segIdx}>{seg.text}</span>
+                                              )
+                                            )}
+                                          </span>
+                                          {isPointAmended && resolvedPointMeta && (
+                                            <div className="font-sans-ui mt-1.5 space-y-1 rounded-lg border border-indigo-200/80 bg-indigo-50/60 px-2 py-1.5 text-[11px] text-indigo-950">
+                                              {resolvedPointMeta.amended_by.map((link, linkIdx) => {
+                                                const parsedLink = parseCitationId(link.source_unit);
+                                                const effDate = link.effective_on ? fmtDate(link.effective_on) : "";
+                                                return (
+                                                  <button
+                                                    type="button"
+                                                    key={`${link.source_unit}-${linkIdx}`}
+                                                    onClick={() => onJumpToProvision?.(link.source_unit)}
+                                                    className="flex w-full items-center justify-between gap-1 text-left font-semibold text-indigo-800 hover:underline"
+                                                  >
+                                                    <span>
+                                                      Đã sửa đổi bởi {parsedLink.label}
+                                                      {effDate ? ` (từ ${effDate})` : ""}
+                                                    </span>
+                                                    <ExternalLink className="h-3 w-3 shrink-0" />
+                                                  </button>
+                                                );
+                                              })}
+                                              <button
+                                                type="button"
+                                                onClick={() =>
+                                                  setShowOriginalMap((prev) => ({
+                                                    ...prev,
+                                                    [pointKey]: !prev[pointKey],
+                                                  }))
+                                                }
+                                                className="text-[10.5px] font-medium text-[#475569] underline-offset-2 hover:text-[#1E3A8A] hover:underline"
+                                              >
+                                                {showOriginalPoint
+                                                  ? "Xem nội dung đang có hiệu lực"
+                                                  : "Xem nguyên văn trước sửa đổi"}
+                                              </button>
+                                            </div>
+                                          )}
                                         </div>
                                       );
                                     })}

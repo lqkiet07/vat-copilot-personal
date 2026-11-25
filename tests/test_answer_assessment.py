@@ -656,3 +656,22 @@ def test_assessment_schema_omits_bounded_constraints_while_parser_enforces_them(
     many_ids = [f"ID_{i}" for i in range(33)]
     with pytest.raises(ValueError):
         parse_assessment(_payload(ids=many_ids), set(many_ids))
+
+
+def test_assessment_and_irac_prompts_align_accented_missing_facts(reviewed):
+    from types import SimpleNamespace
+    from src.engine.answer_assessment import build_assessment_prompt
+    from src.engine.models import ArticleNode
+    from src.engine.prompt import build_irac_prompt
+    from src.engine.provision_evidence import resolve_provision_evidence
+
+    resolution = resolve_provision_evidence([SAFE], DAY, corpus_path=reviewed.corpus_path,
+                                            reviewed_amendment_path=reviewed.reviewed_amendment_path)
+    article = ArticleNode(id=SAFE, doc_id="LUAT_1_2024", code="Khoản 2", title="Chứng từ",
+                          content=TEXT, valid_from="2024-02-01", valid_to="9999-12-31")
+    assess_prompt = build_assessment_prompt("Hồ sơ thuế GTGT?", DAY, [], [article], resolution, "draft")
+    irac_prompt = build_irac_prompt("Hồ sơ thuế GTGT?", DAY, [article], [], resolved_evidence=resolution,
+                                    corpus_path=reviewed.corpus_path)
+    assert "tiếng Việt có dấu đầy đủ" in assess_prompt
+    assert "kết thúc phần Conclusion" in irac_prompt
+

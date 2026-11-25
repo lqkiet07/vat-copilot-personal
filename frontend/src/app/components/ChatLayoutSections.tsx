@@ -66,8 +66,8 @@ export function PortalHeader({
 
         <span className="font-mono-num hidden shrink-0 rounded-full border border-[#BFDBFE] bg-[#EFF6FF] px-2.5 py-0.5 text-[10.5px] font-semibold text-[#1E3A8A] md:inline-flex">
           {isStaging
-            ? `Staging (${docCount} VB · ${fmtDate(freezeDate)})`
-            : `Cơ sở tri thức: Đóng băng ${fmtDate(freezeDate)}`}
+            ? `Kho pháp luật (${docCount} văn bản · ${fmtDate(freezeDate)})`
+            : `Kho pháp luật · Cập nhật ${fmtDate(freezeDate)}`}
         </span>
       </div>
 
@@ -145,11 +145,11 @@ export function WelcomeScreen({
       </div>
 
       <h1 className="text-[26px] font-medium tracking-tight text-[#0F172A] sm:text-[34px]">
-        Hệ thống Tra cứu &amp; Thẩm định Thuế GTGT
+        Tra cứu Pháp luật Thuế GTGT
       </h1>
       <p className="mt-2.5 max-w-lg text-[14px] leading-relaxed text-[#475569]">
-        Nhập tình huống phát sinh để hệ thống đối chiếu qua đồ thị tri thức thời gian và thẩm định
-        hiệu lực các quy định thuế GTGT.
+        Đặt câu hỏi về thuế suất, điều kiện khấu trừ hoặc hóa đơn để tra cứu đúng quy định đang có
+        hiệu lực tại thời điểm bạn quan tâm.
       </p>
 
       <div className="mt-7 w-full max-w-[720px] text-left">
@@ -189,18 +189,16 @@ export function WelcomeScreen({
 }
 
 /** User prompt chat bubble with event evaluation date and selected pipeline. */
-export function UserPromptBubble({ q, date, pipeline }: { q: string; date: string; pipeline: Pipeline }) {
+export function UserPromptBubble({ q, date }: { q: string; date: string; pipeline?: Pipeline }) {
   return (
     <div className="flex justify-end">
       <div className="max-w-[88%] rounded-3xl rounded-br-md border border-[#CBD5E1] bg-[#F1F5F9] px-4 py-3 text-[#0F172A] shadow-2xs sm:max-w-[85%] sm:px-5 sm:py-3.5">
         <p className="text-[14.5px] leading-relaxed">{q}</p>
-        <div className="mt-2 flex flex-wrap items-center justify-end gap-2 text-[11px] text-[#64748B]">
+        <div className="mt-2 flex flex-wrap items-center justify-end gap-1.5 text-[11px] text-[#64748B]">
           <CalendarDays className="h-3 w-3 text-[#1E3A8A]" />
           <span>
-            Mốc sự kiện: <strong className="font-mono-num">{fmtDate(date)}</strong>
+            Mốc tra cứu: <strong className="font-mono-num">{fmtDate(date)}</strong>
           </span>
-          <span>•</span>
-          <span className="font-mono-num font-semibold text-[#1E3A8A]">{pipeline}</span>
         </div>
       </div>
     </div>
@@ -231,7 +229,7 @@ export function ReasoningProgressCard({
         <div className="flex items-center gap-2">
           <Loader2 className="h-4 w-4 animate-spin will-change-transform text-[#1E3A8A]" />
           <span>
-            Đang thẩm định Temporal GraphRAG
+            Đang tra cứu quy định phù hợp
             {elapsedSec > 0 ? (
               <span className="font-mono-num tabular-nums">{` (${elapsedSec}s)`}</span>
             ) : (

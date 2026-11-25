@@ -375,12 +375,212 @@ export function formatTechnicalDiagnosticText(raw: string): string {
   return formatted;
 }
 
-/** Extract user-facing notice when the active LLM provider returned no output or hit quota limits. */
+/** Extract user-facing notice when the active AI provider returned no output or hit quota limits. */
 export function extractProviderNotice(audit?: readonly { text: string }[]): string | null {
   if (!audit || audit.length === 0) return null;
   const hit = audit.some((item) => item.text.includes("LLM_PROVIDER_UNAVAILABLE"));
   if (!hit) return null;
-  return "Mô hình AI tạm thời không phản hồi hoặc hết hạn mức. Bên dưới là trích đoạn chứng cứ pháp lý gốc đã xác minh từ đồ thị Neo4j.";
+  return "Mô hình AI tạm thời không phản hồi hoặc hết hạn mức. Bên dưới là trích đoạn các điều khoản gốc đã được đối chiếu hiệu lực.";
+}
+
+/** Strip a duplicate leading clause/point marker (e.g. "1. " or "a) ") when rendered outside the body span. */
+export function stripLeadingClauseNumber(text: string, label: string): string {
+  if (!text) return "";
+  const trimmed = text.trimStart();
+  const cleanLabel = (label || "").trim().replace(/[.)]+$/, "");
+  if (!cleanLabel) return trimmed;
+  const escaped = cleanLabel.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  const prefixRe = new RegExp(`^${escaped}[.)]\\s+`, "i");
+  return trimmed.replace(prefixRe, "");
+}
+
+export type HighlightSegment = {
+  text: string;
+  highlight: boolean;
+};
+
+const OPERATIVE_STOPWORDS = new Set([
+  "của", "và", "các", "cho", "theo", "quy", "định", "tại", "với", "về",
+  "là", "có", "phải", "hoặc", "trong", "khi", "nếu", "thì", "từ", "trên",
+  "dưới", "này", "đó", "một", "những", "được", "bằng", "như", "sau", "trước",
+  "đối", "vào", "ra", "nên", "mà", "đã", "đang", "sẽ", "để", "gồm", "bao",
+  "trường", "hợp", "hoạt", "động", "mức", "số", "việc", "nội", "dung",
+  "khoản", "điều", "điểm", "thuộc",
+]);
+
+const DANGLE_START_TOKENS = new Set(["tượng", "trị", "gia", "tăng", "cá", "nhân", "hội"]);
+const DANGLE_END_TOKENS = new Set(["kinh", "giá", "trị", "trực", "cá", "khoản", "điều", "chịu"]);
+
+const GENERIC_LEGAL_PHRASES = new Set([
+  "thuế giá trị gia tăng",
+  "giá trị gia tăng",
+  "thuế gtgt",
+  "cơ quan thuế",
+  "quy định pháp luật",
+]);
+
+// Whole grammatical VAT legal phrases highlighted cleanly when query/conclusion touches that domain.
+const CANONICAL_VAT_PHRASES = [
+  "không chịu thuế giá trị gia tăng",
+  "chịu thuế giá trị gia tăng",
+  "phương pháp tính trực tiếp theo doanh thu",
+  "phương pháp khấu trừ thuế",
+  "hộ kinh doanh, cá nhân kinh doanh",
+  "mức thuế suất cao nhất",
+  "thuế suất 0%",
+  "thuế suất 5%",
+  "thuế suất 8%",
+  "thuế suất 10%",
+  "chứng từ thanh toán không dùng tiền mặt",
+  "không dùng tiền mặt",
+  "hóa đơn điện tử",
+  "tiêu dùng ở ngoài việt nam",
+];
+
+const NUMERIC_THRESHOLD_RE =
+  /(?:\b\d+(?:[.,]\d+)?\s*(?:%|tỷ\s+đồng|triệu\s+đồng|nghìn\s+đồng)\b|\btỷ\s+lệ\s*%)/gi;
+
+function normalizeNumericToken(raw: string): string {
+  return raw
+    .toLowerCase()
+    .replace(/\s+/g, " ")
+    .replace(/\b0+(\d)/g, "$1")
+    .trim();
+}
+
+/** Highlight high-signal monetary thresholds, VAT legal statuses, and whole shared key phrases inside a cited clause/point. */
+export function highlightOperativeSpans(clauseText: string, contextText: string): HighlightSegment[] {
+  if (!clauseText) return [];
+  const trimmedCtx = (contextText || "").trim();
+  if (!trimmedCtx) return [{ text: clauseText, highlight: false }];
+
+  const ctxTokens: Array<{ norm: string }> = [];
+  for (const m of trimmedCtx.matchAll(/[\p{L}\p{N}%/-]+/gu)) {
+    ctxTokens.push({ norm: normalizeNumericToken(m[0]) });
+  }
+  const hasContentTokenInCtx = ctxTokens.some(
+    (t) => t.norm.length >= 2 && !OPERATIVE_STOPWORDS.has(t.norm)
+  );
+  if (!hasContentTokenInCtx) {
+    return [{ text: clauseText, highlight: false }];
+  }
+
+  const normalizedCtx = normalizeNumericToken(trimmedCtx);
+  const ctxNgrams = new Set<string>();
+  for (let n = 2; n <= 8; n++) {
+    for (let i = 0; i <= ctxTokens.length - n; i++) {
+      ctxNgrams.add(ctxTokens.slice(i, i + n).map((t) => t.norm).join(" "));
+    }
+  }
+
+  type CandidateSpan = { start: number; end: number; priority: number };
+  const candidates: CandidateSpan[] = [];
+  const lowerClause = clauseText.toLowerCase();
+
+  // 1. Numeric monetary thresholds & tax rates (always highlight inside cited clause when context discusses tax/amounts).
+  const ctxMentionsNumbersOrTax = /\d|thuế|doanh thu|tỷ|triệu|hộ kinh doanh/.test(normalizedCtx);
+  NUMERIC_THRESHOLD_RE.lastIndex = 0;
+  let numMatch: RegExpExecArray | null;
+  while ((numMatch = NUMERIC_THRESHOLD_RE.exec(clauseText)) !== null) {
+    const start = numMatch.index;
+    const end = start + numMatch[0].length;
+    const normFigure = normalizeNumericToken(numMatch[0]);
+    if (ctxMentionsNumbersOrTax || normalizedCtx.includes(normFigure) || ctxNgrams.has(normFigure)) {
+      candidates.push({ start, end, priority: 150 + (end - start) });
+    }
+  }
+
+  // 2. Whole canonical VAT legal phrases when context discusses VAT/tax/invoices/households.
+  if (/thuế|gtgt|hộ|doanh thu|xuất khẩu|hóa đơn|khấu trừ|tiền/.test(normalizedCtx)) {
+    for (const phrase of CANONICAL_VAT_PHRASES) {
+      let searchFrom = 0;
+      while (searchFrom < lowerClause.length) {
+        const idx = lowerClause.indexOf(phrase, searchFrom);
+        if (idx === -1) break;
+        candidates.push({ start: idx, end: idx + phrase.length, priority: 110 + phrase.length });
+        searchFrom = idx + phrase.length;
+      }
+    }
+  }
+
+  // 3. Whole n-gram overlap (without chopping compound words at dangling boundaries).
+  const clauseTokens: Array<{ norm: string; start: number; end: number }> = [];
+  for (const m of clauseText.matchAll(/[\p{L}\p{N}%/-]+/gu)) {
+    if (m.index === undefined) continue;
+    clauseTokens.push({
+      norm: normalizeNumericToken(m[0]),
+      start: m.index,
+      end: m.index + m[0].length,
+    });
+  }
+
+  for (let n = 8; n >= 2; n--) {
+    for (let i = 0; i <= clauseTokens.length - n; i++) {
+      const slice = clauseTokens.slice(i, i + n);
+      const first = slice[0].norm;
+      const last = slice[slice.length - 1].norm;
+      if (DANGLE_START_TOKENS.has(first) || DANGLE_END_TOKENS.has(last)) continue;
+      if (OPERATIVE_STOPWORDS.has(first) || OPERATIVE_STOPWORDS.has(last)) continue;
+
+      const phrase = slice.map((t) => t.norm).join(" ");
+      if (!ctxNgrams.has(phrase) || GENERIC_LEGAL_PHRASES.has(phrase)) continue;
+
+      const contentCount = slice.filter((t) => !OPERATIVE_STOPWORDS.has(t.norm) && t.norm.length > 1).length;
+      if (contentCount < 2) continue;
+
+      const start = slice[0].start;
+      const end = slice[slice.length - 1].end;
+      candidates.push({ start, end, priority: 20 + n * 5 + contentCount });
+    }
+  }
+
+  if (candidates.length === 0) {
+    return [{ text: clauseText, highlight: false }];
+  }
+
+  // Pick highest-priority non-overlapping spans up to a readable cap so the whole clause is not painted.
+  candidates.sort((a, b) => b.priority - a.priority || a.start - b.start);
+  const chosen: Array<{ start: number; end: number }> = [];
+  const maxHighlightChars = Math.max(85, Math.floor(clauseText.length * 0.48));
+  let totalHighlighted = 0;
+
+  for (const cand of candidates) {
+    if (chosen.some((c) => !(cand.end <= c.start || cand.start >= c.end))) continue;
+    const spanLen = cand.end - cand.start;
+    if (totalHighlighted > 0 && totalHighlighted + spanLen > maxHighlightChars) continue;
+    chosen.push({ start: cand.start, end: cand.end });
+    totalHighlighted += spanLen;
+  }
+
+  if (chosen.length === 0) {
+    return [{ text: clauseText, highlight: false }];
+  }
+
+  chosen.sort((a, b) => a.start - b.start);
+  const merged: Array<{ start: number; end: number }> = [chosen[0]];
+  for (let i = 1; i < chosen.length; i++) {
+    const prev = merged[merged.length - 1];
+    const curr = chosen[i];
+    if (curr.start - prev.end <= 1 && /^\s*$/.test(clauseText.slice(prev.end, curr.start))) {
+      prev.end = curr.end;
+    } else {
+      merged.push(curr);
+    }
+  }
+
+  const segments: HighlightSegment[] = [];
+  let cursor = 0;
+  for (const span of merged) {
+    if (span.start > cursor) {
+      segments.push({ text: clauseText.slice(cursor, span.start), highlight: false });
+    }
+    segments.push({ text: clauseText.slice(span.start, span.end), highlight: true });
+    cursor = span.end;
+  }
+  if (cursor < clauseText.length) {
+    segments.push({ text: clauseText.slice(cursor), highlight: false });
+  }
+  return segments;
 }
 
 export const store = {

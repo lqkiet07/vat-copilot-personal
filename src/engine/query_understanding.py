@@ -143,8 +143,10 @@ def _build_understanding_prompt(question: str, history_pairs: list[tuple[str, st
         "gộp đầy đủ ngữ cảnh hội thoại trước (nếu có) để tìm kiếm văn bản luật Thuế GTGT.\n"
         "3. TUYỆT ĐỐI KHÔNG tự bịa thêm con số, mức doanh thu, thuế suất %, hay số hiệu Luật/Nghị định/Điều/Khoản "
         "không có trong câu hỏi hoặc lịch sử.\n"
-        "4. missing_facts: liệt kê ngắn gọn dữ kiện thực tế người dùng còn thiếu để xác định nghĩa vụ thuế "
-        "(ví dụ: hình thức kinh doanh, doanh thu năm), để rỗng [] nếu đã đủ hoặc câu chào/ngoài phạm vi.\n\n"
+        "4. missing_facts: liệt kê tối đa 3 dữ kiện thực tế người dùng còn thiếu để xác định nghĩa vụ thuế, "
+        "BẮT BUỘC viết bằng tiếng Việt có dấu đầy đủ, ngắn gọn, tự nhiên "
+        "(ví dụ: 'Loại hình kinh doanh (hộ cá thể hay doanh nghiệp)', 'Doanh thu hằng năm'); "
+        "để rỗng [] nếu đã đủ hoặc câu chào/ngoài phạm vi.\n\n"
         f"{history_block}"
         f"Câu hỏi hiện tại: {question}"
     )

@@ -63,6 +63,10 @@ class QueryResponse(BaseModel):
     missing_facts: list[str] = Field(default_factory=list, description="Clarifying user facts requested for conditional answers")
     rewritten_query: str | None = Field(default=None, description="Normalized legal query produced by query understanding")
     amended_citation_ids: list[str] = Field(default_factory=list, description="Cited provision IDs updated by operative amendments")
+    resolved_provisions: dict[str, dict] = Field(
+        default_factory=dict,
+        description="Operative provision text and amendment provenance keyed by provision ID",
+    )
 
 
 class DocumentSummary(BaseModel):

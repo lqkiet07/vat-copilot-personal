@@ -1,10 +1,10 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { AlertTriangle, BookOpen, Copy, ExternalLink, GitBranch } from "lucide-react";
 import drum from "@/imports/img_6-hinh-nen-powerpoint-trong-dong.jpg";
-import { type Citation, DOCS, type LawDoc } from "./data";
+import { type Citation, DOCS, type LawDoc, type ResolvedProvisionMeta } from "./data";
 import { apiDocToLawDoc, citationBodyMessage, DOCUMENT_LABELS, findCitationBody, parseCitationId } from "./api";
 import { DATA_FREEZE_DATE, STAGING_DATA_FREEZE_DATE } from "./config";
-import { AnswerAuditSection, AnswerConclusionBox, AnswerHeader } from "./components/AnswerSections";
+import { AnswerAnalysisAccordion, AnswerAuditSection, AnswerConclusionBox, AnswerHeader } from "./components/AnswerSections";
 import {
   FreezeWarningBanner,
   PortalHeader,
@@ -14,7 +14,6 @@ import {
 } from "./components/ChatLayoutSections";
 import { Composer } from "./components/Composer";
 import { LibraryDrawer } from "./components/LibraryDrawer";
-import { MarkdownContent } from "./components/MarkdownContent";
 import { RelatedArticlePreview } from "./components/RelatedArticlePreview";
 import { RelatedDrawerFrame } from "./components/RelatedDrawerFrame";
 import { type Pipeline, SettingsDialog, type SystemSettings } from "./components/SettingsDialog";
@@ -28,6 +27,7 @@ import {
   getDocCategory,
   parseCitationTarget,
   resolveLibraryDocId,
+  splitTechnicalDiagnosticLines,
   store,
 } from "./utils/citationMatch";
 
@@ -72,9 +72,12 @@ export function App() {
   const [activeLibraryDoc, setActiveLibraryDoc] = useState("l48");
   const [librarySearch, setLibrarySearch] = useState("");
   const [focusedCitation, setFocusedCitation] = useState<Citation | null>(null);
+  const [drawerOpenedFromCitation, setDrawerOpenedFromCitation] = useState(false);
   const [citationContext, setCitationContext] = useState<{
     msgId: number;
     citations: Citation[];
+    resolvedProvisions?: Record<string, ResolvedProvisionMeta>;
+    highlightContext?: string;
   } | null>(null);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [pipelineMenuOpen, setPipelineMenuOpen] = useState(false);
@@ -99,6 +102,7 @@ export function App() {
   const resetCitationFocus = useCallback(() => {
     setCitationContext(null);
     setFocusedCitation(null);
+    setDrawerOpenedFromCitation(false);
   }, []);
 
   const {
@@ -180,14 +184,23 @@ export function App() {
     return () => window.removeEventListener("keydown", onKeyDown);
   }, [rightPanel, isDesktop, sidebarOpen, settingsOpen]);
 
-  const latestResult = useMemo(() => {
+  const latestMsg = useMemo(() => {
     for (let i = messages.length - 1; i >= 0; i--) {
-      if (messages[i].result) return messages[i].result;
+      if (messages[i].result) return messages[i];
     }
     return null;
   }, [messages]);
 
+  const latestResult = latestMsg?.result || null;
   const latestCitations: Citation[] = useMemo(() => latestResult?.citations || [], [latestResult]);
+
+  const activeMsg = useMemo(() => {
+    if (citationContext) {
+      const found = messages.find((m) => m.id === citationContext.msgId);
+      if (found) return found;
+    }
+    return latestMsg;
+  }, [citationContext, messages, latestMsg]);
 
   const activeCitations: Citation[] = useMemo(() => {
     if (citationContext && messages.some((m) => m.id === citationContext.msgId)) {
@@ -195,6 +208,16 @@ export function App() {
     }
     return latestCitations;
   }, [citationContext, messages, latestCitations]);
+
+  const activeResolvedProvisions =
+    citationContext?.resolvedProvisions ?? activeMsg?.result?.resolvedProvisions;
+
+  const activeHighlightContext = useMemo(() => {
+    if (citationContext?.highlightContext) return citationContext.highlightContext;
+    if (!activeMsg?.result) return "";
+    const conclusionPrimary = splitTechnicalDiagnosticLines(activeMsg.result.conclusion).primaryText;
+    return [activeMsg.q, conclusionPrimary].filter(Boolean).join("\n");
+  }, [citationContext, activeMsg]);
 
   useEffect(() => {
     if (rightPanel !== "related" || activeCitations.length === 0) return;
@@ -215,9 +238,10 @@ export function App() {
   );
 
   const openLibraryPanel = useCallback(
-    (docId?: string, targetCitation?: Citation | null) => {
+    (docId?: string, targetCitation?: Citation | null, fromCitation = false) => {
       if (docId) setActiveLibraryDoc(docId);
       if (targetCitation !== undefined) setFocusedCitation(targetCitation);
+      setDrawerOpenedFromCitation(fromCitation);
       if (docId) ensureDocuments([docId]);
       if (isDesktop && !getIsWideViewport()) setSidebarOpen(false);
       setRightPanel("library");
@@ -227,28 +251,80 @@ export function App() {
 
   const openRelatedPanel = useCallback(
     (msgId?: number, citations?: Citation[], focus?: Citation | null) => {
-      if (msgId !== undefined && citations) setCitationContext({ msgId, citations });
+      if (msgId !== undefined && citations) {
+        const msg = messages.find((m) => m.id === msgId);
+        const conclusionPrimary = msg?.result
+          ? splitTechnicalDiagnosticLines(msg.result.conclusion).primaryText
+          : "";
+        const highlightContext = msg?.result
+          ? [msg.q, conclusionPrimary].filter(Boolean).join("\n")
+          : "";
+        setCitationContext({
+          msgId,
+          citations,
+          resolvedProvisions: msg?.result?.resolvedProvisions,
+          highlightContext,
+        });
+      }
       if (focus !== undefined) setFocusedCitation(focus);
       if (isDesktop && !getIsWideViewport()) setSidebarOpen(false);
       setRightPanel("related");
     },
-    [isDesktop]
+    [isDesktop, messages]
   );
 
   const handleCitationBadgeClick = useCallback(
     (msgId: number, msgCitations: Citation[], clicked: Citation) => {
-      setCitationContext({ msgId, citations: msgCitations });
+      const msg = messages.find((m) => m.id === msgId);
+      const conclusionPrimary = msg?.result
+        ? splitTechnicalDiagnosticLines(msg.result.conclusion).primaryText
+        : "";
+      const highlightContext = msg?.result
+        ? [msg.q, conclusionPrimary].filter(Boolean).join("\n")
+        : "";
+      setCitationContext({
+        msgId,
+        citations: msgCitations,
+        resolvedProvisions: msg?.result?.resolvedProvisions,
+        highlightContext,
+      });
       setFocusedCitation(clicked);
       const targetDocId = resolveLibraryDocId(clicked, libraryDocs);
       if (targetDocId && libraryDocs.some((d) => d.id === targetDocId)) {
         setLibraryCategory("all");
         setLibrarySearch("");
-        openLibraryPanel(targetDocId, clicked);
+        openLibraryPanel(targetDocId, clicked, true);
       } else {
         openRelatedPanel(msgId, msgCitations, clicked);
       }
     },
-    [libraryDocs, openLibraryPanel, openRelatedPanel]
+    [libraryDocs, messages, openLibraryPanel, openRelatedPanel]
+  );
+
+  const handleJumpToProvision = useCallback(
+    (unitId: string) => {
+      const targetCitation = parseCitationId(unitId);
+      const targetDocId = resolveLibraryDocId(targetCitation, libraryDocs);
+      setCitationContext((prev) => {
+        const base = prev?.citations || activeCitations;
+        const already = base.some((c) => c.id === targetCitation.id);
+        const nextCitations = already ? base : [...base, targetCitation];
+        return prev
+          ? { ...prev, citations: nextCitations }
+          : {
+              msgId: activeMsg?.id ?? 0,
+              citations: nextCitations,
+              resolvedProvisions: activeResolvedProvisions,
+              highlightContext: activeHighlightContext,
+            };
+      });
+      setLibraryCategory("all");
+      setLibrarySearch("");
+      if (targetDocId && libraryDocs.some((d) => d.id === targetDocId)) {
+        openLibraryPanel(targetDocId, targetCitation, true);
+      }
+    },
+    [libraryDocs, activeCitations, activeMsg, activeResolvedProvisions, activeHighlightContext, openLibraryPanel]
   );
 
   const handleCategoryChange = useCallback(
@@ -414,10 +490,14 @@ export function App() {
         librarySearch={librarySearch}
         highlightedCitations={activeCitations}
         focusedCitation={focusedCitation}
+        resolvedProvisions={activeResolvedProvisions}
+        highlightContext={activeHighlightContext}
+        openedFromCitation={drawerOpenedFromCitation}
         onCategoryChange={handleCategoryChange}
         onSelectDoc={setActiveLibraryDoc}
         onSearchChange={setLibrarySearch}
         onFocusCitation={setFocusedCitation}
+        onJumpToProvision={handleJumpToProvision}
         onRetryDoc={retryDocument}
         onOpenRelated={() => setRightPanel("related")}
         onClose={() => setRightPanel("none")}
@@ -458,7 +538,7 @@ export function App() {
                       onClick={() => {
                         setLibraryCategory("all");
                         setLibrarySearch("");
-                        openLibraryPanel(resolvedLibDocId || undefined, c);
+                        openLibraryPanel(resolvedLibDocId || undefined, c, true);
                       }}
                       className="flex shrink-0 items-center gap-1 rounded-md px-1.5 py-0.5 text-[11px] font-semibold text-[#2563EB] hover:bg-[#EFF6FF] hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#1E3A8A]/40"
                     >
@@ -571,24 +651,12 @@ function Answer({ msg, onClickCitation, onOpenRelated, onRetry, onEditQuery, onS
         </div>
       )}
 
-      {r.application && r.application.length > 0 && (
-        <div className="mt-3.5 space-y-1.5">
-          <div className="text-[11.5px] font-bold uppercase tracking-wider text-[#64748B]">
-            Các bước đối chiếu mốc thời gian:
-          </div>
-          <ul className="space-y-1.5 text-[13px] text-[#334155]">
-            {r.application.map((app, i) => (
-              <li key={i} className="flex items-start gap-2">
-                <span className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-[#1E3A8A]" />
-                <MarkdownContent
-                  text={app.replace(/^[•\-\*]\s*/, "")}
-                  onCitationClick={onClickCitation}
-                  className="min-w-0 flex-1"
-                />
-              </li>
-            ))}
-          </ul>
-        </div>
+      {!r.is_out_of_domain && !r.is_greeting && (
+        <AnswerAnalysisAccordion
+          rule={r.rule}
+          application={r.application}
+          onCitationClick={onClickCitation}
+        />
       )}
 
       <AnswerAuditSection audit={r.audit} />

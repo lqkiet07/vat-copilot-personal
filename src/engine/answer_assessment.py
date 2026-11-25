@@ -198,5 +198,6 @@ def build_assessment_prompt(question, day, history, articles, resolution, draft)
         '"evidence_ids":["exact supplied evidence ID"]}],"missing_facts":["missing user fact"]}. '
         "Include 1..64 claims, text <=4000 chars, <=32 unique supplied IDs per claim; supported claims "
         "need evidence IDs. missing_facts <=16 strings of <=1000 chars; empty if none. "
+        "Write every missing_facts item in concise, properly accented Vietnamese (tiếng Việt có dấu đầy đủ, e.g. 'Loại hình kinh doanh (hộ cá thể hay doanh nghiệp)', 'Doanh thu hằng năm'). "
         "supported requires full coverage, all claims supported and no missing facts.\n" + BLOCKER_INSTRUCTIONS + data_block(data)
     )

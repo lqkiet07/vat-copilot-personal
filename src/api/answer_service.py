@@ -44,6 +44,7 @@ class AnswerResult:
     missing_facts: list[str] = field(default_factory=list)
     rewritten_query: str | None = None
     amended_citation_ids: list[str] = field(default_factory=list)
+    resolved_provisions: dict[str, dict] = field(default_factory=dict)
 
     def to_dict(self) -> dict:
         return {
@@ -64,6 +65,7 @@ class AnswerResult:
             "missing_facts": self.missing_facts,
             "rewritten_query": self.rewritten_query,
             "amended_citation_ids": self.amended_citation_ids,
+            "resolved_provisions": self.resolved_provisions,
         }
 
 
@@ -527,9 +529,9 @@ def answer_query(
         if understanding.source == "llm":
             _emit_progress(progress_cb, 0, "understand", f"Đã chuẩn hóa câu hỏi: «{effective_query}»")
         else:
-            _emit_progress(progress_cb, 0, "understand", "Đã xác định câu hỏi pháp lý và mốc thời gian thẩm định.")
+            _emit_progress(progress_cb, 0, "understand", "Đã xác định nội dung câu hỏi và mốc thời gian tra cứu.")
     else:
-        _emit_progress(progress_cb, 0, "understand", "Đã xác định câu hỏi pháp lý và mốc thời gian thẩm định.")
+        _emit_progress(progress_cb, 0, "understand", "Đã xác định nội dung câu hỏi và mốc thời gian tra cứu.")
 
     if reviewed_amendment_path is not None and pipeline not in {"P1_FlatRAG", "P2", "P2_TemporalGraphRAG"}:
         from src.api.reviewed_answer import reviewed_answer

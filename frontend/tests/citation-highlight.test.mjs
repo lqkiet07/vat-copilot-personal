@@ -32,6 +32,8 @@ const {
   formatInlineCitationsPlainText,
   formatTechnicalDiagnosticText,
   extractProviderNotice,
+  highlightOperativeSpans,
+  stripLeadingClauseNumber,
 } = await load("../src/app/utils/citationMatch.ts");
 
 const inventory = JSON.parse(
@@ -240,6 +242,58 @@ test("extractProviderNotice detects LLM_PROVIDER_UNAVAILABLE audit items cleanly
     { text: "LLM_PROVIDER_UNAVAILABLE: Mô hình ngôn ngữ tạm thời không phản hồi" },
   ]);
   assert.match(notice || "", /Mô hình AI tạm thời không phản hồi/i);
+});
+
+test("mapApiQueryResponseToResult maps resolved_provisions operative text and amending links", () => {
+  const mapped = mapApiQueryResponseToResult(
+    {
+      citations: ["ND_68_2026_D3_K1"],
+      risk_score: 0,
+      risk_level: "LOW",
+      warnings: [],
+      irac_sections: { issue: "I", rule: "R", application: "A", conclusion: "C" },
+      resolved_provisions: {
+        ND_68_2026_D3_K1: {
+          text: "1. Doanh thu năm từ 01 tỷ đồng trở xuống không chịu thuế GTGT.",
+          status: "AMENDED",
+          amended_by: [
+            { source_unit: "ND_141_2026_D1_K1", effective_on: "2026-01-01", action: "phrase_replace" },
+          ],
+        },
+      },
+    },
+    "quán net",
+    "2026-03-20"
+  );
+  assert.equal(mapped.resolvedProvisions?.ND_68_2026_D3_K1?.status, "AMENDED");
+  assert.equal(mapped.resolvedProvisions?.ND_68_2026_D3_K1?.amended_by?.[0]?.source_unit, "ND_141_2026_D1_K1");
+});
+
+test("highlightOperativeSpans preserves original clause text 100% and highlights whole key phrases", () => {
+  const clause =
+    "Hộ kinh doanh, cá nhân kinh doanh có hoạt động sản xuất, kinh doanh có mức doanh thu năm từ 01 tỷ đồng trở xuống thuộc đối tượng không chịu thuế giá trị gia tăng.";
+  const context =
+    "quán net có phải đóng thuế kh\nNếu doanh thu từ 01 tỷ đồng trở xuống thì không phải nộp và thuộc đối tượng không chịu thuế giá trị gia tăng.";
+  const segments = highlightOperativeSpans(clause, context);
+  assert.equal(segments.map((s) => s.text).join(""), clause);
+  const highlighted = segments.filter((s) => s.highlight).map((s) => s.text).join(" | ");
+  assert.match(highlighted, /01 tỷ đồng/);
+  assert.match(highlighted, /không chịu thuế giá trị gia tăng/i);
+  assert.doesNotMatch(highlighted, /tượng không chịu/i);
+});
+
+test("highlightOperativeSpans does not emit false highlights when context is empty or stopwords only", () => {
+  const clause = "Thuế suất 0% áp dụng đối với hàng hóa, dịch vụ xuất khẩu.";
+  assert.deepEqual(highlightOperativeSpans(clause, ""), [{ text: clause, highlight: false }]);
+  assert.deepEqual(highlightOperativeSpans(clause, "của và cho theo quy định tại"), [
+    { text: clause, highlight: false },
+  ]);
+});
+
+test("stripLeadingClauseNumber removes matching clause prefix without mangling body text", () => {
+  assert.equal(stripLeadingClauseNumber("1. Hộ kinh doanh có doanh thu.", "1"), "Hộ kinh doanh có doanh thu.");
+  assert.equal(stripLeadingClauseNumber("a) Hàng hóa xuất khẩu.", "a"), "Hàng hóa xuất khẩu.");
+  assert.equal(stripLeadingClauseNumber("10. Trường hợp khác.", "1"), "10. Trường hợp khác.");
 });
 
 

@@ -128,3 +128,11 @@ def test_understand_with_llm_falls_back_safely_on_error_timeout_or_disabled():
     assert on_bad_json.scope == "vat"
     assert on_bad_json.source == "fallback"
     assert "không" in on_bad_json.legal_query
+
+
+def test_understanding_prompt_enforces_accented_vietnamese_missing_facts():
+    from src.engine.query_understanding import _build_understanding_prompt
+
+    prompt = _build_understanding_prompt("quán net có phải đóng thuế kh", [])
+    assert "tiếng Việt có dấu đầy đủ" in prompt
+

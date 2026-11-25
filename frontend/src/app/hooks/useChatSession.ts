@@ -10,10 +10,10 @@ export type Msg = { id: number; q: string; date: string; pipeline: Pipeline; res
 export type Conversation = { id: string; title: string; updated: number; messages: Msg[] };
 
 export const REASONING_STEPS = [
-  "Chuẩn hóa câu hỏi pháp lý và xác định mốc thời gian thẩm định...",
-  "Truy vấn đồ thị tri thức thời gian Neo4j và mở rộng điều khoản liên quan...",
-  "Xếp hạng mức độ liên quan và xác minh hiệu lực từng khoản/điểm...",
-  "Tổng hợp lập luận IRAC và kiểm định trích dẫn chống ảo giác...",
+  "Đang phân tích câu hỏi và mốc ngày tra cứu...",
+  "Đang tìm các điều khoản còn hiệu lực tại ngày đã chọn...",
+  "Đang chọn lọc và đối chiếu văn bản sửa đổi liên quan...",
+  "Đang tổng hợp câu trả lời và kiểm tra trích dẫn...",
 ];
 
 type UseChatSessionArgs = {
@@ -221,11 +221,11 @@ export function useChatSession({
         const errorMsg =
           err instanceof Error
             ? err.message
-            : "Không thể kết nối máy chủ thẩm định pháp lý (Backend offline).";
+            : "Không thể kết nối đến máy chủ tra cứu pháp luật.";
         const errorResult: Result = {
           score: 100,
-          issue: `Lỗi kết nối máy chủ thẩm định: "${q}"`,
-          rule: "Không thể kết nối với dịch vụ backend FastAPI.",
+          issue: `Lỗi kết nối: "${q}"`,
+          rule: "Không thể kết nối với dịch vụ tra cứu.",
           citations: [],
           application: [errorMsg],
           conclusion: errorMsg,

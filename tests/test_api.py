@@ -349,6 +349,13 @@ def test_post_query_stream_emits_stage_and_result_events(client: TestClient, mon
             "missing_facts": ["Doanh thu hằng năm?"],
             "rewritten_query": "Hộ kinh doanh dịch vụ internet",
             "amended_citation_ids": ["ND_68_2026_D3_K1"],
+            "resolved_provisions": {
+                "ND_68_2026_D3_K1": {
+                    "text": "1. Doanh thu năm từ 01 tỷ đồng trở xuống.",
+                    "status": "AMENDED",
+                    "amended_by": [{"source_unit": "ND_141_2026_D1_K1", "effective_on": "2026-01-01", "action": "phrase_replace"}],
+                }
+            },
         }
 
     monkeypatch.setattr("src.api.routes.execute_demo_query", fake_execute)
@@ -363,5 +370,6 @@ def test_post_query_stream_emits_stage_and_result_events(client: TestClient, mon
     assert "event: result" in text
     assert "Doanh thu hằng năm?" in text
     assert "ND_68_2026_D3_K1" in text
+    assert "ND_141_2026_D1_K1" in text
 
 

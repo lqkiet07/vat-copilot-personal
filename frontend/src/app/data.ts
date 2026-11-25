@@ -254,6 +254,18 @@ export const DOCUMENT_LABELS: Record<string, DocumentLabel> = {
   ND_141_2026: { code: "141/2026/NĐ-CP", label: "Nghị định 141/2026/NĐ-CP", libraryDocId: null },
   ND_144_2026: { code: "144/2026/NĐ-CP", label: "Nghị định 144/2026/NĐ-CP", libraryDocId: "nd144" },
 };
+export type AmendmentLink = {
+  source_unit: string;
+  effective_on?: string;
+  action?: string;
+};
+
+export type ResolvedProvisionMeta = {
+  text: string;
+  status: string;
+  amended_by: AmendmentLink[];
+};
+
 export type Result = {
   score: number;
   answer_status?: "ANSWERED" | "INSUFFICIENT_BASIS" | "OUT_OF_SCOPE";
@@ -269,6 +281,7 @@ export type Result = {
   missing_facts?: string[];
   rewritten_query?: string | null;
   amended_citation_ids?: string[];
+  resolvedProvisions?: Record<string, ResolvedProvisionMeta>;
 };
 
 export const SCENARIOS = [

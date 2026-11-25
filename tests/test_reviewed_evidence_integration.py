@@ -414,3 +414,194 @@ def test_provider_no_output_emits_unavailable_warning(reviewed):
     assert trace["generation_disposition"] == "provider_no_output"
     assert any("LLM_PROVIDER_UNAVAILABLE" in w for w in result.warnings)
 
+
+def test_reviewed_answer_exposes_resolved_provisions_and_clean_progress(tmp_path, monkeypatch):
+    corpus = tmp_path / "corpus.json"
+    docs = [
+        {
+            "id": "ND_68_2026",
+            "code": "68/2026/NĐ-CP",
+            "issue_date": "2026-01-01",
+            "valid_from": "2026-01-01",
+            "valid_to": "9999-12-31",
+            "articles": [
+                {
+                    "id": "ND_68_2026_D3",
+                    "code": "Điều 3",
+                    "content": "Điều 3",
+                    "clauses": [
+                        {
+                            "id": "ND_68_2026_D3_K1",
+                            "content": "1. Hộ kinh doanh có mức doanh thu năm từ 500 triệu đồng trở xuống thuộc đối tượng không chịu thuế giá trị gia tăng.",
+                        }
+                    ],
+                }
+            ],
+        },
+        {
+            "id": "ND_141_2026",
+            "code": "141/2026/NĐ-CP",
+            "issue_date": "2026-04-29",
+            "valid_from": "2026-01-01",
+            "valid_to": "9999-12-31",
+            "articles": [
+                {
+                    "id": "ND_141_2026_D1",
+                    "code": "Điều 1",
+                    "content": "Điều 1",
+                    "clauses": [{"id": "ND_141_2026_D1_K1", "content": "Sửa đổi ngưỡng doanh thu."}],
+                }
+            ],
+        },
+    ]
+    corpus.write_text(json.dumps(docs, ensure_ascii=False), encoding="utf-8")
+    raw_text = (
+        "Ban hành ngày 29 tháng 4 năm 2026. "
+        "Hiệu lực từ ngày 01 tháng 01 năm 2026. "
+        "Sửa đổi cụm từ 500 triệu đồng thành 01 tỷ đồng."
+    )
+    raw = tmp_path / "nd141.txt"
+    raw.write_text(raw_text, encoding="utf-8")
+    raw_bytes = raw.read_bytes()
+    sha = lambda p: hashlib.sha256(p.read_bytes()).hexdigest()
+
+    def make_span_ref(sub: str) -> dict:
+        bsub = sub.encode("utf-8")
+        start = raw_bytes.index(bsub)
+        return {"path": "nd141.txt", "sha256": sha(raw), "byte_start": start, "byte_end": start + len(bsub), "text": sub}
+
+    ref_main = {"path": "nd141.txt", "sha256": sha(raw), "excerpt": raw_text}
+    ref_issue = {"path": "nd141.txt", "sha256": sha(raw), "excerpt": "Ban hành ngày 29 tháng 4 năm 2026."}
+    ref_eff = {"path": "nd141.txt", "sha256": sha(raw), "excerpt": "Hiệu lực từ ngày 01 tháng 01 năm 2026."}
+    review = {
+        "schema_version": 1,
+        "oracle": "independent_raw_source_review",
+        "review_complete": True,
+        "pins": {"corpus.json": sha(corpus), "nd141.txt": sha(raw)},
+        "documents": [
+            {
+                "doc_id": "ND_68_2026",
+                "review_status": "reviewed",
+                "source_paths": ["nd141.txt"],
+                "issued_on": "2026-01-01",
+                "effective_on": "2026-01-01",
+            },
+            {
+                "doc_id": "ND_141_2026",
+                "review_status": "reviewed",
+                "source_paths": ["nd141.txt"],
+                "issued_on": "2026-04-29",
+                "effective_on": "2026-01-01",
+                "date_evidence": {
+                    "path": "nd141.txt",
+                    "issued_excerpt": "Ban hành ngày 29 tháng 4 năm 2026.",
+                    "effective_excerpt": "Hiệu lực từ ngày 01 tháng 01 năm 2026.",
+                },
+            },
+        ],
+        "candidates": [
+            {
+                "id": "nd141_threshold",
+                "source_doc": "ND_141_2026",
+                "source_unit": "ND_141_2026_D1_K1",
+                "classification": "unresolved",
+                "evidence": ref_main,
+                "source_effective_intervals": [
+                    {
+                        "from": "2026-01-01",
+                        "to": None,
+                        "issued_on": "2026-04-29",
+                        "date_evidence_refs": [ref_eff],
+                        "issuance_evidence": ref_issue,
+                        "commencement_evidence": ref_eff,
+                        "commencement_basis": "retroactive",
+                    }
+                ],
+                "operative_scope": {
+                    "status": "approved",
+                    "scope": "phrase_replacement",
+                    "targets": [
+                        {"doc_id": "ND_68_2026", "article_id": "ND_68_2026_D3", "clause_id": "ND_68_2026_D3_K1"}
+                    ],
+                    "evidence_refs": [ref_main],
+                },
+                "operations": [
+                    {
+                        "candidate_id": "nd141_threshold",
+                        "source_unit": "ND_141_2026_D1_K1",
+                        "target_id": "ND_68_2026_D3_K1",
+                        "action": "phrase_replace",
+                        "issued_on": "2026-04-29",
+                        "effective_on": "2026-01-01",
+                        "issuance_evidence": ref_issue,
+                        "commencement_evidence": ref_eff,
+                        "old": make_span_ref("500 triệu đồng"),
+                        "new": make_span_ref("01 tỷ đồng"),
+                        "expected_count": 1,
+                    }
+                ],
+                "expected": {
+                    "scope": "phrase_replacement",
+                    "targets": [
+                        {"doc_id": "ND_68_2026", "article_id": "ND_68_2026_D3"}
+                    ],
+                },
+            }
+        ],
+    }
+    ledger = tmp_path / "review.json"
+    ledger.write_text(json.dumps(review, ensure_ascii=False), encoding="utf-8")
+
+    class Session:
+        def __enter__(self):
+            return self
+
+        def __exit__(self, *args):
+            pass
+
+        def run(self, query, **kwargs):
+            rows = [
+                {
+                    "cid": cid,
+                    "exists": True,
+                    "valid_from": "2026-01-01",
+                    "valid_to": "9999-12-31",
+                    "amended_by": [],
+                    "amendments": [],
+                }
+                for cid in kwargs["ids"]
+            ]
+            return SimpleNamespace(data=lambda: rows)
+
+    monkeypatch.setattr(citation_verifier, "get_neo4j_driver", lambda: SimpleNamespace(session=Session))
+    monkeypatch.setattr("src.config.selected_review_path", lambda p: None)
+
+    node = ArticleNode(
+        id="ND_68_2026_D3_K1",
+        doc_id="ND_68_2026",
+        code="Khoản 1 Điều 3",
+        title="Thuế giá trị gia tăng",
+        content="1. Hộ kinh doanh có mức doanh thu năm từ 500 triệu đồng trở xuống thuộc đối tượng không chịu thuế giá trị gia tăng.",
+        valid_from="2026-01-01",
+        valid_to="9999-12-31",
+    )
+    events = []
+    res = answer_service.answer_query(
+        "Hộ kinh doanh doanh thu bao nhiêu không chịu thuế GTGT?",
+        "2026-03-20",
+        retriever_fn=lambda q, d: SimpleNamespace(articles=[node]),
+        corpus_path=str(corpus),
+        reviewed_amendment_path=str(ledger),
+        progress_cb=events.append,
+    )
+    assert "ND_68_2026_D3_K1" in res.resolved_provisions
+    meta = res.resolved_provisions["ND_68_2026_D3_K1"]
+    assert meta["status"] == "AMENDED"
+    assert "01 tỷ đồng" in meta["text"]
+    assert meta["amended_by"] == [
+        {"source_unit": "ND_141_2026_D1_K1", "effective_on": "2026-01-01", "action": "phrase_replace"}
+    ]
+    joined = " ".join(ev["message"] for ev in events)
+    assert not any(tok in joined for tok in ("Neo4j", "Reranker", "IRAC"))
+
+

@@ -257,17 +257,17 @@ export function mapApiQueryResponseToResult(
   if (data.is_greeting) {
     return {
       score: 0,
-      issue: "Hỏi đáp & Hướng dẫn sử dụng Hệ thống Thẩm định Pháp lý Thuế GTGT",
+      issue: "Hướng dẫn sử dụng Trợ lý Thuế GTGT",
       rule: "Hướng dẫn sử dụng; chưa thực hiện tra cứu hoặc xác minh căn cứ pháp lý.",
       citations: [],
       application: [
-        "Xin chào Quý khách / Quý Doanh nghiệp! Tôi là Trợ lý Pháp lý ảo về Thuế Giá trị gia tăng (GTGT) Việt Nam, được vận hành bởi Đồ thị Tri thức Thời gian (Temporal GraphRAG).",
-        "Hệ thống có thể hỗ trợ bạn trực tiếp:",
-        "• Thẩm định thuế suất GTGT cho từng trường hợp gia công, xuất khẩu, thương mại dịch vụ.",
-        "• Tra cứu tính hiệu lực thời gian của các điều luật tại bất kỳ mốc sự việc nào (tự động phát hiện bẫy niên đại).",
-        "• Đối chiếu quy trình xử lý và lập hóa đơn điều chỉnh theo các nghị định mới nhất.",
+        "Xin chào! Tôi là Trợ lý Thuế Giá trị gia tăng (GTGT) Việt Nam.",
+        "Tôi có thể hỗ trợ bạn:",
+        "• Tra cứu mức thuế suất GTGT cho hàng hóa, dịch vụ, hộ kinh doanh và xuất khẩu.",
+        "• Kiểm tra quy định đang có hiệu lực tại đúng ngày phát sinh sự việc.",
+        "• Đối chiếu các điều khoản sửa đổi, bổ sung mới nhất về thuế và hóa đơn.",
       ],
-      conclusion: "Mời bạn nhập câu hỏi cụ thể về tình huống thuế GTGT hoặc chọn các kịch bản gợi ý bên dưới để bắt đầu thẩm định.",
+      conclusion: "Mời bạn nhập câu hỏi cụ thể về tình huống thuế GTGT hoặc chọn một gợi ý bên dưới để bắt đầu.",
       audit: [
         { tone: "warn", text: "Phản hồi chào hỏi, chưa tra cứu hoặc xác minh căn cứ pháp lý." },
       ],
@@ -329,21 +329,44 @@ export function mapApiQueryResponseToResult(
     ? data.amended_citation_ids.filter((item: unknown): item is string => typeof item === "string" && item.trim().length > 0)
     : [];
 
+  const resolvedProvisions: Result["resolvedProvisions"] = {};
+  if (data.resolved_provisions && typeof data.resolved_provisions === "object") {
+    for (const [unitId, rawMeta] of Object.entries(data.resolved_provisions)) {
+      if (!rawMeta || typeof rawMeta !== "object") continue;
+      const metaObj = rawMeta as Record<string, unknown>;
+      const text = typeof metaObj.text === "string" ? metaObj.text : "";
+      if (!text) continue;
+      const status = typeof metaObj.status === "string" ? metaObj.status : "VALID";
+      const amendedBy = Array.isArray(metaObj.amended_by)
+        ? metaObj.amended_by
+            .filter((entry): entry is Record<string, unknown> => Boolean(entry && typeof entry === "object"))
+            .map((entry) => ({
+              source_unit: typeof entry.source_unit === "string" ? entry.source_unit : "",
+              effective_on: typeof entry.effective_on === "string" ? entry.effective_on : undefined,
+              action: typeof entry.action === "string" ? entry.action : undefined,
+            }))
+            .filter((entry) => entry.source_unit.length > 0)
+        : [];
+      resolvedProvisions[unitId] = { text, status, amended_by: amendedBy };
+    }
+  }
+
   return {
     score: data.risk_score ?? 0,
     answer_status: data.answer_status || "ANSWERED",
     issue: data.irac_sections?.issue || `Xác định quy định pháp lý cho: "${query}"`,
     rule: data.irac_sections?.rule || "Chưa xác định được điều khoản viện dẫn cụ thể.",
     citations,
-    application: application.length > 0 ? application : [appText || "Không có nội dung phân tích chi tiết từ mô hình."],
+    application: application.length > 0 ? application : [appText || "Không có nội dung phân tích chi tiết."],
     conclusion:
       data.irac_sections?.conclusion ||
-      "Hệ thống đã thẩm định nhưng chưa tổng hợp được kết luận theo cấu trúc IRAC. Vui lòng thử lại hoặc tắt chế độ LLM.",
+      "Chưa tổng hợp được câu trả lời đầy đủ. Vui lòng thử lại hoặc tắt chế độ trợ lý AI.",
     audit,
     trap,
     missing_facts: missingFacts,
     rewritten_query: typeof data.rewritten_query === "string" ? data.rewritten_query : null,
     amended_citation_ids: amendedIds,
+    resolvedProvisions: Object.keys(resolvedProvisions).length > 0 ? resolvedProvisions : undefined,
   };
 }
 

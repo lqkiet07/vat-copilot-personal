@@ -221,11 +221,11 @@ export function Sidebar({
             className={`flex w-full items-center rounded-xl py-2.5 text-[#475569] transition-colors hover:bg-[#E2E8F0] hover:text-[#1E3A8A] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#1E3A8A]/40 ${
               expanded ? "gap-2.5 px-3 text-[13px] font-medium" : "justify-center px-0"
             }`}
-            title="Cài đặt hệ thống (Mô hình, Mốc thời gian, LLM)"
-            aria-label="Mở cài đặt hệ thống"
+            title="Cài đặt (Chế độ tra cứu, Mốc ngày, Trợ lý AI)"
+            aria-label="Mở cài đặt"
           >
             <Settings className="h-4 w-4 shrink-0 text-[#1E3A8A]" />
-            {expanded && <span>Cài đặt hệ thống</span>}
+            {expanded && <span>Cài đặt</span>}
           </button>
         </div>
       </aside>

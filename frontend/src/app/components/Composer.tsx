@@ -6,21 +6,21 @@ import type { Pipeline } from "./SettingsDialog";
 export const PIPELINES = [
   {
     key: "P3",
-    label: "P3: Đầy đủ (Graph + Rule + RAG)",
-    badge: "Flash (P3)",
-    desc: "Độ chính xác cao nhất cho quy định chuyển tiếp giáp ranh 01/07/2025",
+    label: "Đầy đủ & đối chiếu hiệu lực",
+    badge: "Đầy đủ",
+    desc: "Ưu tiên độ chính xác cao, tự động đối chiếu văn bản sửa đổi và mốc 01/07/2025",
   },
   {
     key: "P2",
-    label: "P2: Rule Engine + Neo4j",
-    badge: "Graph",
-    desc: "Truy vấn quan hệ thời gian trực tiếp trên đồ thị tri thức",
+    label: "Tra cứu theo mốc thời gian",
+    badge: "Theo mốc",
+    desc: "Tìm các quy định đang có hiệu lực tại ngày bạn chọn",
   },
   {
     key: "P1",
-    label: "P1: RAG cơ bản (Vector Search)",
-    badge: "Vector",
-    desc: "Chỉ tìm kiếm ngữ nghĩa phẳng, dễ dính bẫy niên đại luật cũ",
+    label: "Tìm nhanh văn bản",
+    badge: "Tìm nhanh",
+    desc: "Tìm kiếm theo nội dung tương đồng, không kiểm tra văn bản sửa đổi",
   },
 ] as const;
 
@@ -101,21 +101,21 @@ export function Composer({
                 <button
                   type="button"
                   className="flex min-h-[36px] items-center gap-1.5 rounded-full border border-[#CBD5E1] bg-white px-3 py-1 text-[11.5px] font-semibold text-[#1E3A8A] shadow-2xs hover:bg-[#F8FAFC] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#1E3A8A]/40"
-                  title="Kiến trúc suy luận AI"
-                  aria-label="Chọn kiến trúc suy luận AI"
+                  title="Chế độ tra cứu pháp luật"
+                  aria-label="Chọn chế độ tra cứu pháp luật"
                 >
                   <span>
-                    {pipeline}: {PIPELINES.find((p) => p.key === pipeline)?.badge}
+                    Chế độ: {PIPELINES.find((p) => p.key === pipeline)?.badge}
                   </span>
                   <ChevronDown className="h-3.5 w-3.5 text-[#64748B]" />
                 </button>
               </PopoverTrigger>
               <PopoverContent
                 align="start"
-                className="w-[280px] rounded-2xl border border-[#CBD5E1] bg-white p-1.5 shadow-xl"
+                className="w-[290px] rounded-2xl border border-[#CBD5E1] bg-white p-1.5 shadow-xl"
               >
                 <div className="px-2 py-1.5 text-[11px] font-bold uppercase tracking-wider text-[#64748B]">
-                  Chọn Pipeline suy luận
+                  Chọn chế độ tra cứu
                 </div>
                 {PIPELINES.map((p) => {
                   const disabled = isStaging && p.key !== "P3";
@@ -140,7 +140,7 @@ export function Composer({
                     >
                       <span className="text-[12.5px] font-bold">
                         {p.label}
-                        {disabled ? " (chỉ canonical)" : ""}
+                        {disabled ? " (chưa bật)" : ""}
                       </span>
                       <span className="text-[11px] text-[#64748B]">{p.desc}</span>
                     </button>
@@ -214,15 +214,15 @@ export function Composer({
               <select
                 value={pipeline}
                 onChange={(e) => onPipelineChange(e.target.value as Pipeline)}
-                aria-label="Chọn pipeline suy luận"
+                aria-label="Chọn chế độ tra cứu"
                 className="min-h-[34px] cursor-pointer rounded-full border border-[#CBD5E1] bg-white px-2.5 py-1 text-[11px] font-semibold text-[#1E3A8A] shadow-2xs focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#1E3A8A]/40"
               >
-                <option value="P3">P3 Full</option>
+                <option value="P3">Đầy đủ</option>
                 <option value="P2" disabled={isStaging}>
-                  P2 Graph{isStaging ? " (chỉ canonical)" : ""}
+                  Theo mốc{isStaging ? " (chưa bật)" : ""}
                 </option>
                 <option value="P1" disabled={isStaging}>
-                  P1 Flat{isStaging ? " (chỉ canonical)" : ""}
+                  Tìm nhanh{isStaging ? " (chưa bật)" : ""}
                 </option>
               </select>
             </div>
