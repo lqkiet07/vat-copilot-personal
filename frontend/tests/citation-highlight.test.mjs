@@ -297,4 +297,46 @@ test("stripLeadingClauseNumber removes matching clause prefix without mangling b
   assert.equal(stripLeadingClauseNumber("10. Trường hợp khác.", "1"), "10. Trường hợp khác.");
 });
 
+test("formatInlineCitationsToMarkdownLinks uses compact numbered markers when indexed and keeps 1-arg compatibility", () => {
+  const indexMap = new Map([
+    ["ND_68_2026_D3_K1", 1],
+    ["ND_68_2026_D3_K2", 2],
+  ]);
+  const text =
+    "- Dưới 01 tỷ đồng [ND_68_2026_D3_K1] , [ND_68_2026_D3_K2] .\n" +
+    "- Tham khảo thêm [LUAT_48_2024_D5] .";
+
+  const indexed = formatInlineCitationsToMarkdownLinks(text, indexMap);
+  assert.equal(
+    indexed,
+    "- Dưới 01 tỷ đồng [1](#cite:ND_68_2026_D3_K1)[2](#cite:ND_68_2026_D3_K2).\n" +
+      "- Tham khảo thêm [Điều 5 Luật 48/2024](#cite:LUAT_48_2024_D5)."
+  );
+
+  // Single-argument behavior remains full-label Markdown link unchanged.
+  const unindexed = formatInlineCitationsToMarkdownLinks("Theo [ND_68_2026_D3_K1].");
+  assert.equal(unindexed, "Theo [Khoản 1 Điều 3 Nghị định 68/2026/NĐ-CP](#cite:ND_68_2026_D3_K1).");
+});
+
+test("formatInlineCitationsToMarkdownLinks and PlainText expand comma/semicolon-separated canonical IDs", () => {
+  const indexMap = new Map([
+    ["ND_68_2026_D3_K2", 1],
+    ["ND_68_2026_D10_K1_a", 2],
+    ["LUAT_108_2025_D13_K1_b", 3],
+  ]);
+  const grouped = "Nộp thuế [ND_68_2026_D3_K2, ND_68_2026_D10_K1_a; LUAT_108_2025_D13_K1_b].";
+  assert.equal(
+    formatInlineCitationsToMarkdownLinks(grouped, indexMap),
+    "Nộp thuế [1](#cite:ND_68_2026_D3_K2)[2](#cite:ND_68_2026_D10_K1_a)[3](#cite:LUAT_108_2025_D13_K1_b)."
+  );
+  assert.match(
+    formatInlineCitationsPlainText(grouped),
+    /Khoản 2 Điều 3 Nghị định 68\/2026\/NĐ-CP; Điểm a Khoản 1 Điều 10 Nghị định 68\/2026\/NĐ-CP; Điểm b Khoản 1 Điều 13 Luật 108\/2025\/QH15/
+  );
+  assert.equal(
+    formatInlineCitationsToMarkdownLinks("Giữ nguyên [BOGUS_D9, BOGUS_D10] và [Khuyên dùng]."),
+    "Giữ nguyên [BOGUS_D9, BOGUS_D10] và [Khuyên dùng]."
+  );
+});
+
 

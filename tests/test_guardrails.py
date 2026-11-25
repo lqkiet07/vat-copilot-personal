@@ -56,3 +56,15 @@ def test_non_domain_arbitrary_query():
     result = check_query_domain("Quả cam màu gì?")
     assert result.is_allowed
     assert result.reason == "UNCLEAR_REQUIRES_RETRIEVAL"
+
+
+def test_prefixed_tax_query_is_not_treated_as_greeting():
+    res = check_query_domain("test thuế suất")
+    assert res.is_greeting is False
+    assert res.is_allowed is True
+    assert res.reason == "IN_DOMAIN"
+
+
+def test_standalone_test_is_greeting_and_ood_uses_word_boundaries():
+    assert check_query_domain("test").is_greeting is True
+    assert check_query_domain("bảo hiểm xã hội cho doanh nghiệp").reason == "EXPLICIT_OUT_OF_DOMAIN"

@@ -232,7 +232,12 @@ def _parse_irac_sections(raw_text: str) -> dict[str, str]:
             current_key = keys.pop()
             sections[current_key] = body.strip() if separator else ""
         elif current_key and line.strip():
-            sections[current_key] = (sections[current_key] + " " + line.strip()).strip()
+            # Preserve line breaks so Markdown bullet lists in Conclusion/Application render properly.
+            sections[current_key] = (
+                f"{sections[current_key]}\n{line.strip()}"
+                if sections[current_key]
+                else line.strip()
+            )
     return sections
 
 
@@ -526,12 +531,9 @@ def answer_query(
                 reason_override=EmptyReason.OUT_OF_SCOPE,
             )
         effective_query = understanding.legal_query
-        if understanding.source == "llm":
-            _emit_progress(progress_cb, 0, "understand", f"Đã chuẩn hóa câu hỏi: «{effective_query}»")
-        else:
-            _emit_progress(progress_cb, 0, "understand", "Đã xác định nội dung câu hỏi và mốc thời gian tra cứu.")
+        _emit_progress(progress_cb, 0, "understand", "Đã phân tích nội dung câu hỏi và xác định mốc thời gian tra cứu.")
     else:
-        _emit_progress(progress_cb, 0, "understand", "Đã xác định nội dung câu hỏi và mốc thời gian tra cứu.")
+        _emit_progress(progress_cb, 0, "understand", "Đã phân tích nội dung câu hỏi và xác định mốc thời gian tra cứu.")
 
     if reviewed_amendment_path is not None and pipeline not in {"P1_FlatRAG", "P2", "P2_TemporalGraphRAG"}:
         from src.api.reviewed_answer import reviewed_answer

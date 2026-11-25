@@ -77,9 +77,21 @@ def check_query_domain(query: str) -> GuardrailResult:
             refusal_message="Vui lòng nhập câu hỏi pháp lý về thuế GTGT."
         )
 
-    # 1. Check greeting
+    from src.api.chat_domain import OUT_OF_SCOPE_KEYWORDS
+    has_core_tax = bool(CORE_TAX_PATTERN.search(q_clean))
+    has_domain_kw = has_core_tax or any(kw in q_clean for kw in VAT_DOMAIN_KEYWORDS)
+
+    # 1. Check greeting (skip if VAT domain terms appear; restrict "test" to exact standalone token)
     words = q_clean.split()
-    if len(words) <= 3 and any(q_clean == g or q_clean.startswith(g + " ") for g in GREETING_KEYWORDS):
+    is_greeting = (
+        not has_domain_kw
+        and len(words) <= 3
+        and any(
+            (q_clean == "test" if g == "test" else (q_clean == g or q_clean.startswith(g + " ")))
+            for g in GREETING_KEYWORDS
+        )
+    )
+    if is_greeting:
         return GuardrailResult(
             is_allowed=False,
             is_greeting=True,
@@ -87,9 +99,11 @@ def check_query_domain(query: str) -> GuardrailResult:
             refusal_message="Xin chào! Tôi là Trợ lý Pháp lý ảo về Thuế Giá trị gia tăng (GTGT) Việt Nam. Hãy đặt câu hỏi về chính sách thuế, thuế suất hoặc quy định hóa đơn chứng từ để tôi hỗ trợ bạn."
         )
 
-    from src.api.chat_domain import OUT_OF_SCOPE_KEYWORDS
-    has_core_tax = bool(CORE_TAX_PATTERN.search(q_clean))
-    if not has_core_tax and any(word in q_clean for word in OUT_OF_SCOPE_KEYWORDS):
+    ood_pattern = re.compile(
+        r"\b(?:" + "|".join(re.escape(w) for w in sorted(OUT_OF_SCOPE_KEYWORDS, key=len, reverse=True)) + r")\b",
+        re.IGNORECASE,
+    )
+    if not has_core_tax and ood_pattern.search(q_clean):
         return GuardrailResult(is_allowed=False, reason="EXPLICIT_OUT_OF_DOMAIN",
                                refusal_message="Câu hỏi nằm ngoài phạm vi thuế GTGT.")
     has_legal_business_context = has_core_tax or bool(LEGAL_BUSINESS_CONTEXT.search(q_clean))
@@ -103,8 +117,7 @@ def check_query_domain(query: str) -> GuardrailResult:
                 )
 
     # 3. Check domain presence
-    has_domain_keyword = (has_core_tax or any(kw in q_clean for kw in VAT_DOMAIN_KEYWORDS)
-                          or bool(re.search(r"\b\d+/\d{4}(?:/[\w-]+)?\b", q_clean)))
+    has_domain_keyword = (has_domain_kw or bool(re.search(r"\b\d+/\d{4}(?:/[\w-]+)?\b", q_clean)))
     if not has_domain_keyword:
         return GuardrailResult(is_allowed=True, reason="UNCLEAR_REQUIRES_RETRIEVAL")
 

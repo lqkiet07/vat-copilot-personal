@@ -697,3 +697,19 @@ def test_needs_facts_allows_coverage_true_and_ignores_unrelated_or_repeal_blocke
     assert delivery_allowed(parsed, base_res) is False
 
 
+def test_sanitize_missing_facts_drops_statute_requests_and_deduplicates():
+    from src.engine.answer_assessment import sanitize_missing_facts
+
+    raw = [
+        "Quy định cụ thể về nghĩa vụ thuế GTGT đối với doanh nghiệp",
+        "Loại hình kinh doanh (hộ kinh doanh hay doanh nghiệp)",
+        "loại hình kinh doanh (hộ kinh doanh hay doanh nghiệp)",
+        "Căn cứ pháp lý áp dụng tại ngày tra cứu",
+        "Doanh thu hằng năm",
+    ]
+    assert sanitize_missing_facts(raw) == [
+        "Loại hình kinh doanh (hộ kinh doanh hay doanh nghiệp)",
+        "Doanh thu hằng năm",
+    ]
+
+

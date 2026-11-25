@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { AlertTriangle, BookOpen, Copy, ExternalLink } from "lucide-react";
+import { AlertTriangle, Copy, ExternalLink } from "lucide-react";
 import drum from "@/imports/img_6-hinh-nen-powerpoint-trong-dong.jpg";
 import { type Citation, DOCS, type LawDoc, type ResolvedProvisionMeta } from "./data";
 import { apiDocToLawDoc, citationBodyMessage, DOCUMENT_LABELS, findCitationBody, parseCitationId } from "./api";
@@ -606,6 +606,13 @@ function Answer({ msg, onClickCitation, onOpenRelated, onRetry, onEditQuery, onS
   }, []);
 
   const isErrorCard = r.score === 100 && r.citations.length === 0;
+  const citationIndexMap = useMemo(() => {
+    const map = new Map<string, number>();
+    r.citations.forEach((c, idx) => {
+      if (c.id) map.set(c.id, idx + 1);
+    });
+    return map;
+  }, [r.citations]);
 
   function copyText() {
     const cleanConclusion = formatInlineCitationsPlainText(r.conclusion);
@@ -622,6 +629,7 @@ function Answer({ msg, onClickCitation, onOpenRelated, onRetry, onEditQuery, onS
         pipeline={msg.pipeline}
         date={msg.date}
         answerStatus={r.answer_status}
+        hasMissingFacts={Boolean(r.missing_facts && r.missing_facts.length > 0)}
         isGreeting={r.is_greeting}
         amendedCount={r.amended_citation_ids?.length || 0}
       />
@@ -629,6 +637,7 @@ function Answer({ msg, onClickCitation, onOpenRelated, onRetry, onEditQuery, onS
       <AnswerConclusionBox
         result={r}
         isErrorCard={isErrorCard}
+        citationIndexMap={citationIndexMap}
         onCitationClick={onClickCitation}
         onSelectMissingFact={onSelectMissingFact}
         onRetry={onRetry}
@@ -648,6 +657,7 @@ function Answer({ msg, onClickCitation, onOpenRelated, onRetry, onEditQuery, onS
         <AnswerAnalysisAccordion
           rule={r.rule}
           application={r.application}
+          citationIndexMap={citationIndexMap}
           onCitationClick={onClickCitation}
         />
       )}
@@ -662,10 +672,12 @@ function Answer({ msg, onClickCitation, onOpenRelated, onRetry, onEditQuery, onS
               type="button"
               key={c.id || `${c.art || c.label}-${idx}`}
               onClick={() => onClickCitation(c)}
-              className="flex items-center gap-1 rounded-full border border-[#BFDBFE] bg-[#EFF6FF] px-2.5 py-1 text-[11px] font-semibold text-[#1E3A8A] transition-colors hover:bg-[#DBEAFE] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#1E3A8A]/40"
+              className="flex items-center gap-1.5 rounded-full border border-[#BFDBFE] bg-[#EFF6FF] px-2.5 py-1 text-[11px] font-semibold text-[#1E3A8A] transition-colors hover:bg-[#DBEAFE] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#1E3A8A]/40"
               title="Bấm để mở văn bản và tô sáng đúng điều khoản được trích dẫn"
             >
-              <BookOpen className="h-3 w-3 shrink-0" />
+              <span className="inline-flex h-4 min-w-4 items-center justify-center rounded-full bg-[#1E3A8A] px-1 text-[10px] font-bold leading-none text-white">
+                {idx + 1}
+              </span>
               <span>{c.label}</span>
               <ExternalLink className="h-2.5 w-2.5 shrink-0" />
             </button>

@@ -1,6 +1,7 @@
 from dataclasses import dataclass
 import json
-from typing import Literal
+import re
+from typing import Iterable, Literal
 
 
 @dataclass(frozen=True)
@@ -116,6 +117,29 @@ def _has_system_evidence_blocker(blocked: dict, relevant_ids: set[str] | None = 
     return False
 
 
+_NON_USER_FACT_PREFIX_RE = re.compile(
+    r"^(?:quy\s+định|căn\s+cứ(?:\s+pháp\s+lý)?|văn\s+bản(?:\s+pháp\s+luật|\s+hướng\s+dẫn)?|điều\s+khoản)\b",
+    re.IGNORECASE,
+)
+
+
+def sanitize_missing_facts(items: Iterable[str]) -> list[str]:
+    """Filter out statute/legal-rule requests so chips prompt only for user-supplied factual details."""
+    cleaned: list[str] = []
+    seen: set[str] = set()
+    for raw in items or ():
+        if not isinstance(raw, str):
+            continue
+        text = " ".join(raw.strip().split())
+        if not text or _NON_USER_FACT_PREFIX_RE.search(text):
+            continue
+        key = text.casefold()
+        if key not in seen:
+            seen.add(key)
+            cleaned.append(text)
+    return cleaned
+
+
 def delivery_allowed(assessment: AnswerAssessment, resolution, explicit_ids=()) -> bool:
     if not assessment.claims or any(c.status != "supported" for c in assessment.claims):
         return False
@@ -216,6 +240,6 @@ def build_assessment_prompt(question, day, history, articles, resolution, draft)
         '"evidence_ids":["exact supplied evidence ID"]}],"missing_facts":["missing user fact"]}. '
         "Include 1..64 claims, text <=4000 chars, <=32 unique supplied IDs per claim; supported claims "
         "need evidence IDs. missing_facts <=16 strings of <=1000 chars; empty if none. "
-        "Write every missing_facts item in concise, properly accented Vietnamese (tiếng Việt có dấu đầy đủ, e.g. 'Loại hình kinh doanh (hộ cá thể hay doanh nghiệp)', 'Doanh thu hằng năm'). "
+        "Write every missing_facts item ONLY as a factual detail from the user (never ask for 'Quy định...', 'Căn cứ...', or legal rules) in concise, properly accented Vietnamese (tiếng Việt có dấu đầy đủ, e.g. 'Loại hình kinh doanh (hộ cá thể hay doanh nghiệp)', 'Doanh thu hằng năm'). "
         "supported requires full coverage, all claims supported and no missing facts.\n" + BLOCKER_INSTRUCTIONS + data_block(data)
     )

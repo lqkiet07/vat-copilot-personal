@@ -154,3 +154,57 @@ def test_assessment_optional_config_bound_without_generation_change(reviewed):
     assert calls[1]["responseMimeType"] == "application/json"
     assert calls[1]["thinkingConfig"] == {"thinkingBudget": 0}
 
+
+def test_parse_irac_sections_preserves_multiline_bullets():
+    from src.api.answer_service import _parse_irac_sections
+    raw = (
+        "Issue: Nghĩa vụ thuế GTGT\n"
+        f"Rule: Quy định áp dụng [{SAFE}]\n"
+        f"Application: Đối chiếu điều kiện [{SAFE}]\n"
+        "Conclusion:\n"
+        f"- Dưới 01 tỷ đồng: không chịu thuế [{SAFE}]\n"
+        f"- Trên 01 tỷ đồng: phải nộp thuế [{SAFE}]\n"
+        "Bạn vui lòng cho biết doanh thu?"
+    )
+    sections = _parse_irac_sections(raw)
+    assert sections["conclusion"] == (
+        f"- Dưới 01 tỷ đồng: không chịu thuế [{SAFE}]\n"
+        f"- Trên 01 tỷ đồng: phải nộp thuế [{SAFE}]\n"
+        "Bạn vui lòng cho biết doanh thu?"
+    )
+    assert not sections["conclusion"].startswith("\n")
+
+
+def test_irac_prompt_requests_separate_citation_brackets_and_threshold_reconciliation(reviewed):
+    from src.engine.models import ArticleNode
+    from src.engine.prompt import build_irac_prompt
+    from src.engine.provision_evidence import resolve_provision_evidence
+
+    resolution = resolve_provision_evidence(
+        [SAFE], "2026-03-20", corpus_path=reviewed.corpus_path,
+        reviewed_amendment_path=reviewed.reviewed_amendment_path,
+    )
+    article = ArticleNode(
+        id=SAFE, doc_id="LUAT_1_2024", code="Khoản 2", title="Chứng từ",
+        content=TEXT, valid_from="2024-02-01", valid_to="9999-12-31",
+    )
+    prompt = build_irac_prompt("Hộ kinh doanh đóng thuế?", "2026-03-20", [article], [], resolved_evidence=resolution)
+    assert "[ID1] [ID2]" in prompt
+    assert "không để khoảng trống" in prompt
+
+
+@pytest.mark.parametrize("kind", ["timeout", "transport"])
+def test_assessment_outage_surfaces_provider_unavailable_warning(reviewed, kind):
+    calls = []
+
+    def llm(*args, **kwargs):
+        calls.append(1)
+        if len(calls) == 2:
+            raise (TimeoutError("secret") if kind == "timeout" else OSError("secret"))
+        return f"Issue: R\nRule: {TEXT} [{SAFE}]\nApplication: {TEXT} [{SAFE}]\nConclusion: Keep. [{SAFE}]"
+
+    result = answer(reviewed, use_llm=True, llm_fn=llm)
+    assert result.answer_status == "INSUFFICIENT_BASIS"
+    assert any("LLM_PROVIDER_UNAVAILABLE" in w for w in result.warnings)
+    assert "secret" not in str(result.to_dict())
+

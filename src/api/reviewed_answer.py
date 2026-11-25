@@ -427,14 +427,19 @@ def reviewed_answer(question, query, day, pipeline, use_llm, model, history, tra
                          + ", ".join(omissions)] if omissions else [])
     if packing_failure:
         context_warnings.append("CONTEXT_BUDGET_EXCEEDED: chưa gọi mô hình vì context không chứa đủ căn cứ bắt buộc.")
-    if use_llm and trace.get("generation_disposition") == "provider_no_output":
-        context_warnings.append(PROVIDER_UNAVAILABLE_WARNING)
-    warnings = list(dict.fromkeys(list(getattr(report, "warnings", [])) + blockers + context_warnings + [GROUNDING_LIMITATION]))
     delivered_ok = bool(
         trace.get("generated_delivered")
         and trace.get("assessment_outcome") in {"supported", "needs_facts"}
     )
-    missing_facts = list(
+    assessment_provider_outage = (
+        not delivered_ok
+        and trace.get("assessment_reason") in {"no_output", "timeout", "transport", "truncated"}
+    )
+    if use_llm and (trace.get("generation_disposition") == "provider_no_output" or assessment_provider_outage):
+        context_warnings.append(PROVIDER_UNAVAILABLE_WARNING)
+    warnings = list(dict.fromkeys(list(getattr(report, "warnings", [])) + blockers + context_warnings + [GROUNDING_LIMITATION]))
+    from src.engine.answer_assessment import sanitize_missing_facts
+    missing_facts = sanitize_missing_facts(
         trace.get("assessment_missing_facts")
         or trace.get("understanding_missing_facts")
         or []

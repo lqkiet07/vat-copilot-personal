@@ -6,19 +6,42 @@ import { extractProviderNotice, fmtDate, formatTechnicalDiagnosticText, splitTec
 import { MarkdownContent } from "./MarkdownContent";
 import type { Pipeline } from "./SettingsDialog";
 
-/** Render answer card top metadata strip with validity status badge and evaluation date. */
+/** Render answer card top metadata strip with actionable status badge and evaluation date. */
 export function AnswerHeader({
   date,
   answerStatus,
+  hasMissingFacts = false,
   isGreeting,
   amendedCount = 0,
 }: {
   pipeline?: Pipeline;
   date: string;
   answerStatus?: Result["answer_status"];
+  hasMissingFacts?: boolean;
   isGreeting?: boolean;
   amendedCount?: number;
 }) {
+  const statusBadge = (() => {
+    if (!answerStatus || isGreeting) return null;
+    if (answerStatus === "ANSWERED") {
+      if (!hasMissingFacts) return null;
+      return {
+        label: "Cần bổ sung thông tin",
+        classes: "border-sky-200 bg-sky-50 text-sky-800",
+      };
+    }
+    if (answerStatus === "INSUFFICIENT_BASIS") {
+      return {
+        label: "Chưa đủ căn cứ",
+        classes: "border-amber-200 bg-amber-50 text-amber-800",
+      };
+    }
+    return {
+      label: "Ngoài phạm vi",
+      classes: "border-orange-200 bg-orange-50 text-orange-800",
+    };
+  })();
+
   return (
     <div className="flex flex-wrap items-center justify-between gap-2 border-b border-[#F1F5F9] pb-3.5">
       <div className="flex flex-wrap items-center gap-2">
@@ -26,20 +49,11 @@ export function AnswerHeader({
           <img src={emblem} alt="Quốc huy" className="h-4 w-auto" />
         </div>
         <span className="text-[14px] font-bold text-[#1E3A8A]">Trợ lý Thuế GTGT</span>
-        {answerStatus && !isGreeting && (
+        {statusBadge && (
           <span
-            className={`rounded-full border px-2 py-0.5 text-[10.5px] font-semibold ${answerStatus === "ANSWERED"
-                ? "border-emerald-200 bg-emerald-50 text-emerald-700"
-                : answerStatus === "INSUFFICIENT_BASIS"
-                  ? "border-amber-200 bg-amber-50 text-amber-800"
-                  : "border-orange-200 bg-orange-50 text-orange-800"
-              }`}
+            className={`rounded-full border px-2 py-0.5 text-[10.5px] font-semibold ${statusBadge.classes}`}
           >
-            {answerStatus === "ANSWERED"
-              ? "Đã trả lời"
-              : answerStatus === "INSUFFICIENT_BASIS"
-                ? "Chưa đủ căn cứ"
-                : "Ngoài phạm vi"}
+            {statusBadge.label}
           </span>
         )}
         {amendedCount > 0 && !isGreeting && (
@@ -66,6 +80,7 @@ export function AnswerHeader({
 export function AnswerConclusionBox({
   result,
   isErrorCard,
+  citationIndexMap,
   onCitationClick,
   onSelectMissingFact,
   onRetry,
@@ -73,6 +88,7 @@ export function AnswerConclusionBox({
 }: {
   result: Result;
   isErrorCard: boolean;
+  citationIndexMap?: ReadonlyMap<string, number>;
   onCitationClick?: (citation: Citation) => void;
   onSelectMissingFact?: (fact: string) => void;
   onRetry: () => void;
@@ -106,6 +122,7 @@ export function AnswerConclusionBox({
 
       <MarkdownContent
         text={primaryText}
+        citationIndexMap={citationIndexMap}
         onCitationClick={onCitationClick}
         className="mt-2.5 text-[14.5px] font-medium text-[#0F172A]"
       />
@@ -182,10 +199,12 @@ export function AnswerConclusionBox({
 export function AnswerAnalysisAccordion({
   rule,
   application,
+  citationIndexMap,
   onCitationClick,
 }: {
   rule?: string;
   application?: string[];
+  citationIndexMap?: ReadonlyMap<string, number>;
   onCitationClick?: (citation: Citation) => void;
 }) {
   const [expanded, setExpanded] = useState(false);
@@ -217,7 +236,7 @@ export function AnswerAnalysisAccordion({
               <div className="mb-1 text-[11.5px] font-bold uppercase tracking-wider text-[#64748B]">
                 Quy định áp dụng:
               </div>
-              <MarkdownContent text={cleanRule} onCitationClick={onCitationClick} />
+              <MarkdownContent text={cleanRule} citationIndexMap={citationIndexMap} onCitationClick={onCitationClick} />
             </div>
           )}
 
@@ -232,6 +251,7 @@ export function AnswerAnalysisAccordion({
                     <span className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-[#1E3A8A]" />
                     <MarkdownContent
                       text={app.replace(/^[•\-\*]\s*/, "")}
+                      citationIndexMap={citationIndexMap}
                       onCitationClick={onCitationClick}
                       className="min-w-0 flex-1"
                     />

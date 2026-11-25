@@ -7,6 +7,7 @@ import { formatInlineCitationsToMarkdownLinks } from "../utils/citationMatch";
 type Props = {
   text: string;
   className?: string;
+  citationIndexMap?: ReadonlyMap<string, number>;
   onCitationClick?: (citation: Citation) => void;
 };
 
@@ -18,8 +19,13 @@ function safeUrlTransform(url: string): string {
 }
 
 /** Render structured Markdown safely while converting recognized Neo4j citation tags into clickable pills. */
-export function MarkdownContent({ text, className = "", onCitationClick }: Props) {
-  const transformed = formatInlineCitationsToMarkdownLinks(text);
+export function MarkdownContent({ text, className = "", citationIndexMap, onCitationClick }: Props) {
+  // Separate a non-bullet closing line after a bullet list so CommonMark does not fold it into the last <li>.
+  const separatedLists = text.replace(
+    /(^|\n)([ \t]*(?:[-*•]|\d+\.)[ \t]+[^\n]+)\n(?=[ \t]*(?!(?:[-*•]|\d+\.)[ \t])\S)/g,
+    "$1$2\n\n"
+  );
+  const transformed = formatInlineCitationsToMarkdownLinks(separatedLists, citationIndexMap);
 
   return (
     <div className={`space-y-2 leading-relaxed ${className}`}>
@@ -41,13 +47,28 @@ export function MarkdownContent({ text, className = "", onCitationClick }: Props
             if (href?.startsWith("#cite:")) {
               const rawId = decodeURIComponent(href.slice("#cite:".length));
               const citation = parseCitationId(rawId);
+              const citeNum = citationIndexMap?.get(citation.id);
+              if (citeNum !== undefined) {
+                return (
+                  <button
+                    type="button"
+                    data-inline-citation={citation.id}
+                    onClick={() => onCitationClick?.(citation)}
+                    title={`${citation.label} — Bấm để mở văn bản và xem điều khoản này`}
+                    aria-label={`Trích dẫn ${citeNum}: ${citation.label}`}
+                    className="ml-1 inline-flex h-[18px] min-w-[18px] items-center justify-center rounded-full border border-[#BFDBFE] bg-[#EFF6FF] px-1.5 align-middle text-[10.5px] font-bold leading-none text-[#1E3A8A] transition-colors hover:border-[#93C5FD] hover:bg-[#DBEAFE] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#1E3A8A]/40"
+                  >
+                    {citeNum}
+                  </button>
+                );
+              }
               return (
                 <button
                   type="button"
                   data-inline-citation={citation.id}
                   onClick={() => onCitationClick?.(citation)}
-                  title="Bấm để mở văn bản và xem điều khoản này"
-                  className="mx-0.5 inline-flex items-center rounded-md border border-[#BFDBFE] bg-[#EFF6FF] px-1.5 py-0.5 align-baseline text-[12px] font-semibold text-[#1E3A8A] transition-colors hover:bg-[#DBEAFE] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#1E3A8A]/40"
+                  title={`${citation.label} — Bấm để mở văn bản và xem điều khoản này`}
+                  className="ml-1 inline-flex items-center rounded-md border border-[#BFDBFE] bg-[#EFF6FF] px-1.5 py-0.5 align-baseline text-[12px] font-semibold text-[#1E3A8A] transition-colors hover:bg-[#DBEAFE] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#1E3A8A]/40"
                 >
                   {children}
                 </button>

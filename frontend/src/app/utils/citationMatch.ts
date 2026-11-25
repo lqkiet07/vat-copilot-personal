@@ -302,21 +302,55 @@ export function splitTechnicalDiagnosticLines(text: string): {
   };
 }
 
-const INLINE_CITATION_TAG_RE =
-  /\[([A-Z0-9_]+(?:_D\d+[a-z]?(?:_K\d+[a-z]?(?:_(?:[a-zđ]|d_1))?)?)?)\](?!\()/gi;
+const SINGLE_CITATION_ID_SRC =
+  "[A-Z0-9_]+(?:_D\\d+[a-z]?(?:_K\\d+[a-z]?(?:_(?:[a-zđ]|d_1))?)?)?";
+const INLINE_CITATION_TAG_RE = new RegExp(`\\[(${SINGLE_CITATION_ID_SRC})\\](?!\\()`, "gi");
+// Also match comma/semicolon-separated canonical citation lists emitted inside a single bracket pair.
+const INLINE_CITATION_GROUP_RE = new RegExp(
+  `\\[(${SINGLE_CITATION_ID_SRC}(?:\\s*[,;]\\s*${SINGLE_CITATION_ID_SRC})*)\\](?!\\()`,
+  "gi"
+);
 
 function isRecognizedInlineCitation(parsed: Citation): boolean {
   return parsed.label !== parsed.id || Object.hasOwn(DOCUMENT_LABELS, parsed.id);
 }
 
-/** Convert recognized [DOC_ID_...] tags into clickable `#cite:` Markdown links while leaving unknown tags untouched. */
-export function formatInlineCitationsToMarkdownLinks(text: string): string {
+function parseInlineCitationGroup(inner: string): Citation[] | null {
+  const tokens = inner
+    .split(/\s*[,;]\s*/)
+    .map((tok) => tok.trim())
+    .filter(Boolean);
+  if (tokens.length === 0) return null;
+  const parsedList = tokens.map(parseCitationId);
+  return parsedList.every(isRecognizedInlineCitation) ? parsedList : null;
+}
+
+/** Convert recognized [DOC_ID_...] tags (single or comma/semicolon grouped) into clickable `#cite:` Markdown links. */
+export function formatInlineCitationsToMarkdownLinks(
+  text: string,
+  citationIndexMap?: ReadonlyMap<string, number>
+): string {
   if (!text) return "";
-  return text.replace(INLINE_CITATION_TAG_RE, (full, rawId: string) => {
-    const parsed = parseCitationId(rawId);
-    if (!isRecognizedInlineCitation(parsed)) return full;
-    return `[${parsed.label}](#cite:${encodeURIComponent(parsed.id)})`;
+  let linked = text.replace(INLINE_CITATION_GROUP_RE, (full, inner: string) => {
+    const parsedList = parseInlineCitationGroup(inner);
+    if (!parsedList) return full;
+    return parsedList
+      .map((parsed) => {
+        const index = citationIndexMap?.get(parsed.id);
+        const display = index !== undefined ? String(index) : parsed.label;
+        return `[${display}](#cite:${encodeURIComponent(parsed.id)})`;
+      })
+      .join(", ");
   });
+
+  if (citationIndexMap && citationIndexMap.size > 0) {
+    // Remove redundant separators between consecutive numbered badges and stray spaces before punctuation.
+    linked = linked
+      .replace(/(\]\(#cite:[^)]+\))\s*[,;]\s*(?=\[\d+\]\(#cite:)/g, "$1")
+      .replace(/(\]\(#cite:[^)]+\))\s+([.,;:)])/g, "$1$2");
+  }
+
+  return linked;
 }
 
 /** Replace recognized [DOC_ID_...] tags with clean Vietnamese labels for plain-text clipboard export. */
@@ -337,9 +371,9 @@ export function formatInlineCitationsPlainText(text: string): string {
           })
           .join("; ");
       }
-      return line.replace(INLINE_CITATION_TAG_RE, (full, rawId: string) => {
-        const parsed = parseCitationId(rawId);
-        return isRecognizedInlineCitation(parsed) ? parsed.label : full;
+      return line.replace(INLINE_CITATION_GROUP_RE, (full, inner: string) => {
+        const parsedList = parseInlineCitationGroup(inner);
+        return parsedList ? parsedList.map((p) => p.label).join("; ") : full;
       });
     })
     .join("\n");

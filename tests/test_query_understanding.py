@@ -147,3 +147,78 @@ def test_needs_query_understanding_handles_colloquial_and_chip_followups():
     ) is True
 
 
+@pytest.mark.parametrize(
+    "drifted",
+    [
+        "Chủ thể kinh doanh quán nét phải nộp những loại thuế nào?",
+        "Hộ kinh doanh có phải nộp thuế thu nhập cá nhân và thuế GTGT không?",
+        "Cửa hàng có phải đóng lệ phí môn bài không?",
+    ],
+)
+def test_validate_rewritten_query_rejects_general_non_vat_tax_drift(drifted):
+    ok, reason = validate_rewritten_query("mở tiệm tôi phải đóng thuế hem", drifted, history=None)
+    assert ok is False
+    assert reason == "added_non_vat_scope"
+
+    # Explicitly asked tax lists or non-VAT taxes in user text remain allowed.
+    ok_explicit, reason_explicit = validate_rewritten_query(
+        "cần nộp những loại thuế nào gồm thuế thu nhập cá nhân và lệ phí môn bài?",
+        drifted,
+        history=None,
+    )
+    assert ok_explicit is True
+    assert reason_explicit == "accepted"
+
+
+def test_understanding_prompt_enforces_general_vat_scope_without_case_hardcode():
+    from src.engine.query_understanding import _build_understanding_prompt
+
+    prompt = _build_understanding_prompt("mở tiệm tôi phải đóng thuế hem", [])
+    assert "những/các loại thuế" in prompt
+    assert "KHÔNG tự suy diễn" in prompt
+    assert "trò chơi điện tử" not in prompt
+
+
+def test_answer_query_understand_progress_hides_raw_rewritten_query():
+    from src.api.answer_service import answer_query
+
+    events = []
+
+    def fake_llm(prompt: str, **kwargs):
+        return json.dumps(
+            {
+                "scope": "vat",
+                "legal_query": "Nghĩa vụ thuế GTGT đối với quán net là gì?",
+                "missing_facts": ["Loại hình kinh doanh"],
+            },
+            ensure_ascii=False,
+        )
+
+    answer_query(
+        "quán nét tôi phải đóng thuế hem",
+        "2026-03-20",
+        use_llm=True,
+        pipeline="P1_FlatRAG",
+        fetch_fn=lambda *a, **k: ([], [], []),
+        llm_fn=fake_llm,
+        progress_cb=events.append,
+    )
+    understand_events = [e for e in events if e.get("stage") == "understand"]
+    assert len(understand_events) == 1
+    assert "«" not in understand_events[0]["message"]
+    assert "Đã chuẩn hóa câu hỏi" not in understand_events[0]["message"]
+
+
+def test_needs_query_understanding_routes_declarative_long_followup_with_history():
+    hist = [{"role": "user", "content": "quán nét tôi phải đóng thuế hem"}]
+    assert needs_query_understanding(
+        "hộ kinh doanh, doanh thu khoảng 800 triệu một năm",
+        history=hist,
+    ) is True
+    # Standalone formal question without follow-up cues still bypasses extra understanding.
+    assert needs_query_understanding(
+        "Thuế suất GTGT đối với dịch vụ xuất khẩu phần mềm là bao nhiêu?",
+        history=hist,
+    ) is False
+
+
