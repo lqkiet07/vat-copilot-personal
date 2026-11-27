@@ -621,4 +621,271 @@ def test_whole_document_mention_does_not_force_context_budget_exceeded(reviewed)
     assert "vui lòng cho biết thêm" in fallback["conclusion"].lower()
 
 
+def test_reviewed_answer_retains_point_lead_in_and_counterpart_threshold_clause_via_expansion(
+    tmp_path, monkeypatch
+):
+    from src.engine import reranker as reranker_mod
+
+    raw = tmp_path / "source.txt"
+    raw.write_text("Mức thuế suất 5% và ngưỡng doanh thu 01 tỷ đồng.", encoding="utf-8")
+    corpus = tmp_path / "corpus.json"
+    docs = [
+        {
+            "id": "LUAT_48_2024",
+            "code": "48/2024",
+            "issue_date": "2024-11-26",
+            "valid_from": "2025-07-01",
+            "valid_to": "9999-12-31",
+            "articles": [
+                {
+                    "id": "LUAT_48_2024_D9",
+                    "code": "Điều 9",
+                    "title": "Thuế suất",
+                    "content": "Điều 9. Thuế suất",
+                    "clauses": [
+                        {
+                            "id": "LUAT_48_2024_D9_K2",
+                            "code": "Khoản 2",
+                            "content": "2. Mức thuế suất 5% áp dụng đối với hàng hóa sau:",
+                            "points": [
+                                {"id": "LUAT_48_2024_D9_K2_b", "code": "Điểm b", "content": "Phân bón."}
+                            ],
+                        }
+                    ],
+                }
+            ],
+        },
+        {
+            "id": "ND_68_2026",
+            "code": "68/2026",
+            "issue_date": "2026-03-05",
+            "valid_from": "2026-01-01",
+            "valid_to": "9999-12-31",
+            "articles": [
+                {
+                    "id": "ND_68_2026_D3",
+                    "code": "Điều 3",
+                    "title": "Hộ kinh doanh",
+                    "content": "Điều 3",
+                    "clauses": [
+                        {"id": "ND_68_2026_D3_K1", "code": "Khoản 1", "content": "Từ 01 tỷ đồng trở xuống không chịu thuế."},
+                        {"id": "ND_68_2026_D3_K2", "code": "Khoản 2", "content": "Trên 01 tỷ đồng nộp trực tiếp."},
+                    ],
+                }
+            ],
+        },
+    ]
+    corpus.write_text(json.dumps(docs, ensure_ascii=False), encoding="utf-8")
+    sha = lambda p: hashlib.sha256(p.read_bytes()).hexdigest()
+    review = {
+        "schema_version": 1,
+        "oracle": "independent_raw_source_review",
+        "review_complete": True,
+        "pins": {"corpus.json": sha(corpus), "source.txt": sha(raw)},
+        "documents": [
+            {"doc_id": "LUAT_48_2024", "review_status": "reviewed", "source_paths": ["source.txt"], "issued_on": "2024-11-26", "effective_on": "2025-07-01"},
+            {"doc_id": "ND_68_2026", "review_status": "reviewed", "source_paths": ["source.txt"], "issued_on": "2026-03-05", "effective_on": "2026-01-01"},
+        ],
+        "candidates": [],
+    }
+    ledger = tmp_path / "review.json"
+    ledger.write_text(json.dumps(review), encoding="utf-8")
+
+    class _Session:
+        def __enter__(self):
+            return self
+
+        def __exit__(self, *args):
+            pass
+
+        def run(self, query, **kwargs):
+            rows = [{"cid": cid, "exists": True, "valid_from": "2025-07-01", "valid_to": "9999-12-31", "amended_by": [], "amendments": []} for cid in kwargs["ids"]]
+            return SimpleNamespace(data=lambda: rows)
+
+    monkeypatch.setattr(citation_verifier, "get_neo4j_driver", lambda: SimpleNamespace(session=_Session))
+    monkeypatch.setattr("src.config.selected_review_path", lambda p: None)
+    # Simulate rerank keeping only D9_K2_b and D3_K2 while omitting their companion parent/sibling.
+    monkeypatch.setattr(
+        reranker_mod,
+        "rerank_provisions",
+        lambda q, arts, **kw: [a for a in arts if a.id in {"LUAT_48_2024_D9_K2_b", "ND_68_2026_D3_K2"}],
+    )
+
+    pool_nodes = [
+        ArticleNode(id="LUAT_48_2024_D9", doc_id="LUAT_48_2024", code="Điều 9", title="Thuế suất", content="Điều 9. Thuế suất", valid_from="2025-07-01", valid_to="9999-12-31"),
+        ArticleNode(id="ND_68_2026_D3", doc_id="ND_68_2026", code="Điều 3", title="Hộ kinh doanh", content="Điều 3", valid_from="2026-01-01", valid_to="9999-12-31"),
+    ]
+    res = answer_service.answer_query(
+        "Phân bón và hộ kinh doanh doanh thu 650 triệu thế nào?",
+        "2026-03-20",
+        retriever_fn=lambda q, d: SimpleNamespace(articles=pool_nodes),
+        corpus_path=str(corpus),
+        reviewed_amendment_path=str(ledger),
+    )
+    assert "LUAT_48_2024_D9_K2" in res.active_article_ids
+    assert "ND_68_2026_D3_K1" in res.active_article_ids
+
+
+def test_reviewed_answer_keeps_interleaved_companion_and_multi_doc_coverage_under_9_item_pack_cap(
+    tmp_path, monkeypatch
+):
+    from src.engine import reranker as reranker_mod
+
+    raw = tmp_path / "source.txt"
+    raw.write_text("Nội dung tổng hợp 181, 359, 144 và ngưỡng 01 tỷ đồng.", encoding="utf-8")
+    corpus = tmp_path / "corpus.json"
+    docs = [
+        {
+            "id": "ND_68_2026",
+            "code": "68/2026",
+            "issue_date": "2026-03-05",
+            "valid_from": "2026-01-01",
+            "valid_to": "9999-12-31",
+            "articles": [
+                {
+                    "id": "ND_68_2026_D3",
+                    "code": "Điều 3",
+                    "title": "Hộ kinh doanh",
+                    "content": "Điều 3",
+                    "clauses": [
+                        {"id": "ND_68_2026_D3_K1", "code": "Khoản 1", "content": "Từ 01 tỷ đồng trở xuống không chịu thuế."},
+                        {"id": "ND_68_2026_D3_K2", "code": "Khoản 2", "content": "Trên 01 tỷ đồng nộp trực tiếp."},
+                    ],
+                }
+            ],
+        },
+        {
+            "id": "ND_181_2025",
+            "code": "181/2025",
+            "issue_date": "2025-07-01",
+            "valid_from": "2025-07-01",
+            "valid_to": "9999-12-31",
+            "articles": [
+                {
+                    "id": "ND_181_2025_D2",
+                    "code": "Điều 2",
+                    "title": "Quy định 181",
+                    "content": "Điều 2",
+                    "clauses": [
+                        {"id": f"ND_181_2025_D2_K{i}", "code": f"Khoản {i}", "content": f"Khoản 181 số {i}."}
+                        for i in range(1, 5)
+                    ],
+                }
+            ],
+        },
+        {
+            "id": "ND_359_2025",
+            "code": "359/2025",
+            "issue_date": "2025-12-31",
+            "valid_from": "2026-01-01",
+            "valid_to": "9999-12-31",
+            "articles": [
+                {
+                    "id": "ND_359_2025_D1",
+                    "code": "Điều 1",
+                    "title": "Quy định 359",
+                    "content": "Điều 1",
+                    "clauses": [
+                        {"id": f"ND_359_2025_D1_K{i}", "code": f"Khoản {i}", "content": f"Khoản 359 số {i}."}
+                        for i in range(1, 10)
+                    ],
+                }
+            ],
+        },
+        {
+            "id": "ND_144_2026",
+            "code": "144/2026",
+            "issue_date": "2026-04-01",
+            "valid_from": "2026-04-01",
+            "valid_to": "9999-12-31",
+            "articles": [
+                {
+                    "id": "ND_144_2026_D1",
+                    "code": "Điều 1",
+                    "title": "Quy định 144",
+                    "content": "Điều 1",
+                    "clauses": [
+                        {"id": f"ND_144_2026_D1_K{i}", "code": f"Khoản {i}", "content": f"Khoản 144 số {i}."}
+                        for i in range(1, 3)
+                    ],
+                }
+            ],
+        },
+    ]
+    corpus.write_text(json.dumps(docs, ensure_ascii=False), encoding="utf-8")
+    sha = lambda p: hashlib.sha256(p.read_bytes()).hexdigest()
+    review = {
+        "schema_version": 1,
+        "oracle": "independent_raw_source_review",
+        "review_complete": True,
+        "pins": {"corpus.json": sha(corpus), "source.txt": sha(raw)},
+        "documents": [
+            {"doc_id": "ND_68_2026", "review_status": "reviewed", "source_paths": ["source.txt"], "issued_on": "2026-03-05", "effective_on": "2026-01-01"},
+            {"doc_id": "ND_181_2025", "review_status": "reviewed", "source_paths": ["source.txt"], "issued_on": "2025-07-01", "effective_on": "2025-07-01"},
+            {"doc_id": "ND_359_2025", "review_status": "reviewed", "source_paths": ["source.txt"], "issued_on": "2025-12-31", "effective_on": "2026-01-01"},
+            {"doc_id": "ND_144_2026", "review_status": "reviewed", "source_paths": ["source.txt"], "issued_on": "2026-04-01", "effective_on": "2026-04-01"},
+        ],
+        "candidates": [],
+    }
+    ledger = tmp_path / "review.json"
+    ledger.write_text(json.dumps(review), encoding="utf-8")
+
+    class _Session:
+        def __enter__(self):
+            return self
+
+        def __exit__(self, *args):
+            pass
+
+        def run(self, query, **kwargs):
+            rows = [{"cid": cid, "exists": True, "valid_from": "2025-07-01", "valid_to": "9999-12-31", "amended_by": [], "amendments": []} for cid in kwargs["ids"]]
+            return SimpleNamespace(data=lambda: rows)
+
+    monkeypatch.setattr(citation_verifier, "get_neo4j_driver", lambda: SimpleNamespace(session=_Session))
+    monkeypatch.setattr("src.config.selected_review_path", lambda p: None)
+
+    # Case A: 9-item cap must still keep D3_K1 right after D3_K2 despite 8 extra clauses.
+    keep_a = {"ND_68_2026_D3_K2"} | {f"ND_359_2025_D1_K{i}" for i in range(1, 9)}
+    monkeypatch.setattr(
+        reranker_mod,
+        "rerank_provisions",
+        lambda q, arts, **kw: [a for a in arts if a.id == "ND_68_2026_D3_K2"] + [a for a in arts if a.id in keep_a and a.id != "ND_68_2026_D3_K2"],
+    )
+    pool_a = [
+        ArticleNode(id="ND_68_2026_D3", doc_id="ND_68_2026", code="Điều 3", title="Hộ kinh doanh", content="Điều 3", valid_from="2026-01-01", valid_to="9999-12-31"),
+        ArticleNode(id="ND_359_2025_D1", doc_id="ND_359_2025", code="Điều 1", title="Quy định 359", content="Điều 1", valid_from="2026-01-01", valid_to="9999-12-31"),
+    ]
+    res_a = answer_service.answer_query(
+        "Hộ kinh doanh doanh thu 650 triệu thế nào?",
+        "2026-04-15",
+        retriever_fn=lambda q, d: SimpleNamespace(articles=pool_a),
+        corpus_path=str(corpus),
+        reviewed_amendment_path=str(ledger),
+    )
+    assert "ND_68_2026_D3_K1" in res_a.active_article_ids
+
+    # Case B: multi-doc scope must preserve coverage for 181, 359, and 144 under 9-item cap.
+    monkeypatch.setattr(
+        reranker_mod,
+        "rerank_provisions",
+        lambda q, arts, **kw: [a for a in arts if a.id.startswith("ND_359_2025_")][:9],
+    )
+    pool_b = [
+        ArticleNode(id="ND_359_2025_D1", doc_id="ND_359_2025", code="Điều 1", title="Quy định 359", content="Điều 1", valid_from="2026-01-01", valid_to="9999-12-31"),
+        ArticleNode(id="ND_181_2025_D2", doc_id="ND_181_2025", code="Điều 2", title="Quy định 181", content="Điều 2", valid_from="2025-07-01", valid_to="9999-12-31"),
+        ArticleNode(id="ND_144_2026_D1", doc_id="ND_144_2026", code="Điều 1", title="Quy định 144", content="Điều 1", valid_from="2026-04-01", valid_to="9999-12-31"),
+    ]
+    res_b = answer_service.answer_query(
+        "So sánh Nghị định 181/2025/NĐ-CP, Nghị định 359/2025/NĐ-CP và Nghị định 144/2026/NĐ-CP?",
+        "2026-04-15",
+        retriever_fn=lambda q, d: SimpleNamespace(articles=pool_b),
+        corpus_path=str(corpus),
+        reviewed_amendment_path=str(ledger),
+    )
+    active_docs = {aid.split("_D", 1)[0] for aid in res_b.active_article_ids}
+    assert {"ND_181_2025", "ND_359_2025", "ND_144_2026"}.issubset(active_docs)
+
+
+
+
 

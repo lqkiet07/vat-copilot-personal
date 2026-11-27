@@ -128,4 +128,49 @@ def test_clause_vector_search_and_merge_vector_ranks():
     assert merged[0] == "D5"
 
 
+def test_enrich_articles_folds_active_point_children_after_clauses():
+    from src.engine.hybrid_retriever import _enrich_articles
+
+    class _FakeResult:
+        def data(self):
+            return [
+                {
+                    "id": "LUAT_48_2024_D9",
+                    "doc_id": "LUAT_48_2024",
+                    "code": "Điều 9",
+                    "title": "Thuế suất",
+                    "raw_content": "Điều 9. Thuế suất",
+                    "clause_texts": ["Khoan 2: Mức thuế suất 5% áp dụng đối với hàng hóa sau:"],
+                    "point_texts": ["Diem b: Phân bón, quặng để sản xuất phân bón."],
+                    "valid_from": "2025-07-01",
+                    "valid_to": "9999-12-31",
+                    "embedding": None,
+                    "related_ids": [],
+                }
+            ]
+
+    class _FakeSession:
+        def run(self, cypher, **kwargs):
+            self.last_cypher = cypher
+            return _FakeResult()
+
+    sess = _FakeSession()
+    nodes = _enrich_articles(sess, ["LUAT_48_2024_D9"], "2025-08-01")
+    assert len(nodes) == 1
+    assert "CONTAINS]->(pt:Point)" in sess.last_cypher
+    assert "Phân bón, quặng để sản xuất phân bón." in nodes[0].content
+
+
+@pytest.mark.requires_neo4j
+def test_enrich_articles_includes_point_enumerations_for_luat_48_d9():
+    from src.engine.hybrid_retriever import _enrich_articles
+    from src.graph.connection import get_neo4j_driver
+
+    with get_neo4j_driver().session() as session:
+        nodes = _enrich_articles(session, ["LUAT_48_2024_D9"], "2025-08-01")
+    assert len(nodes) == 1
+    assert "Phân bón" in nodes[0].content
+
+
+
 

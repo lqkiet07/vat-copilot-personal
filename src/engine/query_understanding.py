@@ -20,15 +20,23 @@ _EXPLICIT_LEGAL_REF_RE = re.compile(
 )
 _FOLLOW_UP_CUE_RE = re.compile(
     r"^(?:còn|vậy|nếu|thế|với lại|ngoài ra|tôi là|bên tôi|mình là|em là|bổ sung)\b"
-    r"|\b(?:thì sao|như vậy|trường hợp trên|quy định đó)\b",
+    r"|\b(?:thì sao|như vậy|trường hợp trên|quy định đó"
+    r"|khách hàng mua|bên mua|bên bán|người mua|người bán|trường hợp này"
+    r"|áp dụng quy định nào|chịu quy định nào|thì áp dụng|thì tính|theo phương pháp nào)\b",
     re.IGNORECASE,
 )
 _INTERROGATIVE_RE = re.compile(
     r"\?|\b(?:bao\s+nhiêu|như\s+thế\s+nào|thế\s+nào|có\s+phải|có\s+được|ra\s+sao|khi\s+nào|ở\s+đâu|là\s+gì|gì|nào)\b",
     re.IGNORECASE,
 )
+_EXPLICIT_ENTITY_RE = re.compile(
+    r"\b(?:hộ kinh doanh|cá nhân kinh doanh|doanh nghiệp|công ty|hợp tác xã|tổ chức|cơ sở kinh doanh|nhà thầu)\b",
+    re.IGNORECASE,
+)
 _COLLOQUIAL_BUSINESS_RE = re.compile(
-    r"\b(?:quán|tiệm|online|tại nhà|cửa hàng|bán lẻ|chợ|bán hàng|bán quần áo|bán đồ|mở quán|mở tiệm)\b",
+    r"\b(?:quán|tiệm|online|tại nhà|cửa hàng|bán lẻ|chợ|bán hàng|bán quần áo|bán đồ|mở quán|mở tiệm"
+    r"|phòng trọ|nhà trọ|cho\s+(?:sinh viên\s+)?thuê|mang đi|nhà tôi"
+    r"|bán\s+(?:trà|cà phê|nước|cơm|phở|bánh|hàng|tạp hóa))\b",
     re.IGNORECASE,
 )
 _FORMAL_VAT_TERMS = (
@@ -116,11 +124,7 @@ def needs_query_understanding(question: str, history: list[dict] | None = None) 
         return False
     if has_history and _is_declarative_followup(lowered):
         return True
-    if (
-        _COLLOQUIAL_BUSINESS_RE.search(lowered)
-        and "hộ kinh doanh" not in lowered
-        and "cá nhân kinh doanh" not in lowered
-    ):
+    if _COLLOQUIAL_BUSINESS_RE.search(lowered) and not _EXPLICIT_ENTITY_RE.search(lowered):
         return True
     return not any(term in lowered for term in _FORMAL_VAT_TERMS)
 

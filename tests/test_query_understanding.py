@@ -224,3 +224,51 @@ def test_needs_query_understanding_routes_declarative_long_followup_with_history
     ) is False
 
 
+def test_needs_query_understanding_captures_elliptical_multiturn_formal_questions():
+    hist = [
+        {
+            "role": "user",
+            "content": "Sản phẩm trồng trọt do hợp tác xã bán ra ở khâu thương mại chịu thuế bao nhiêu?",
+        }
+    ]
+    assert (
+        needs_query_understanding(
+            "khách hàng mua là doanh nghiệp chế biến nộp thuế theo phương pháp khấu trừ thì áp dụng quy định nào?",
+            history=hist,
+        )
+        is True
+    )
+    # Self-contained standalone Turn 2 formal question without anaphora stays bypassed.
+    assert (
+        needs_query_understanding(
+            "Thuế suất GTGT đối với dịch vụ xuất khẩu phần mềm là bao nhiêu?",
+            history=hist,
+        )
+        is False
+    )
+
+
+@pytest.mark.parametrize(
+    "query",
+    [
+        "bán trà sữa mang đi doanh thu khoảng 400 triệu một năm có phải nộp thuế GTGT không?",
+        "nhà tôi có 5 phòng trọ cho sinh viên thuê thì có phải đóng thuế giá trị gia tăng không?",
+    ],
+)
+def test_needs_query_understanding_captures_everyday_commerce_and_rental_without_legal_entity(query):
+    assert needs_query_understanding(query, history=None) is True
+
+
+@pytest.mark.parametrize(
+    "query",
+    [
+        "Hộ kinh doanh thuế GTGT thế nào?",
+        "Công ty tôi mua máy tính xách tay phục vụ văn phòng có được khấu trừ thuế GTGT đầu vào không?",
+        "chạy xe ôm công nghệ có thu nhập khoảng 300 triệu/năm thì có phải đóng thuế GTGT không?",
+    ],
+)
+def test_needs_query_understanding_still_bypasses_explicit_legal_entity_formal_queries(query):
+    assert needs_query_understanding(query, history=None) is False
+
+
+

@@ -220,53 +220,10 @@ def _expand_1hop_relations(
         return []
 
 
-def _search_clause_vector(
-    session, vec: list[float], as_of_date: str, top_k: int = 30, min_score: float = 0.35
-) -> list[str]:
-    """Search Clause vector index and lift matching parent Article IDs."""
-    cypher_clause_vec = """
-    CALL db.index.vector.queryNodes('clause_embedding', $top_k, $vec) YIELD node, score
-    MATCH (parent:Article)-[:CONTAINS]->(node:Clause)
-    WHERE node.valid_from <= date($as_of_date)
-      AND node.valid_to >= date($as_of_date)
-      AND parent.valid_from <= date($as_of_date)
-      AND parent.valid_to >= date($as_of_date)
-    RETURN parent.id AS id, max(score) AS score
-    ORDER BY score DESC
-    """
-    try:
-        rows = session.run(
-            cypher_clause_vec, top_k=top_k, vec=vec, as_of_date=as_of_date
-        ).data()
-        if not isinstance(rows, list):
-            return []
-        filtered = [
-            r["id"] for r in rows
-            if isinstance(r, dict) and r.get("id") and float(r.get("score", 0.0)) >= min_score
-        ]
-        if filtered:
-            return filtered
-        return [r["id"] for r in rows[:5] if isinstance(r, dict) and r.get("id")]
-    except Exception:
-        return []
-
-
-def _merge_vector_ranks(
-    article_ranks: list[str], clause_ranks: list[str], k: int = 60
-) -> list[str]:
-    """Fuse article-level and clause-level vector rankings via weighted RRF."""
-    if not clause_ranks:
-        return list(article_ranks)
-    fused = reciprocal_rank_fusion(
-        article_ranks, clause_ranks, k=k, ft_weight=1.0, vec_weight=1.25
-    )
-    return [doc_id for doc_id, _ in fused]
-
-
 def _enrich_articles(
     session, candidate_ids: list[str], as_of_date: str
 ) -> list[ArticleNode]:
-    """Fetch article details, active clauses, and 1-hop relations as of specified date."""
+    """Fetch article details, active clauses and points, and 1-hop relations as of specified date."""
     if not candidate_ids:
         return []
 
@@ -283,10 +240,22 @@ def _enrich_articles(
     OPTIONAL MATCH (art)-[:CONTAINS]->(cl:Clause)
       WHERE cl.valid_from <= date($as_of_date)
         AND cl.valid_to >= date($as_of_date)
-    WITH art, doc, related_ids, cl
+    OPTIONAL MATCH (cl)-[:CONTAINS]->(pt:Point)
+      WHERE pt.valid_from <= date($as_of_date)
+        AND pt.valid_to >= date($as_of_date)
+    WITH art, doc, related_ids, cl, pt
+    ORDER BY cl.code, pt.code
+    WITH art, doc, related_ids, cl,
+         collect(DISTINCT CASE WHEN pt IS NOT NULL THEN '  ' + pt.code + ': ' + pt.content ELSE null END) AS cl_points
     ORDER BY cl.code
     WITH art, doc, related_ids,
-         collect(DISTINCT CASE WHEN cl IS NOT NULL THEN cl.code + ': ' + cl.content ELSE null END) AS clause_texts
+         collect(DISTINCT CASE
+           WHEN cl IS NOT NULL AND size(cl_points) > 0
+             THEN cl.code + ': ' + cl.content + '\n' + reduce(s = '', p IN cl_points | CASE WHEN s = '' THEN p ELSE s + '\n' + p END)
+           WHEN cl IS NOT NULL
+             THEN cl.code + ': ' + cl.content
+           ELSE null
+         END) AS clause_texts
     RETURN art.id AS id, doc.id AS doc_id, art.code AS code,
            art.title AS title, art.content AS raw_content,
            clause_texts,
@@ -302,11 +271,14 @@ def _enrich_articles(
     for r in rows:
         related = sorted({x for x in r.pop("related_ids") if x})
         clause_texts = [x for x in r.pop("clause_texts", []) if x]
+        point_texts = [x for x in r.pop("point_texts", []) if x]
         raw_content = r.pop("raw_content", "") or ""
+        parts = [raw_content] if raw_content else []
         if clause_texts:
-            full_content = f"{raw_content}\n\n" + "\n".join(clause_texts)
-        else:
-            full_content = raw_content
+            parts.append("\n".join(clause_texts))
+        if point_texts:
+            parts.append("\n".join(point_texts))
+        full_content = "\n\n".join(parts)
 
         node = ArticleNode(
             **r,

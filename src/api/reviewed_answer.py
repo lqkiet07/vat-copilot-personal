@@ -350,23 +350,53 @@ def reviewed_answer(question, query, day, pipeline, use_llm, model, history, tra
     explicit_ids = explicit_evidence_ids(query, corpus_path)
     strict_explicit, doc_scope = _partition_explicit_ids(query, explicit_ids, articles)
     if articles:
-        from src.engine.reranker import rerank_provisions
+        from src.engine.reranker import (
+            ensure_scope_doc_coverage,
+            expand_companion_provisions,
+            preserve_top_retrieved_anchor,
+            rerank_provisions,
+        )
         from src.engine.evidence_pack import pack_evidence
         from src.engine.answer_assessment import build_assessment_prompt
 
+        projected_pool = list(articles)
+        top_retrieved_parent = articles[0].id.split("_K", 1)[0]
+        max_pool = max(12, len(strict_explicit) + 7)
         if doc_scope:
-            scope_docs = {eid.split("_D", 1)[0] for eid in doc_scope}
+            ordered_scope_docs = list(dict.fromkeys(eid.split("_D", 1)[0] for eid in doc_scope))
+            scope_docs = set(ordered_scope_docs)
             in_scope = [a for a in articles if a.id.split("_D", 1)[0] in scope_docs]
             other = [a for a in articles if a.id.split("_D", 1)[0] not in scope_docs]
             articles = rerank_provisions(
                 query, in_scope + other, explicit_ids=strict_explicit,
                 top_n=max(10, len(strict_explicit) + 6),
             )
+            if len(ordered_scope_docs) >= 2:
+                articles = ensure_scope_doc_coverage(
+                    articles,
+                    projected_pool,
+                    ordered_scope_docs,
+                    per_doc_min=2,
+                    insert_at=4,
+                    max_total=max_pool,
+                )
         else:
             articles = rerank_provisions(
                 query, articles, explicit_ids=strict_explicit,
                 top_n=max(10, len(strict_explicit) + 5),
             )
+            articles = preserve_top_retrieved_anchor(
+                articles,
+                projected_pool,
+                top_retrieved_parent,
+                insert_at=5,
+                max_total=max_pool,
+            )
+        articles = expand_companion_provisions(
+            articles,
+            projected_pool,
+            max_total=max_pool,
+        )
         context = provider_context_limit(_llm_provider())
         # Separate unavailable explicit refs so partial verified evidence still displays instead of wiping to [].
         available_requested = [
