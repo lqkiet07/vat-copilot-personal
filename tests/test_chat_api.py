@@ -146,7 +146,8 @@ def test_post_chat_stream_emits_error_event_instead_of_raising(
     assert response.status_code == 200
     names = _event_names(response.text)
     assert names[-1] == "error"
-    assert "retrieval backend down" in response.text
+    assert "Máy chủ tra cứu tạm thời gián đoạn" in response.text
+    assert "retrieval backend down" not in response.text
 
 
 def test_post_chat_greeting_is_out_of_scope(client: TestClient, stub_backend):

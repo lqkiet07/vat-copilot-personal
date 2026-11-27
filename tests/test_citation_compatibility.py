@@ -694,3 +694,18 @@ def test_verify_and_score_forwards_exact_corpus_path():
     assert result.risk_score == 50
     assert result.warnings and "xác minh" in result.warnings[0]
     assert "[ND_181_2025_D9]" in prune_invalid_citations("[ND_181_2025_D9]", result.report)
+
+
+def test_load_verification_metadata_hits_stat_cache_without_rereading_bytes(exact_corpus, monkeypatch):
+    from src.verifier import citation_verifier
+
+    path = exact_corpus[2]()
+    first = citation_verifier._load_verification_metadata(path)
+    assert "ND_181_2025_D9" in first
+
+    def forbidden_read(self):
+        raise AssertionError("Unchanged corpus file must hit stat cache without re-reading bytes")
+
+    monkeypatch.setattr(Path, "read_bytes", forbidden_read)
+    second = citation_verifier._load_verification_metadata(path)
+    assert "ND_181_2025_D9" in second

@@ -68,3 +68,11 @@ def test_prefixed_tax_query_is_not_treated_as_greeting():
 def test_standalone_test_is_greeting_and_ood_uses_word_boundaries():
     assert check_query_domain("test").is_greeting is True
     assert check_query_domain("bảo hiểm xã hội cho doanh nghiệp").reason == "EXPLICIT_OUT_OF_DOMAIN"
+
+
+def test_traffic_administrative_fine_without_tax_terms_is_out_of_domain():
+    res = check_query_domain(
+        "Mức xử phạt vi phạm hành chính khi điều khiển ô tô vượt đèn đỏ là bao nhiêu tiền?"
+    )
+    assert res.is_allowed is False
+    assert res.reason == "EXPLICIT_OUT_OF_DOMAIN"

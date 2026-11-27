@@ -6,6 +6,7 @@ from typing import Literal
 from pydantic import BaseModel, Field, field_validator
 
 ChatRole = Literal["user", "assistant"]
+_MODEL_ID_RE = re.compile(r"^[A-Za-z0-9._:-]{1,64}$")
 
 
 class ChatMessage(BaseModel):
@@ -18,9 +19,16 @@ class ChatMessage(BaseModel):
 class ChatRequest(BaseModel):
     """Payload accepted by the chat endpoints."""
 
-    messages: list[ChatMessage] = Field(..., min_length=1)
+    messages: list[ChatMessage] = Field(..., min_length=1, max_length=40)
     as_of_date: str | None = None
     model: str = "qwen2.5:7b"
+
+    @field_validator("model")
+    @classmethod
+    def validate_model(cls, v: str) -> str:
+        if not isinstance(v, str) or not _MODEL_ID_RE.fullmatch(v):
+            raise ValueError("model contains disallowed characters or exceeds 64 chars")
+        return v
 
     @field_validator("as_of_date")
     @classmethod

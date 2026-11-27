@@ -5,6 +5,7 @@ from contextvars import ContextVar
 import json
 from io import BytesIO
 import os
+import re
 import time
 from json import JSONDecodeError
 from urllib.error import HTTPError, URLError
@@ -187,9 +188,14 @@ def _gemini_output(data, event):
     return output
 
 
+_SAFE_GEMINI_MODEL_RE = re.compile(r"^[A-Za-z0-9._:-]{1,64}$")
+
+
 def _call_gemini_api(prompt: str, api_key: str, model: str = "gemini-2.5-flash", timeout: float = 30.0,
                      generation_config: dict | None = None) -> str | None:
     """Call Google Gemini REST API."""
+    if not isinstance(model, str) or not _SAFE_GEMINI_MODEL_RE.fullmatch(model):
+        raise ValueError("Unsafe model identifier")
     deadline = time.monotonic() + timeout
     config = _gemini_config(model, generation_config)
     template = {

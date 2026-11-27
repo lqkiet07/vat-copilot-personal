@@ -4,6 +4,8 @@ from datetime import date
 
 from pydantic import BaseModel, Field, field_validator
 
+_MODEL_ID_RE = re.compile(r"^[A-Za-z0-9._:-]{1,64}$")
+
 ALLOWED_PIPELINES = (
     "P3_FullSystem",
     "P2_TemporalGraphRAG",
@@ -22,7 +24,23 @@ class QueryRequest(BaseModel):
     pipeline: str = Field(default="P3_FullSystem", description="Retrieval pipeline identifier")
     use_llm: bool = Field(default=False, description="Whether to invoke LLM generation")
     model: str = Field(default="qwen2.5:7b", description="LLM model identifier")
-    history: list[dict] = Field(default_factory=list, description="Conversation history turns")
+    history: list[dict] = Field(default_factory=list, max_length=40, description="Conversation history turns")
+
+    @field_validator("model")
+    @classmethod
+    def validate_model(cls, v: str) -> str:
+        if not isinstance(v, str) or not _MODEL_ID_RE.fullmatch(v):
+            raise ValueError("model contains disallowed characters or exceeds 64 chars")
+        return v
+
+    @field_validator("history")
+    @classmethod
+    def validate_history_items(cls, v: list[dict]) -> list[dict]:
+        for turn in v:
+            content = turn.get("content") if isinstance(turn, dict) else None
+            if isinstance(content, str) and len(content) > 8000:
+                raise ValueError("history message exceeds 8000 characters")
+        return v
 
     @field_validator("as_of_date")
     @classmethod

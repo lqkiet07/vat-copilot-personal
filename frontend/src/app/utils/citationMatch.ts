@@ -1,5 +1,6 @@
 import { parseCitationId } from "../api";
 import { DOCUMENT_LABELS, type Article, type Citation, type Clause, type LawDoc, type Point } from "../data";
+export { fmtDate } from "./dateFormat";
 
 export type DocCategory = "all" | "luat" | "nghidinh" | "thongtu" | "other";
 
@@ -33,14 +34,6 @@ export type PreviewClausesResult = {
 };
 
 export const CONVERSATION_STORAGE_LIMIT = 40;
-
-/** Format ISO YYYY-MM-DD date string to DD/MM/YYYY for Vietnamese display. */
-export function fmtDate(iso: string): string {
-  if (!iso || !iso.includes("-")) return iso;
-  const parts = iso.split("-");
-  if (parts.length !== 3) return iso;
-  return `${parts[2]}/${parts[1]}/${parts[0]}`;
-}
 
 /** Normalize staging _d_1 point suffix vs Vietnamese "đ" into a canonical token. */
 export function normalizePointKey(raw: string | undefined | null): string | null {

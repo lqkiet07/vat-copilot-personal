@@ -29,6 +29,7 @@ CLEAR_OUT_OF_DOMAIN_PATTERNS = [
     r"thuật toán", r"quy hoạch động", r"giải thuật", r"đồ thị euler", r"dijkstra", r"machine learning",
     r"thời tiết", r"nấu ăn", r"bóng đá", r"viết thơ", r"bài thơ", r"công thức hóa học", r"vật lý",
     r"lập trình java", r"lập trình c", r"lập trình python", r"react js", r"html css",
+    r"vượt đèn đỏ", r"vi phạm giao thông", r"bằng lái xe", r"giấy phép lái xe", r"nồng độ cồn",
 ]
 
 CORE_TAX_KEYWORDS = [

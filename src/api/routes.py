@@ -1,5 +1,6 @@
 """API routes for VAT Legal Temporal GraphRAG."""
 import json
+import logging
 from collections.abc import Iterator
 import queue
 import threading
@@ -17,6 +18,7 @@ from src.ui.demo_service import DEMO_SCENARIOS, execute_demo_query
 
 router = APIRouter(prefix="/api", tags=["Legal VAT API"])
 api_router = router
+logger = logging.getLogger(__name__)
 
 
 @router.get("/health", response_model=HealthResponse)
@@ -84,8 +86,9 @@ def post_query(req: QueryRequest) -> QueryResponse:
             history=req.history,
         )
         return QueryResponse(**result)
-    except Exception as exc:
-        raise HTTPException(status_code=503, detail=f"Service unavailable: {exc}")
+    except Exception:
+        logger.exception("Query processing failed")
+        raise HTTPException(status_code=503, detail="Service temporarily unavailable")
 
 
 @router.post("/query/stream")
@@ -111,8 +114,9 @@ def post_query_stream(req: QueryRequest) -> StreamingResponse:
                 progress_cb=on_progress,
             )
             event_queue.put(("result", QueryResponse(**result).model_dump()))
-        except Exception as exc:
-            event_queue.put(("error", {"message": f"Service unavailable: {exc}"}))
+        except Exception:
+            logger.exception("Streaming query failed")
+            event_queue.put(("error", {"message": "Máy chủ tra cứu tạm thời gián đoạn. Vui lòng thử lại sau."}))
         finally:
             event_queue.put(None)
 
@@ -153,8 +157,9 @@ def post_chat_stream(req: ChatRequest) -> StreamingResponse:
         try:
             for name, payload in events:
                 yield _sse_frame(name, payload)
-        except Exception as exc:
-            yield _sse_frame("error", {"message": str(exc)})
+        except Exception:
+            logger.exception("Streaming chat failed")
+            yield _sse_frame("error", {"message": "Máy chủ tra cứu tạm thời gián đoạn. Vui lòng thử lại sau."})
 
     return StreamingResponse(
         event_stream(),

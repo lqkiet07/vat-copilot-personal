@@ -69,6 +69,7 @@ def _parse_cid_parts(cid: str) -> tuple[str, str | None, str | None]:
 
 
 _META_CACHE: dict[tuple[str, str], dict[str, dict]] = {}
+_STAT_DIGEST_CACHE: dict[tuple[str, int, int], str] = {}
 _PROJECTION_CACHE: dict[tuple[str, str, str], list[tuple[str, dict]]] = {}
 
 
@@ -77,7 +78,15 @@ def _load_verification_metadata(corpus_path: str) -> dict[str, dict]:
     if not target.is_absolute() and not target.exists():
         target = Path(__file__).resolve().parents[2] / target
     target = target.resolve()
-    digest = hashlib.sha256(target.read_bytes()).hexdigest()
+    stat = target.stat()
+    stat_key = (str(target), stat.st_mtime_ns, stat.st_size)
+    # Reuse stat-keyed SHA-256 digest so repeated _verify() calls skip re-reading multi-MB corpus JSON.
+    digest = _STAT_DIGEST_CACHE.get(stat_key)
+    if digest is None:
+        digest = hashlib.sha256(target.read_bytes()).hexdigest()
+        if len(_STAT_DIGEST_CACHE) >= 16:
+            _STAT_DIGEST_CACHE.clear()
+        _STAT_DIGEST_CACHE[stat_key] = digest
     cache_key = (str(target), digest)
     cached = _META_CACHE.get(cache_key)
     if cached is not None:

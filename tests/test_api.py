@@ -307,7 +307,8 @@ def test_post_query_handles_service_error(client: TestClient):
             },
         )
         assert response.status_code == 503
-        assert "Service unavailable: Engine failure" in response.json()["detail"]
+        assert response.json()["detail"] == "Service temporarily unavailable"
+        assert "Engine failure" not in response.json()["detail"]
 
 
 def test_neo4j_driver_singleton():
@@ -371,5 +372,41 @@ def test_post_query_stream_emits_stage_and_result_events(client: TestClient, mon
     assert "Doanh thu hằng năm?" in text
     assert "ND_68_2026_D3_K1" in text
     assert "ND_141_2026_D1_K1" in text
+
+
+@pytest.mark.parametrize("bad_model", ["gemini-2.5-flash/../../files", "bad?key=1", "a" * 65])
+def test_query_and_chat_requests_reject_unsafe_model_identifiers(bad_model):
+    from src.api.chat_models import ChatMessage, ChatRequest
+    from src.engine.llm_client import _call_gemini_api
+
+    with pytest.raises(ValidationError):
+        QueryRequest(query="thuế suất?", as_of_date="2026-03-20", model=bad_model)
+    with pytest.raises(ValidationError):
+        ChatRequest(messages=[ChatMessage(role="user", content="thuế suất?")], model=bad_model)
+    with pytest.raises(ValueError, match="Unsafe model identifier"):
+        _call_gemini_api("prompt", "fake-key", model=bad_model)
+
+
+def test_query_and_chat_requests_reject_unbounded_history():
+    from src.api.chat_models import ChatMessage, ChatRequest
+
+    too_many_history = [{"role": "user", "content": "hỏi"} for _ in range(41)]
+    with pytest.raises(ValidationError):
+        QueryRequest(query="thuế suất?", as_of_date="2026-03-20", history=too_many_history)
+    with pytest.raises(ValidationError):
+        ChatRequest(messages=[ChatMessage(role="user", content="hỏi") for _ in range(41)])
+
+
+def test_query_503_does_not_leak_raw_exception_details(client: TestClient):
+    from unittest.mock import patch
+
+    with patch("src.api.routes.execute_demo_query", side_effect=RuntimeError("secret C:\\internal\\db.pwd failure")):
+        response = client.post(
+            "/api/query",
+            json={"query": "thuế suất?", "as_of_date": "2026-03-20", "pipeline": "P3_FullSystem"},
+        )
+    assert response.status_code == 503
+    assert "internal" not in response.json()["detail"]
+    assert "secret" not in response.json()["detail"]
 
 
