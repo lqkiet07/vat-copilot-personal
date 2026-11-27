@@ -4,14 +4,16 @@
       "baseline": {
         "total_in_scope": 22,
         "top5_hit_rate": 0.9545,
+        "primary_top5_hit_rate": 0.7727,
         "forbidden_noise_rate": 0.0,
-        "mean_latency_ms": 4976.9
+        "mean_latency_ms": 5922.9
       },
       "upgraded": {
         "total_in_scope": 22,
-        "top5_hit_rate": 0.9091,
+        "top5_hit_rate": 1.0,
+        "primary_top5_hit_rate": 0.9545,
         "forbidden_noise_rate": 0.0,
-        "mean_latency_ms": 6396.7
+        "mean_latency_ms": 8905.6
       }
     },
     "cases": [
@@ -26,16 +28,20 @@
           "ND_252_2026_D15"
         ],
         "baseline_hit_top5": true,
+        "baseline_primary_hit_top5": false,
         "baseline_noise": false,
-        "baseline_ms": 6714.0,
+        "baseline_ms": 23081.7,
         "upgraded_top5": [
-          "VBHN_25_2026_D3",
-          "LUAT_108_2025_D13",
-          "ND_252_2026_D42"
+          "ND_68_2026_D3",
+          "ND_359_2025_D1",
+          "LUAT_149_2025_D1",
+          "ND_181_2025_D3",
+          "ND_68_2026_D8"
         ],
         "upgraded_hit_top5": true,
+        "upgraded_primary_hit_top5": true,
         "upgraded_noise": false,
-        "upgraded_ms": 26437.9
+        "upgraded_ms": 68164.7
       },
       {
         "id": "UPG_02",
@@ -48,16 +54,20 @@
           "ND_68_2026_D4"
         ],
         "baseline_hit_top5": true,
+        "baseline_primary_hit_top5": true,
         "baseline_noise": false,
-        "baseline_ms": 4951.4,
+        "baseline_ms": 5276.9,
         "upgraded_top5": [
-          "VBHN_25_2026_D3",
-          "VBHN_25_2026_D4",
-          "VBHN_25_2026_D10"
+          "ND_68_2026_D3",
+          "ND_68_2026_D10",
+          "LUAT_149_2025_D1",
+          "ND_359_2025_D1",
+          "LUAT_48_2024_D4"
         ],
         "upgraded_hit_top5": true,
+        "upgraded_primary_hit_top5": true,
         "upgraded_noise": false,
-        "upgraded_ms": 5202.4
+        "upgraded_ms": 6814.2
       },
       {
         "id": "UPG_03",
@@ -70,16 +80,18 @@
           "VBHN_25_2026_D3"
         ],
         "baseline_hit_top5": true,
+        "baseline_primary_hit_top5": false,
         "baseline_noise": false,
-        "baseline_ms": 4845.3,
+        "baseline_ms": 5151.5,
         "upgraded_top5": [
           "LUAT_108_2025_D13",
-          "VBHN_25_2026_D10",
-          "LUAT_48_2024_D9"
+          "ND_68_2026_D11",
+          "ND_252_2026_D43"
         ],
         "upgraded_hit_top5": true,
+        "upgraded_primary_hit_top5": true,
         "upgraded_noise": false,
-        "upgraded_ms": 5310.3
+        "upgraded_ms": 5573.0
       },
       {
         "id": "UPG_04",
@@ -92,16 +104,20 @@
           "VBHN_25_2026_D3"
         ],
         "baseline_hit_top5": true,
+        "baseline_primary_hit_top5": true,
         "baseline_noise": false,
-        "baseline_ms": 4928.4,
+        "baseline_ms": 5120.0,
         "upgraded_top5": [
-          "VBHN_25_2026_D3",
-          "ND_181_2025_D7",
-          "ND_68_2026_D3"
+          "TT_18_2026_D8",
+          "ND_68_2026_D18",
+          "ND_181_2025_D23",
+          "ND_68_2026_D8",
+          "LUAT_48_2024_D12"
         ],
         "upgraded_hit_top5": true,
+        "upgraded_primary_hit_top5": false,
         "upgraded_noise": false,
-        "upgraded_ms": 5329.3
+        "upgraded_ms": 6480.8
       },
       {
         "id": "UPG_05",
@@ -114,16 +130,18 @@
           "VBHN_25_2026_D9"
         ],
         "baseline_hit_top5": true,
+        "baseline_primary_hit_top5": true,
         "baseline_noise": false,
-        "baseline_ms": 4932.6,
+        "baseline_ms": 5023.2,
         "upgraded_top5": [
           "ND_68_2026_D8",
-          "VBHN_25_2026_D8",
-          "ND_174_2025_D1"
+          "LUAT_108_2025_D13",
+          "ND_68_2026_D13"
         ],
         "upgraded_hit_top5": true,
+        "upgraded_primary_hit_top5": true,
         "upgraded_noise": false,
-        "upgraded_ms": 5317.1
+        "upgraded_ms": 6525.8
       },
       {
         "id": "UPG_06",
@@ -136,16 +154,18 @@
           "ND_181_2025_D23"
         ],
         "baseline_hit_top5": true,
+        "baseline_primary_hit_top5": true,
         "baseline_noise": false,
-        "baseline_ms": 4865.5,
+        "baseline_ms": 5017.7,
         "upgraded_top5": [
           "LUAT_48_2024_D18",
-          "ND_181_2025_D4",
-          "LUAT_48_2024_D5"
+          "LUAT_48_2024_D5",
+          "ND_181_2025_D4"
         ],
         "upgraded_hit_top5": true,
+        "upgraded_primary_hit_top5": true,
         "upgraded_noise": false,
-        "upgraded_ms": 5328.9
+        "upgraded_ms": 5482.6
       },
       {
         "id": "UPG_07",
@@ -158,18 +178,20 @@
           "TT_18_2026_D8"
         ],
         "baseline_hit_top5": true,
+        "baseline_primary_hit_top5": true,
         "baseline_noise": false,
-        "baseline_ms": 4875.2,
+        "baseline_ms": 5053.3,
         "upgraded_top5": [
           "ND_141_2026_D1",
-          "VBHN_25_2026_D3",
-          "LUAT_48_2024_D18",
+          "ND_68_2026_D18",
           "ND_141_2026_D4",
-          "ND_68_2026_D3"
+          "ND_68_2026_D3",
+          "LUAT_48_2024_D18"
         ],
         "upgraded_hit_top5": true,
+        "upgraded_primary_hit_top5": true,
         "upgraded_noise": false,
-        "upgraded_ms": 5362.4
+        "upgraded_ms": 5644.2
       },
       {
         "id": "UPG_08",
@@ -182,16 +204,18 @@
           "LUAT_48_2024_D9"
         ],
         "baseline_hit_top5": true,
+        "baseline_primary_hit_top5": true,
         "baseline_noise": false,
-        "baseline_ms": 4889.4,
+        "baseline_ms": 5245.3,
         "upgraded_top5": [
+          "LUAT_48_2024_D9",
           "ND_181_2025_D39",
-          "TT_69_2025_D1",
-          "ND_174_2025_D2"
+          "TT_69_2025_D8"
         ],
-        "upgraded_hit_top5": false,
+        "upgraded_hit_top5": true,
+        "upgraded_primary_hit_top5": true,
         "upgraded_noise": false,
-        "upgraded_ms": 5360.0
+        "upgraded_ms": 5550.1
       },
       {
         "id": "UPG_09",
@@ -204,16 +228,18 @@
           "TT_32_2026_D4"
         ],
         "baseline_hit_top5": true,
+        "baseline_primary_hit_top5": true,
         "baseline_noise": false,
-        "baseline_ms": 4872.7,
+        "baseline_ms": 4977.5,
         "upgraded_top5": [
           "ND_174_2025_D2",
           "TT_32_2026_D7",
-          "ND_141_2026_D3"
+          "ND_174_2025_D1"
         ],
         "upgraded_hit_top5": true,
+        "upgraded_primary_hit_top5": true,
         "upgraded_noise": false,
-        "upgraded_ms": 5303.1
+        "upgraded_ms": 5299.3
       },
       {
         "id": "UPG_10",
@@ -226,18 +252,20 @@
           "TT_77_2025_D1"
         ],
         "baseline_hit_top5": true,
+        "baseline_primary_hit_top5": true,
         "baseline_noise": false,
-        "baseline_ms": 4902.0,
+        "baseline_ms": 5317.3,
         "upgraded_top5": [
           "ND_359_2025_D1",
-          "TT_101_2025_D1",
-          "TT_77_2025_D1",
           "TT_84_2026_D4",
+          "TT_84_2026_D6",
+          "TT_101_2025_D1",
           "TT_77_2025_D3"
         ],
         "upgraded_hit_top5": true,
+        "upgraded_primary_hit_top5": true,
         "upgraded_noise": false,
-        "upgraded_ms": 5402.3
+        "upgraded_ms": 6013.7
       },
       {
         "id": "UPG_11",
@@ -250,16 +278,20 @@
           "LUAT_108_2025_D13"
         ],
         "baseline_hit_top5": true,
+        "baseline_primary_hit_top5": false,
         "baseline_noise": false,
-        "baseline_ms": 5068.7,
+        "baseline_ms": 5659.4,
         "upgraded_top5": [
-          "VBHN_25_2026_D3",
-          "VBHN_25_2026_D4",
-          "LUAT_48_2024_D14"
+          "ND_68_2026_D3",
+          "ND_359_2025_D1",
+          "ND_68_2026_D10",
+          "LUAT_149_2025_D1",
+          "LUAT_48_2024_D12"
         ],
         "upgraded_hit_top5": true,
+        "upgraded_primary_hit_top5": true,
         "upgraded_noise": false,
-        "upgraded_ms": 5322.1
+        "upgraded_ms": 8255.1
       },
       {
         "id": "UPG_12",
@@ -272,16 +304,18 @@
           "LUAT_48_2024_D14"
         ],
         "baseline_hit_top5": true,
+        "baseline_primary_hit_top5": true,
         "baseline_noise": false,
-        "baseline_ms": 4847.3,
+        "baseline_ms": 5026.3,
         "upgraded_top5": [
           "ND_181_2025_D23",
-          "LUAT_48_2024_D14",
-          "ND_144_2026_D4"
+          "ND_181_2025_D28",
+          "ND_181_2025_D21"
         ],
         "upgraded_hit_top5": true,
+        "upgraded_primary_hit_top5": true,
         "upgraded_noise": false,
-        "upgraded_ms": 5290.2
+        "upgraded_ms": 5853.2
       },
       {
         "id": "UPG_13",
@@ -294,18 +328,20 @@
           "LUAT_48_2024_D9"
         ],
         "baseline_hit_top5": true,
+        "baseline_primary_hit_top5": true,
         "baseline_noise": false,
-        "baseline_ms": 4803.6,
+        "baseline_ms": 4987.9,
         "upgraded_top5": [
-          "ND_181_2025_D4",
-          "ND_359_2025_D1",
           "LUAT_48_2024_D5",
+          "ND_359_2025_D1",
+          "LUAT_149_2025_D1",
           "LUAT_48_2024_D9",
-          "VBHN_25_2026_D3"
+          "ND_181_2025_D19"
         ],
         "upgraded_hit_top5": true,
+        "upgraded_primary_hit_top5": true,
         "upgraded_noise": false,
-        "upgraded_ms": 5249.8
+        "upgraded_ms": 5784.3
       },
       {
         "id": "UPG_14",
@@ -318,18 +354,20 @@
           "ND_252_2026_D46"
         ],
         "baseline_hit_top5": true,
+        "baseline_primary_hit_top5": false,
         "baseline_noise": false,
-        "baseline_ms": 4931.1,
+        "baseline_ms": 5158.5,
         "upgraded_top5": [
-          "VBHN_25_2026_D11",
           "ND_68_2026_D11",
-          "ND_252_2026_D42",
-          "TT_89_2026_D33",
+          "LUAT_48_2024_D4",
+          "ND_252_2026_D43",
+          "ND_181_2025_D3",
           "LUAT_108_2025_D13"
         ],
         "upgraded_hit_top5": true,
+        "upgraded_primary_hit_top5": true,
         "upgraded_noise": false,
-        "upgraded_ms": 5386.8
+        "upgraded_ms": 6446.9
       },
       {
         "id": "UPG_15",
@@ -342,16 +380,18 @@
           "ND_68_2026_D13"
         ],
         "baseline_hit_top5": true,
+        "baseline_primary_hit_top5": true,
         "baseline_noise": false,
-        "baseline_ms": 4831.7,
+        "baseline_ms": 4987.0,
         "upgraded_top5": [
-          "LUAT_48_2024_D9",
+          "LUAT_48_2024_D5",
           "ND_181_2025_D17",
-          "TT_89_2026_D15"
+          "ND_181_2025_D28"
         ],
         "upgraded_hit_top5": true,
+        "upgraded_primary_hit_top5": true,
         "upgraded_noise": false,
-        "upgraded_ms": 5304.4
+        "upgraded_ms": 5642.7
       },
       {
         "id": "UPG_16",
@@ -364,18 +404,20 @@
           "VBHN_25_2026_D9"
         ],
         "baseline_hit_top5": true,
+        "baseline_primary_hit_top5": true,
         "baseline_noise": false,
-        "baseline_ms": 4885.7,
+        "baseline_ms": 5205.7,
         "upgraded_top5": [
-          "VBHN_25_2026_D3",
           "ND_68_2026_D3",
-          "ND_68_2026_D12",
-          "VBHN_25_2026_D10",
+          "ND_68_2026_D10",
+          "LUAT_149_2025_D1",
+          "ND_68_2026_D9",
           "ND_68_2026_D8"
         ],
         "upgraded_hit_top5": true,
+        "upgraded_primary_hit_top5": true,
         "upgraded_noise": false,
-        "upgraded_ms": 5782.1
+        "upgraded_ms": 6494.1
       },
       {
         "id": "UPG_17",
@@ -388,16 +430,20 @@
           "ND_181_2025_D26"
         ],
         "baseline_hit_top5": true,
+        "baseline_primary_hit_top5": true,
         "baseline_noise": false,
-        "baseline_ms": 4947.2,
+        "baseline_ms": 4922.4,
         "upgraded_top5": [
+          "ND_181_2025_D27",
+          "ND_181_2025_D18",
           "ND_181_2025_D26",
           "ND_144_2026_D4",
-          "ND_181_2025_D27"
+          "LUAT_48_2024_D14"
         ],
         "upgraded_hit_top5": true,
+        "upgraded_primary_hit_top5": true,
         "upgraded_noise": false,
-        "upgraded_ms": 7253.4
+        "upgraded_ms": 6555.7
       },
       {
         "id": "UPG_18",
@@ -410,16 +456,20 @@
           "ND_141_2026_D1"
         ],
         "baseline_hit_top5": true,
+        "baseline_primary_hit_top5": true,
         "baseline_noise": false,
-        "baseline_ms": 4868.0,
+        "baseline_ms": 4950.3,
         "upgraded_top5": [
-          "VBHN_25_2026_D3",
+          "LUAT_48_2024_D12",
+          "ND_174_2025_D1",
+          "TT_89_2026_D32",
           "ND_68_2026_D3",
-          "LUAT_48_2024_D12"
+          "ND_181_2025_D20"
         ],
         "upgraded_hit_top5": true,
+        "upgraded_primary_hit_top5": true,
         "upgraded_noise": false,
-        "upgraded_ms": 5709.3
+        "upgraded_ms": 6412.0
       },
       {
         "id": "UPG_19",
@@ -432,16 +482,20 @@
           "ND_181_2025_D21"
         ],
         "baseline_hit_top5": true,
+        "baseline_primary_hit_top5": true,
         "baseline_noise": false,
-        "baseline_ms": 4910.5,
+        "baseline_ms": 4991.5,
         "upgraded_top5": [
+          "LUAT_48_2024_D14",
+          "ND_181_2025_D20",
           "ND_181_2025_D27",
-          "ND_181_2025_D28",
-          "ND_181_2025_D25"
+          "LUAT_48_2024_D11",
+          "LUAT_48_2024_D16"
         ],
         "upgraded_hit_top5": true,
+        "upgraded_primary_hit_top5": true,
         "upgraded_noise": false,
-        "upgraded_ms": 5256.8
+        "upgraded_ms": 5453.2
       },
       {
         "id": "UPG_20",
@@ -454,17 +508,20 @@
           "ND_181_2025_D1"
         ],
         "baseline_hit_top5": false,
+        "baseline_primary_hit_top5": false,
         "baseline_noise": false,
-        "baseline_ms": 4901.5,
+        "baseline_ms": 5013.4,
         "upgraded_top5": [
-          "TT_89_2026_D32",
-          "ND_181_2025_D21",
+          "ND_359_2025_D1",
+          "LUAT_48_2024_D15",
           "LUAT_48_2024_D11",
-          "ND_181_2025_D20"
+          "LUAT_149_2025_D1",
+          "ND_181_2025_D23"
         ],
-        "upgraded_hit_top5": false,
+        "upgraded_hit_top5": true,
+        "upgraded_primary_hit_top5": true,
         "upgraded_noise": false,
-        "upgraded_ms": 5330.9
+        "upgraded_ms": 6413.8
       },
       {
         "id": "UPG_24",
@@ -477,17 +534,20 @@
           "LUAT_90_2025_D6"
         ],
         "baseline_hit_top5": true,
+        "baseline_primary_hit_top5": true,
         "baseline_noise": false,
-        "baseline_ms": 4884.8,
+        "baseline_ms": 4949.7,
         "upgraded_top5": [
-          "TT_32_2026_D3",
           "ND_181_2025_D8",
-          "TT_89_2026_D22",
-          "ND_181_2025_D16"
+          "TT_32_2026_D3",
+          "ND_181_2025_D4",
+          "ND_181_2025_D16",
+          "TT_89_2026_D67"
         ],
         "upgraded_hit_top5": true,
+        "upgraded_primary_hit_top5": true,
         "upgraded_noise": false,
-        "upgraded_ms": 5270.0
+        "upgraded_ms": 5474.6
       },
       {
         "id": "UPG_25",
@@ -500,215 +560,1010 @@
           "ND_181_2025_D24"
         ],
         "baseline_hit_top5": true,
+        "baseline_primary_hit_top5": true,
         "baseline_noise": false,
-        "baseline_ms": 4835.0,
+        "baseline_ms": 5188.0,
         "upgraded_top5": [
-          "LUAT_48_2024_D9",
-          "ND_174_2025_D1",
-          "VBHN_25_2026_D3"
+          "ND_181_2025_D17",
+          "NQ_204_2025_D1",
+          "LUAT_48_2024_D9"
         ],
         "upgraded_hit_top5": true,
+        "upgraded_primary_hit_top5": true,
         "upgraded_noise": false,
-        "upgraded_ms": 5217.6
+        "upgraded_ms": 5589.8
       }
     ]
   },
   "e2e_evaluation": {
     "summary": {
-      "total_cases": 10,
-      "scope_accuracy": 0.9,
-      "status_accuracy": 0.9,
-      "citation_hit_rate": 1.0,
+      "total_cases": 25,
+      "scope_accuracy": 1.0,
+      "status_accuracy": 0.92,
+      "answered_rate": 0.7273,
+      "citation_hit_rate": 0.96,
+      "primary_citation_hit_rate": 0.88,
+      "conclusion_accuracy": 1.0,
+      "strict_pass_rate": 0.8,
       "forbidden_noise_rate": 0.0,
-      "conditional_missing_facts_rate": 0.0,
-      "mean_latency_ms": 14029.0
+      "conditional_missing_facts_rate": 0.4,
+      "mean_latency_ms": 36673.0,
+      "by_category": {
+        "colloquial_everyday": {
+          "total": 5,
+          "strict_pass_rate": 0.6,
+          "answered_rate": 0.6,
+          "primary_citation_hit_rate": 0.6,
+          "conclusion_accuracy": 1.0,
+          "mean_latency_ms": 43238.9
+        },
+        "temporal_amendment": {
+          "total": 5,
+          "strict_pass_rate": 0.6,
+          "answered_rate": 0.6,
+          "primary_citation_hit_rate": 1.0,
+          "conclusion_accuracy": 1.0,
+          "mean_latency_ms": 27684.8
+        },
+        "conditional_needs_facts": {
+          "total": 5,
+          "strict_pass_rate": 1.0,
+          "answered_rate": 0.6,
+          "primary_citation_hit_rate": 1.0,
+          "conclusion_accuracy": 1.0,
+          "mean_latency_ms": 62244.1
+        },
+        "multi_turn_followup": {
+          "total": 5,
+          "strict_pass_rate": 0.8,
+          "answered_rate": 1.0,
+          "primary_citation_hit_rate": 0.8,
+          "conclusion_accuracy": 1.0,
+          "mean_latency_ms": 43157.7
+        },
+        "out_of_scope_and_boundary": {
+          "total": 5,
+          "strict_pass_rate": 1.0,
+          "answered_rate": 1.0,
+          "primary_citation_hit_rate": 1.0,
+          "conclusion_accuracy": 1.0,
+          "mean_latency_ms": 7039.6
+        }
+      }
     },
     "cases": [
       {
         "id": "UPG_01",
         "category": "colloquial_everyday",
+        "expected_scope": "in_scope",
         "answer_status": "INSUFFICIENT_BASIS",
+        "llm_used": true,
         "citations": [
-          "ND_181_2025_D4_K16",
-          "LUAT_108_2025_D13_K1_a",
-          "ND_68_2026_D8_K4_b"
-        ],
-        "missing_facts": [],
-        "rewritten_query": "tôi mở tiệm net ở dưới quê có cần đóng thuế GTGT không?",
-        "latency_ms": 39888.7,
-        "scope_ok": true,
-        "status_ok": true,
-        "citation_ok": true,
-        "has_noise": false,
-        "has_missing_facts": false
-      },
-      {
-        "id": "UPG_06",
-        "category": "temporal_amendment",
-        "answer_status": "INSUFFICIENT_BASIS",
-        "citations": [
-          "LUAT_48_2024_D18_K2",
-          "LUAT_48_2024_D5_K28",
-          "ND_181_2025_D4_K16",
-          "LUAT_48_2024_D5_K27",
-          "ND_181_2025_D23_K12"
-        ],
-        "missing_facts": [],
-        "rewritten_query": "Hộ kinh doanh có doanh thu 150 triệu đồng một năm vào tháng 10/2025 có thuộc đối tượng không chịu thuế GTGT không?",
-        "latency_ms": 13014.1,
-        "scope_ok": true,
-        "status_ok": true,
-        "citation_ok": true,
-        "has_noise": false,
-        "has_missing_facts": false
-      },
-      {
-        "id": "UPG_11",
-        "category": "conditional_needs_facts",
-        "answer_status": "INSUFFICIENT_BASIS",
-        "citations": [
-          "ND_181_2025_D4_K16",
-          "LUAT_48_2024_D5_K27",
-          "LUAT_48_2024_D9_K4"
-        ],
-        "missing_facts": [],
-        "rewritten_query": "Mở quán ăn uống bình dân có phải đóng thuế GTGT không?",
-        "latency_ms": 19670.3,
-        "scope_ok": true,
-        "status_ok": true,
-        "citation_ok": true,
-        "has_noise": false,
-        "has_missing_facts": false
-      },
-      {
-        "id": "UPG_16",
-        "category": "multi_turn_followup",
-        "answer_status": "INSUFFICIENT_BASIS",
-        "citations": [
+          "ND_68_2026_D3_K1",
           "ND_68_2026_D3_K2",
-          "ND_68_2026_D12_K2",
-          "ND_68_2026_D4_K5_d",
-          "ND_68_2026_D12_K1",
-          "ND_68_2026_D10_K2_b"
+          "LUAT_108_2025_D13_K1_b",
+          "LUAT_108_2025_D13_K1",
+          "LUAT_108_2025_D13_K1_a",
+          "ND_68_2026_D9_K2",
+          "ND_68_2026_D9_K3",
+          "ND_68_2026_D9_K1",
+          "TT_18_2026_D4_K1_a"
         ],
-        "missing_facts": [],
-        "rewritten_query": "tôi là hộ kinh doanh doanh thu 150 triệu một năm",
-        "latency_ms": 10715.9,
+        "missing_facts": [
+          "Loại hình kinh doanh (hộ kinh doanh, cá nhân kinh doanh hay doanh nghiệp)",
+          "Mức doanh thu hằng năm của tiệm net"
+        ],
+        "rewritten_query": "Hộ kinh doanh hoặc cá nhân kinh doanh hoặc doanh nghiệp mở tiệm net ở nông thôn có phải đóng thuế giá trị gia tăng không?",
+        "answer_preview": {
+          "conclusion": "Để trả lời chính xác trường hợp của bạn, vui lòng cho biết thêm các thông tin bên dưới (một số quy định liên quan đang có hiệu lực đã được đính kèm bên trong phần phân tích chi tiết).",
+          "rule": "[ND_68_2026_D3_K1] [ND_68_2026_D3_K2] [LUAT_108_2025_D13_K1_b] [LUAT_108_2025_D13_K1] [LUAT_108_2025_D13_K1_a] [ND_68_2026_D9_K2] [ND_68_2026_D9_K3] [ND_68_2026_D9_K1] [TT_18_2026_D4_K1_a]",
+          "application": "[ND_68_2026_D3_K1] Hộ kinh doanh, cá nhân kinh doanh có hoạt động sản xuất, kinh doanh có mức doanh thu năm từ 01 tỷ đồng trở xuống thuộc đối tượng không chịu thuế giá trị gia tăng.\n[ND_68_2026_D3_K2] Hộ kinh doanh, cá nhân kinh doanh có hoạt động sản xuất, kinh doanh có mức doanh thu năm trên 01 tỷ"
+        },
+        "understanding_source": "llm",
+        "generation_disposition": "draft_replaced",
+        "generation_reason": "unsupported_draft",
+        "assessment_outcome": "needs_facts",
+        "assessment_reason": "unsupported",
+        "latency_ms": 43349.2,
         "scope_ok": true,
         "status_ok": true,
+        "answered_ok": false,
         "citation_ok": true,
+        "primary_citation_ok": true,
+        "conclusion_ok": true,
+        "strict_pass": true,
         "has_noise": false,
-        "has_missing_facts": false
-      },
-      {
-        "id": "UPG_21",
-        "category": "out_of_scope_and_boundary",
-        "answer_status": "INSUFFICIENT_BASIS",
-        "citations": [
-          "LUAT_108_2025_D44_K3_a",
-          "LUAT_108_2025_D44_K3_b"
-        ],
-        "missing_facts": [],
-        "rewritten_query": "Mức xử phạt vi phạm hành chính khi điều khiển ô tô vượt đèn đỏ là bao nhiêu tiền?",
-        "latency_ms": 11278.1,
-        "scope_ok": false,
-        "status_ok": false,
-        "citation_ok": true,
-        "has_noise": false,
-        "has_missing_facts": false
+        "has_missing_facts": true
       },
       {
         "id": "UPG_02",
         "category": "colloquial_everyday",
-        "answer_status": "INSUFFICIENT_BASIS",
+        "expected_scope": "in_scope",
+        "answer_status": "ANSWERED",
+        "llm_used": true,
         "citations": [
-          "LUAT_108_2025_D13_K1_a",
-          "ND_68_2026_D10_K1_b",
-          "ND_68_2026_D10_K1_a"
+          "ND_68_2026_D3_K1",
+          "ND_68_2026_D3_K2",
+          "LUAT_108_2025_D13_K1_b",
+          "LUAT_108_2025_D13_K1_a"
         ],
-        "missing_facts": [],
-        "rewritten_query": "bán trà sữa mang đi doanh thu khoảng 400 triệu một năm có phải nộp thuế GTGT không?",
-        "latency_ms": 10401.9,
+        "missing_facts": [
+          "Phương pháp tính thuế GTGT đang áp dụng"
+        ],
+        "rewritten_query": "Hộ kinh doanh, cá nhân kinh doanh hoặc doanh nghiệp bán trà sữa mang đi với doanh thu khoảng 400 triệu đồng một năm có phải nộp thuế giá trị gia tăng không?",
+        "answer_preview": {
+          "conclusion": "Việc xác định nghĩa vụ thuế giá trị gia tăng phụ thuộc vào việc người kinh doanh hoạt động dưới hình thức hộ kinh doanh, cá nhân kinh doanh hay doanh nghiệp.\n- Trường hợp là hộ kinh doanh hoặc cá nhân kinh doanh có doanh thu năm khoảng 400 triệu đồng (từ 01 tỷ đồng trở xuống), hoạt động bán trà sữa mang đi thuộc đối tượng không chịu thuế giá trị gia tăng và không phải nộp thuế [ND_68_2026_D3_K1].\n- Trường hợp là doanh nghiệp bán trà sữa mang đi với doanh thu 400 triệu đồng một năm, dữ liệu hiện ",
+          "rule": "Hộ kinh doanh, cá nhân kinh doanh có hoạt động sản xuất, kinh doanh có mức doanh thu năm từ 01 tỷ đồng trở xuống thuộc đối tượng không chịu thuế giá trị gia tăng [ND_68_2026_D3_K1]. Ngược lại, trường hợp có mức doanh thu năm trên 01 tỷ đồng thì thuộc đối tượng chịu thuế giá trị gia tăng [ND_68_2026_",
+          "application": "Cơ sở kinh doanh bán trà sữa mang đi có doanh thu khoảng 400 triệu đồng một năm, tức là mức doanh thu năm này từ 01 tỷ đồng trở xuống [ND_68_2026_D3_K1]. Do đó, nếu là hộ kinh doanh hoặc cá nhân kinh doanh với mức doanh thu trên, hoạt động này sẽ thuộc đối tượng không chịu thuế giá trị gia tăng và c"
+        },
+        "understanding_source": "llm",
+        "generation_disposition": "generated_delivered",
+        "generation_reason": "verified_draft",
+        "assessment_outcome": "supported",
+        "assessment_reason": "accepted",
+        "latency_ms": 19683.4,
         "scope_ok": true,
         "status_ok": true,
+        "answered_ok": true,
         "citation_ok": true,
+        "primary_citation_ok": true,
+        "conclusion_ok": true,
+        "strict_pass": true,
+        "has_noise": false,
+        "has_missing_facts": true
+      },
+      {
+        "id": "UPG_03",
+        "category": "colloquial_everyday",
+        "expected_scope": "in_scope",
+        "answer_status": "ANSWERED",
+        "llm_used": true,
+        "citations": [
+          "LUAT_108_2025_D13_K1",
+          "LUAT_108_2025_D13_K1_b",
+          "ND_181_2025_D4_K9"
+        ],
+        "missing_facts": [
+          "Tổng doanh thu hằng năm từ hoạt động kinh doanh",
+          "Hình thức hoạt động cụ thể của dịch vụ vận chuyển"
+        ],
+        "rewritten_query": "chạy xe ôm công nghệ trên ứng dụng thu nhập mỗi tháng mười mấy triệu có phải đóng thuế GTGT không?",
+        "answer_preview": {
+          "conclusion": "Việc cá nhân chạy xe ôm công nghệ có phải đóng thuế GTGT hay không phụ thuộc vào các điều kiện cụ thể sau:\n- Trường hợp hoạt động vận chuyển thuộc đối tượng không chịu thuế GTGT theo quy định về vận tải hành khách công cộng trong đô thị hoặc doanh thu hằng năm chưa đạt mức phải nộp thuế thì cá nhân không phải nộp thuế GTGT [ND_181_2025_D4_K9].\n- Trường hợp hoạt động cung cấp dịch vụ vận chuyển thuộc đối tượng chịu thuế và có mức doanh thu hằng năm từ hoạt động kinh doanh đạt ngưỡng phải nộp thuế",
+          "rule": "Hộ kinh doanh và cá nhân kinh doanh có trách nhiệm tự xác định số thuế GTGT phải nộp dựa trên mức doanh thu hàng năm từ hoạt động sản xuất, kinh doanh hàng hóa, dịch vụ thuộc đối tượng chịu thuế [LUAT_108_2025_D13_K1] [LUAT_108_2025_D13_K1_b]. Đối với hoạt động vận chuyển hành khách công cộng bằng x",
+          "application": "Cá nhân chạy xe ôm công nghệ thu được thu nhập mỗi tháng mười mấy triệu đồng được xác định là cá nhân kinh doanh, có nghĩa vụ tự kê khai và xác định số thuế GTGT phải nộp theo quy định pháp luật [LUAT_108_2025_D13_K1_b]. Tuy nhiên, để xác định chính xác dịch vụ xe ôm công nghệ có thuộc đối tượng chị"
+        },
+        "understanding_source": "bypass",
+        "generation_disposition": "generated_delivered",
+        "generation_reason": "verified_draft",
+        "assessment_outcome": "needs_facts",
+        "assessment_reason": "accepted",
+        "latency_ms": 68398.1,
+        "scope_ok": true,
+        "status_ok": true,
+        "answered_ok": true,
+        "citation_ok": true,
+        "primary_citation_ok": false,
+        "conclusion_ok": true,
+        "strict_pass": false,
+        "has_noise": false,
+        "has_missing_facts": true
+      },
+      {
+        "id": "UPG_04",
+        "category": "colloquial_everyday",
+        "expected_scope": "in_scope",
+        "answer_status": "ANSWERED",
+        "llm_used": true,
+        "citations": [
+          "ND_181_2025_D7_K1_a",
+          "ND_181_2025_D7_K1",
+          "ND_181_2025_D7_K1_b",
+          "ND_68_2026_D8_K4_d"
+        ],
+        "missing_facts": [
+          "Doanh thu hằng năm từ hoạt động cho thuê phòng trọ",
+          "Phương pháp tính thuế áp dụng"
+        ],
+        "rewritten_query": "Hoạt động cho thuê phòng trọ cho sinh viên của hộ kinh doanh, cá nhân kinh doanh hoặc doanh nghiệp có phải nộp thuế giá trị gia tăng không?",
+        "answer_preview": {
+          "conclusion": "- Trường hợp hoạt động cho thuê phòng trọ thuộc diện chịu thuế giá trị gia tăng, hộ kinh doanh, cá nhân kinh doanh và doanh nghiệp phải tính thuế dựa trên giá chưa có thuế giá trị gia tăng theo số tiền thuê từng kỳ hoặc trả trước [ND_181_2025_D7_K1_b], trong đó cá nhân kinh doanh thực hiện khai và nộp thuế tại nơi có bất động sản cho thuê [ND_68_2026_D8_K4_d].\n- Trường hợp chưa đủ căn cứ pháp lý để xác định chính xác nghĩa vụ thuế cụ thể của từng loại hình đối với hoạt động này.\nXin vui lòng cho",
+          "rule": "Pháp luật quy định số tiền cho thuê tài sản là giá thuê được quy định trong hợp đồng [ND_181_2025_D7_K1_a]. Đối với hoạt động cho thuê tài sản, giá tính thuế là số tiền cho thuê chưa có thuế giá trị gia tăng [ND_181_2025_D7_K1]. Trường hợp cho thuê theo hình thức trả tiền thuê từng kỳ hoặc trả trước",
+          "application": "Khi hộ kinh doanh, cá nhân kinh doanh hoặc doanh nghiệp thực hiện hoạt động cho thuê phòng trọ cho sinh viên, giá tính thuế giá trị gia tăng được xác định dựa trên số tiền cho thuê chưa bao gồm thuế ghi trong hợp đồng [ND_181_2025_D7_K1_a] [ND_181_2025_D7_K1]. Nếu tiền thuê được trả theo từng kỳ hoặ"
+        },
+        "understanding_source": "llm",
+        "generation_disposition": "generated_delivered",
+        "generation_reason": "verified_draft",
+        "assessment_outcome": "supported",
+        "assessment_reason": "accepted",
+        "latency_ms": 56237.7,
+        "scope_ok": true,
+        "status_ok": true,
+        "answered_ok": true,
+        "citation_ok": true,
+        "primary_citation_ok": false,
+        "conclusion_ok": true,
+        "strict_pass": false,
+        "has_noise": false,
+        "has_missing_facts": true
+      },
+      {
+        "id": "UPG_05",
+        "category": "colloquial_everyday",
+        "expected_scope": "in_scope",
+        "answer_status": "INSUFFICIENT_BASIS",
+        "llm_used": true,
+        "citations": [
+          "LUAT_108_2025_D13_K1_b",
+          "LUAT_108_2025_D13_K1",
+          "LUAT_48_2024_D16_K1_a",
+          "LUAT_48_2024_D16_K1",
+          "LUAT_48_2024_D16_K2",
+          "ND_68_2026_D8_K2",
+          "ND_174_2025_D1_K2_b",
+          "ND_174_2025_D1_K2",
+          "ND_68_2026_D3_K1"
+        ],
+        "missing_facts": [
+          "Mức doanh thu hằng năm dự kiến của tiệm sửa xe",
+          "Loại hình hoạt động cụ thể (hộ kinh doanh, cá nhân kinh doanh hay doanh nghiệp)"
+        ],
+        "rewritten_query": "Mở tiệm sửa xe máy nhỏ tại nhà với tư cách là hộ kinh doanh, cá nhân kinh doanh hoặc doanh nghiệp có bắt buộc xuất hóa đơn và nộp thuế giá trị gia tăng không?",
+        "answer_preview": {
+          "conclusion": "Để trả lời chính xác trường hợp của bạn, vui lòng cho biết thêm các thông tin bên dưới (một số quy định liên quan đang có hiệu lực đã được đính kèm bên trong phần phân tích chi tiết).",
+          "rule": "[LUAT_108_2025_D13_K1_b] [LUAT_108_2025_D13_K1] [LUAT_48_2024_D16_K1_a] [LUAT_48_2024_D16_K1] [LUAT_48_2024_D16_K2] [ND_68_2026_D8_K2] [ND_174_2025_D1_K2_b] [ND_174_2025_D1_K2] [ND_68_2026_D3_K1]",
+          "application": "[LUAT_108_2025_D13_K1_b] Trường hợp hộ kinh doanh, cá nhân kinh doanh xác định có mức doanh thu hằng năm từ hoạt động sản xuất, kinh doanh hàng hóa, dịch vụ thuộc đối tượng chịu thuế, đối tượng phải nộp thuế theo quy định của pháp luật về thuế, hộ kinh doanh, cá nhân kinh doanh tự xác định số thuế g"
+        },
+        "understanding_source": "llm",
+        "generation_disposition": "draft_replaced",
+        "generation_reason": "unsupported_draft",
+        "assessment_outcome": "needs_facts",
+        "assessment_reason": "unsupported",
+        "latency_ms": 28526.3,
+        "scope_ok": true,
+        "status_ok": true,
+        "answered_ok": false,
+        "citation_ok": true,
+        "primary_citation_ok": true,
+        "conclusion_ok": true,
+        "strict_pass": true,
+        "has_noise": false,
+        "has_missing_facts": true
+      },
+      {
+        "id": "UPG_06",
+        "category": "temporal_amendment",
+        "expected_scope": "in_scope",
+        "answer_status": "ANSWERED",
+        "llm_used": true,
+        "citations": [
+          "LUAT_48_2024_D18_K2",
+          "LUAT_48_2024_D5_K28"
+        ],
+        "missing_facts": [],
+        "rewritten_query": "Hộ kinh doanh có doanh thu 150 triệu đồng một năm vào tháng 10/2025 có thuộc đối tượng không chịu thuế GTGT không?",
+        "answer_preview": {
+          "conclusion": "Việc xác định hộ kinh doanh có doanh thu 150 triệu đồng vào tháng 10/2025 có thuộc đối tượng không chịu thuế GTGT hay không phụ thuộc vào văn bản hướng dẫn chi tiết của Chính phủ và thời điểm có hiệu lực của quy định mức doanh thu [LUAT_48_2024_D18_K2] [LUAT_48_2024_D5_K28].\n- Hộ kinh doanh chưa áp dụng mức doanh thu không chịu thuế mới theo Luật 48/2024/QH15 do quy định này chưa đến thời điểm có hiệu lực thi hành vào tháng 10/2025 [LUAT_48_2024_D18_K2].\n- Hộ kinh doanh cần căn cứ vào các quy đị",
+          "rule": "Quy định về mức doanh thu của hộ, cá nhân sản xuất, kinh doanh thuộc đối tượng không chịu thuế tại khoản 25 Điều 5 của Luật Thuế giá trị gia tăng có hiệu lực thi hành từ ngày 01 tháng 01 năm 2026 [LUAT_48_2024_D18_K2]. Chính phủ quy định chi tiết về đối tượng không chịu thuế giá trị gia tăng [LUAT_4",
+          "application": "Do quy định về mức doanh thu của hộ, cá nhân sản xuất, kinh doanh thuộc đối tượng không chịu thuế chỉ có hiệu lực thi hành từ ngày 01/01/2026 [LUAT_48_2024_D18_K2], trong khi thời điểm xem xét là tháng 10/2025 thì quy định này chưa chính thức có hiệu lực áp dụng."
+        },
+        "understanding_source": "bypass",
+        "generation_disposition": "generated_delivered",
+        "generation_reason": "verified_draft",
+        "assessment_outcome": "supported",
+        "assessment_reason": "accepted",
+        "latency_ms": 22919.7,
+        "scope_ok": true,
+        "status_ok": true,
+        "answered_ok": true,
+        "citation_ok": true,
+        "primary_citation_ok": true,
+        "conclusion_ok": true,
+        "strict_pass": true,
         "has_noise": false,
         "has_missing_facts": false
       },
       {
         "id": "UPG_07",
         "category": "temporal_amendment",
+        "expected_scope": "in_scope",
         "answer_status": "INSUFFICIENT_BASIS",
+        "llm_used": true,
         "citations": [
-          "LUAT_48_2024_D18_K2",
           "ND_141_2026_D1_K2",
           "ND_141_2026_D1_K1",
           "ND_68_2026_D18_K4",
-          "ND_68_2026_D3_K1"
+          "ND_68_2026_D3_K1",
+          "ND_68_2026_D3_K2",
+          "LUAT_48_2024_D18_K2",
+          "LUAT_48_2024_D18",
+          "ND_141_2026_D4_K3",
+          "ND_141_2026_D4_K1"
         ],
         "missing_facts": [],
         "rewritten_query": "Ngưỡng doanh thu không chịu thuế GTGT của hộ, cá nhân kinh doanh áp dụng trong năm 2026 theo quy định sửa đổi là bao nhiêu?",
-        "latency_ms": 10986.9,
+        "answer_preview": {
+          "conclusion": "Chưa đủ căn cứ để kết luận pháp lý cho tình huống; trên đây chỉ là trích đoạn chứng cứ đã xác minh.\nHệ thống chưa xác minh được chứng cứ VBHN 25 2026 D3: Container is not citable; changed or blocked descendants: VBHN 25 2026 D3 K1, VBHN 25 2026 D3 K2\nHệ thống chưa xác minh được chứng cứ VBHN 25 2026 D3 K1: Consolidation reference is not operative evidence\nHệ thống chưa xác minh được chứng cứ VBHN 25 2026 D3 K2: Consolidation reference is not operative evidence\nHệ thống chưa xác minh được chứng c",
+          "rule": "[ND_141_2026_D1_K2] [ND_141_2026_D1_K1] [ND_68_2026_D18_K4] [ND_68_2026_D3_K1] [ND_68_2026_D3_K2] [LUAT_48_2024_D18_K2] [LUAT_48_2024_D18] [ND_141_2026_D4_K3] [ND_141_2026_D4_K1]",
+          "application": "[ND_141_2026_D1_K2] Sửa đổi, bổ sung khoản 5 Điều 8 Nghị định số 68/2026/NĐ-CP như sau: \"5. Sử dụng hóa đơn điện tử a) Hộ kinh doanh, cá nhân kinh doanh có doanh thu năm trên 01 tỷ đồng thì phải áp dụng hóa đơn điện tử có mã của cơ quan thuế, hóa đơn điện tử khởi tạo từ máy tính tiền có kết nối dữ l"
+        },
+        "understanding_source": "bypass",
+        "generation_disposition": "draft_replaced",
+        "generation_reason": "unsupported_draft",
+        "assessment_outcome": "unknown",
+        "assessment_reason": "invalid_schema",
+        "latency_ms": 20310.7,
         "scope_ok": true,
-        "status_ok": true,
+        "status_ok": false,
+        "answered_ok": false,
         "citation_ok": true,
+        "primary_citation_ok": true,
+        "conclusion_ok": true,
+        "strict_pass": false,
         "has_noise": false,
         "has_missing_facts": false
+      },
+      {
+        "id": "UPG_08",
+        "category": "temporal_amendment",
+        "expected_scope": "in_scope",
+        "answer_status": "ANSWERED",
+        "llm_used": true,
+        "citations": [
+          "LUAT_48_2024_D9_K2",
+          "LUAT_48_2024_D9_K2_b"
+        ],
+        "missing_facts": [],
+        "rewritten_query": "Từ ngày 01/07/2025, mặt hàng phân bón áp dụng mức thuế suất thuế GTGT bao nhiêu phần trăm?",
+        "answer_preview": {
+          "conclusion": "Mặt hàng phân bón áp dụng mức thuế suất thuế GTGT 5% kể từ ngày 01/07/2025 [LUAT_48_2024_D9_K2_b].",
+          "rule": "Theo quy định, mặt hàng phân bón thuộc đối tượng áp dụng mức thuế suất thuế giá trị gia tăng là 5% [LUAT_48_2024_D9_K2] [LUAT_48_2024_D9_K2_b].",
+          "application": "Đối chiếu với quy định pháp luật hiện hành từ ngày 01/07/2025, sản phẩm phân bón được xác định thuộc nhóm hàng hóa áp dụng mức thuế suất 5% [LUAT_48_2024_D9_K2] [LUAT_48_2024_D9_K2_b]."
+        },
+        "understanding_source": "bypass",
+        "generation_disposition": "generated_delivered",
+        "generation_reason": "verified_draft",
+        "assessment_outcome": "supported",
+        "assessment_reason": "accepted",
+        "latency_ms": 23545.0,
+        "scope_ok": true,
+        "status_ok": true,
+        "answered_ok": true,
+        "citation_ok": true,
+        "primary_citation_ok": true,
+        "conclusion_ok": true,
+        "strict_pass": true,
+        "has_noise": false,
+        "has_missing_facts": false
+      },
+      {
+        "id": "UPG_09",
+        "category": "temporal_amendment",
+        "expected_scope": "in_scope",
+        "answer_status": "ANSWERED",
+        "llm_used": true,
+        "citations": [
+          "ND_174_2025_D2_K1",
+          "ND_174_2025_D2_K2"
+        ],
+        "missing_facts": [],
+        "rewritten_query": "Chính sách giảm thuế GTGT xuống 8% theo Nghị quyết 204/2025/QH15 và Nghị định 174/2025/NĐ-CP áp dụng đến hết thời điểm nào?",
+        "answer_preview": {
+          "conclusion": "Chính sách giảm thuế giá trị gia tăng xuống 8% theo Nghị quyết số 204/2025/QH15 và Nghị định số 174/2025/NĐ-CP được áp dụng đến hết ngày 31 tháng 12 năm 2026 [ND_174_2025_D2_K1] [ND_174_2025_D2_K2].",
+          "rule": "Các chính sách giảm thuế giá trị gia tăng theo quy định có hiệu lực thi hành tính đến hết ngày 31 tháng 12 năm 2026 [ND_174_2025_D2_K1]. Đồng thời, các giải pháp bình ổn mặt bằng giá cả thị trường đối với hàng hóa, dịch vụ thuộc diện giảm thuế được thực hiện từ ngày 01 tháng 7 năm 2025 đến hết ngày ",
+          "application": "Theo các quy định pháp luật hiện hành về việc giảm thuế giá trị gia tăng, thời hạn hiệu lực thi hành của chính sách giảm thuế được xác định rõ ràng kéo dài đến hết ngày 31 tháng 12 năm 2026 [ND_174_2025_D2_K1]. Do đó, mọi hoạt động triển khai, hướng dẫn cũng như việc thụ hưởng lợi ích giảm thuế cho "
+        },
+        "understanding_source": "bypass",
+        "generation_disposition": "generated_delivered",
+        "generation_reason": "verified_draft",
+        "assessment_outcome": "supported",
+        "assessment_reason": "accepted",
+        "latency_ms": 29959.6,
+        "scope_ok": true,
+        "status_ok": true,
+        "answered_ok": true,
+        "citation_ok": true,
+        "primary_citation_ok": true,
+        "conclusion_ok": true,
+        "strict_pass": true,
+        "has_noise": false,
+        "has_missing_facts": false
+      },
+      {
+        "id": "UPG_10",
+        "category": "temporal_amendment",
+        "expected_scope": "in_scope",
+        "answer_status": "INSUFFICIENT_BASIS",
+        "llm_used": true,
+        "citations": [
+          "ND_359_2025_D1_K1",
+          "ND_359_2025_D1_K2",
+          "TT_77_2025_D3_K1",
+          "TT_101_2025_D1",
+          "ND_181_2025_D2_K1",
+          "ND_181_2025_D2_K2",
+          "ND_181_2025_D2_K3",
+          "ND_144_2026_D1",
+          "ND_144_2026_D1_K2"
+        ],
+        "missing_facts": [
+          "Loại hình kinh doanh (hộ cá nhân, doanh nghiệp, hợp tác xã, liên hiệp hợp tác xã) của người nộp thuế là gì?",
+          "Phương pháp tính thuế GTGT (khấu trừ hay trực tiếp) của người nộp thuế là gì?",
+          "Đối tượng mua hàng (doanh nghiệp, hợp tác xã, liên hiệp hợp tác xã khác, hộ, cá nhân sản xuất, kinh doanh, tổ chức, cá nhân khác) là gì?",
+          "Người nộp thuế có thực hiện các dịch vụ kinh doanh chứng khoán, chuyển nhượng chứng khoán hoặc sử dụng máy chuyên dùng phục vụ sản xuất nông nghiệp không?",
+          "Người nộp thuế có hoạt động bán nợ không?"
+        ],
+        "rewritten_query": "Quy định tại Nghị định 181/2025/NĐ-CP được sửa đổi, bổ sung bởi Nghị định 359/2025/NĐ-CP và Nghị định 144/2026/NĐ-CP như thế nào tại tháng 09/2026?",
+        "answer_preview": {
+          "conclusion": "Để trả lời chính xác trường hợp của bạn, vui lòng cho biết thêm các thông tin bên dưới (một số quy định liên quan đang có hiệu lực đã được đính kèm bên trong phần phân tích chi tiết).",
+          "rule": "[ND_359_2025_D1_K1] [ND_359_2025_D1_K2] [TT_77_2025_D3_K1] [TT_101_2025_D1] [ND_181_2025_D2_K1] [ND_181_2025_D2_K2] [ND_181_2025_D2_K3] [ND_144_2026_D1] [ND_144_2026_D1_K2]",
+          "application": "[ND_359_2025_D1_K1] Bổ sung khoản 1b sau khoản 1 Điều 4 như sau: “1b. Doanh nghiệp, hợp tác xã, liên hiệp hợp tác xã mua sản phẩm cây trồng, rừng trồng, chăn nuôi, thủy sản nuôi trồng, đánh bắt chưa chế biến thành các sản phẩm khác hoặc chỉ qua sơ chế thông thường bán cho doanh nghiệp, hợp tác xã, l"
+        },
+        "understanding_source": "bypass",
+        "generation_disposition": "draft_replaced",
+        "generation_reason": "unsupported_draft",
+        "assessment_outcome": "needs_facts",
+        "assessment_reason": "unsupported",
+        "latency_ms": 41689.0,
+        "scope_ok": true,
+        "status_ok": false,
+        "answered_ok": false,
+        "citation_ok": true,
+        "primary_citation_ok": true,
+        "conclusion_ok": true,
+        "strict_pass": false,
+        "has_noise": false,
+        "has_missing_facts": true
+      },
+      {
+        "id": "UPG_11",
+        "category": "conditional_needs_facts",
+        "expected_scope": "in_scope",
+        "answer_status": "INSUFFICIENT_BASIS",
+        "llm_used": true,
+        "citations": [
+          "LUAT_108_2025_D13_K1_b",
+          "LUAT_108_2025_D13_K1",
+          "ND_68_2026_D3_K1",
+          "ND_68_2026_D3_K2",
+          "LUAT_108_2025_D13_K1_a",
+          "ND_68_2026_D9_K2",
+          "ND_68_2026_D9_K3",
+          "ND_68_2026_D9_K1",
+          "ND_68_2026_D10_K1"
+        ],
+        "missing_facts": [
+          "Doanh thu hằng năm",
+          "Phương pháp tính thuế GTGT"
+        ],
+        "rewritten_query": "Mở quán ăn uống bình dân thì hộ kinh doanh, cá nhân kinh doanh hoặc doanh nghiệp có phải nộp thuế giá trị gia tăng không?",
+        "answer_preview": {
+          "conclusion": "Để trả lời chính xác trường hợp của bạn, vui lòng cho biết thêm các thông tin bên dưới (một số quy định liên quan đang có hiệu lực đã được đính kèm bên trong phần phân tích chi tiết).",
+          "rule": "[LUAT_108_2025_D13_K1_b] [LUAT_108_2025_D13_K1] [ND_68_2026_D3_K1] [ND_68_2026_D3_K2] [LUAT_108_2025_D13_K1_a] [ND_68_2026_D9_K2] [ND_68_2026_D9_K3] [ND_68_2026_D9_K1] [ND_68_2026_D10_K1]",
+          "application": "[LUAT_108_2025_D13_K1_b] Trường hợp hộ kinh doanh, cá nhân kinh doanh xác định có mức doanh thu hằng năm từ hoạt động sản xuất, kinh doanh hàng hóa, dịch vụ thuộc đối tượng chịu thuế, đối tượng phải nộp thuế theo quy định của pháp luật về thuế, hộ kinh doanh, cá nhân kinh doanh tự xác định số thuế g"
+        },
+        "understanding_source": "llm",
+        "generation_disposition": "draft_replaced",
+        "generation_reason": "unsupported_draft",
+        "assessment_outcome": "unknown",
+        "assessment_reason": "invalid_schema",
+        "latency_ms": 41065.3,
+        "scope_ok": true,
+        "status_ok": true,
+        "answered_ok": false,
+        "citation_ok": true,
+        "primary_citation_ok": true,
+        "conclusion_ok": true,
+        "strict_pass": true,
+        "has_noise": false,
+        "has_missing_facts": true
       },
       {
         "id": "UPG_12",
         "category": "conditional_needs_facts",
+        "expected_scope": "in_scope",
         "answer_status": "INSUFFICIENT_BASIS",
+        "llm_used": true,
         "citations": [
           "ND_181_2025_D23_K14",
           "ND_181_2025_D23_K13",
-          "ND_181_2025_D20_K3",
           "LUAT_48_2024_D14_K1_e",
-          "LUAT_48_2024_D14_K1_b"
+          "LUAT_48_2024_D14_K1",
+          "ND_181_2025_D20_K3",
+          "ND_181_2025_D20_K1",
+          "ND_181_2025_D20_K2",
+          "LUAT_48_2024_D14_K1_d_1",
+          "ND_181_2025_D23_K16"
         ],
         "missing_facts": [],
         "rewritten_query": "Công ty tôi mua máy tính xách tay phục vụ văn phòng có được khấu trừ thuế GTGT đầu vào không?",
-        "latency_ms": 11890.9,
+        "answer_preview": {
+          "conclusion": "Chưa đủ căn cứ để kết luận pháp lý cho tình huống; trên đây chỉ là trích đoạn chứng cứ đã xác minh.\nHệ thống chưa xác minh được chứng cứ ND 181 2025 D23: Container is not citable; changed or blocked descendants: ND 181 2025 D23 K2, ND 181 2025 D23 K2 a, ND 181 2025 D23 K2 c\nHệ thống chưa xác minh được chứng cứ ND 181 2025 D23 K2: Container is not citable; changed or blocked descendants: ND 181 2025 D23 K2 a, ND 181 2025 D23 K2 c\nHệ thống chưa xác minh được chứng cứ ND 181 2025 D4: Container is n",
+          "rule": "[ND_181_2025_D23_K14] [ND_181_2025_D23_K13] [LUAT_48_2024_D14_K1_e] [LUAT_48_2024_D14_K1] [ND_181_2025_D20_K3] [ND_181_2025_D20_K1] [ND_181_2025_D20_K2] [LUAT_48_2024_D14_K1_d_1] [ND_181_2025_D23_K16]",
+          "application": "[ND_181_2025_D23_K14] Văn phòng Tổng công ty, tập đoàn không trực tiếp hoạt động kinh doanh và các đơn vị hành chính sự nghiệp trực thuộc như: bệnh viện, trạm xá, nhà nghỉ điều dưỡng, viện, trường đào tạo,... không phải là người nộp thuế giá trị gia tăng thì không được khấu trừ thuế giá trị gia tăng"
+        },
+        "understanding_source": "bypass",
+        "generation_disposition": "draft_replaced",
+        "generation_reason": "unsupported_draft",
+        "assessment_outcome": "unknown",
+        "assessment_reason": "timeout",
+        "latency_ms": 131840.5,
         "scope_ok": true,
         "status_ok": true,
+        "answered_ok": false,
         "citation_ok": true,
+        "primary_citation_ok": true,
+        "conclusion_ok": true,
+        "strict_pass": true,
         "has_noise": false,
         "has_missing_facts": false
       },
       {
+        "id": "UPG_13",
+        "category": "conditional_needs_facts",
+        "expected_scope": "in_scope",
+        "answer_status": "ANSWERED",
+        "llm_used": true,
+        "citations": [
+          "LUAT_48_2024_D5_K1",
+          "ND_181_2025_D4_K1",
+          "LUAT_149_2025_D1_K1_a",
+          "ND_359_2025_D1_K1"
+        ],
+        "missing_facts": [],
+        "rewritten_query": "Bán sản phẩm nông nghiệp chưa qua chế biến có thuộc đối tượng chịu thuế GTGT không?",
+        "answer_preview": {
+          "conclusion": "Việc bán sản phẩm nông nghiệp chưa qua chế biến hoặc qua sơ chế thông thường có các nghĩa vụ thuế GTGT khác nhau tùy thuộc vào phương pháp tính thuế và đối tượng mua hàng:\n- Tổ chức, cá nhân tự sản xuất, đánh bắt bán ra hoặc ở khâu nhập khẩu thuộc đối tượng không chịu thuế GTGT [LUAT_48_2024_D5_K1].\n- Doanh nghiệp, hợp tác xã, liên hiệp hợp tác xã nộp thuế theo phương pháp khấu trừ bán cho doanh nghiệp, hợp tác xã, liên hiệp hợp tác xã khác không phải kê khai, tính nộp thuế GTGT [LUAT_149_2025_D",
+          "rule": "Sản phẩm cây trồng, rừng trồng, chăn nuôi, thủy sản nuôi trồng, đánh bắt chưa chế biến thành các sản phẩm khác hoặc chỉ qua sơ chế thông thường của tổ chức, cá nhân tự sản xuất, đánh bắt bán ra và ở khâu nhập khẩu thuộc đối tượng không chịu thuế GTGT [LUAT_48_2024_D5_K1]. Các sản phẩm sơ chế thông t",
+          "application": "Việc xác định nghĩa vụ thuế GTGT đối với việc bán sản phẩm nông nghiệp chưa qua chế biến phụ thuộc vào chủ thể thực hiện hoạt động bán và đối tượng mua hàng. Nếu tổ chức hoặc cá nhân tự sản xuất, đánh bắt trực tiếp bán ra hoặc ở khâu nhập khẩu, sản phẩm này thuộc đối tượng không chịu thuế GTGT [LUAT"
+        },
+        "understanding_source": "bypass",
+        "generation_disposition": "generated_delivered",
+        "generation_reason": "verified_draft",
+        "assessment_outcome": "supported",
+        "assessment_reason": "accepted",
+        "latency_ms": 20787.1,
+        "scope_ok": true,
+        "status_ok": true,
+        "answered_ok": true,
+        "citation_ok": true,
+        "primary_citation_ok": true,
+        "conclusion_ok": true,
+        "strict_pass": true,
+        "has_noise": false,
+        "has_missing_facts": false
+      },
+      {
+        "id": "UPG_14",
+        "category": "conditional_needs_facts",
+        "expected_scope": "in_scope",
+        "answer_status": "ANSWERED",
+        "llm_used": true,
+        "citations": [
+          "LUAT_48_2024_D4_K5",
+          "LUAT_108_2025_D13_K4_a",
+          "LUAT_108_2025_D13_K4_b",
+          "ND_68_2026_D11_K2",
+          "ND_68_2026_D11_K4",
+          "ND_252_2026_D43_K2"
+        ],
+        "missing_facts": [
+          "Loại hình kinh doanh (hộ kinh doanh, cá nhân kinh doanh hay doanh nghiệp)",
+          "Doanh thu hằng năm",
+          "Phương pháp kê khai và tính thuế GTGT"
+        ],
+        "rewritten_query": "Hoạt động bán hàng online trên sàn thương mại điện tử của hộ kinh doanh, cá nhân kinh doanh hoặc doanh nghiệp có phải tự kê khai và nộp thuế GTGT không?",
+        "answer_preview": {
+          "conclusion": "- Trường hợp hoạt động trên sàn thương mại điện tử có chức năng đặt hàng trực tuyến và thanh toán, chủ quản sàn thực hiện khấu trừ, khai thay và nộp thay, hộ kinh doanh và cá nhân kinh doanh không phải tự kê khai, nộp thuế [LUAT_48_2024_D4_K5] [LUAT_108_2025_D13_K4_a].\n- Trường hợp hoạt động trên nền tảng không có chức năng đặt hàng trực tuyến và thanh toán, hộ kinh doanh, cá nhân cư trú và cá nhân không cư trú phải trực tiếp tự kê khai và nộp thuế [LUAT_108_2025_D13_K4_b] [ND_68_2026_D11_K2] [N",
+          "rule": "Chủ quản nền tảng thương mại điện tử hoặc nền tảng số có chức năng đặt hàng trực tuyến và thanh toán thực hiện khấu trừ, kê khai và nộp thay số thuế cho hộ kinh doanh, cá nhân kinh doanh [LUAT_48_2024_D4_K5] [LUAT_108_2025_D13_K4_a]. Đối với nền tảng không có các chức năng này, hộ kinh doanh và cá n",
+          "application": "Khi hộ kinh doanh hoặc cá nhân kinh doanh bán hàng trên sàn thương mại điện tử có tích hợp đầy đủ chức năng đặt hàng trực tuyến và thanh toán trực tuyến, họ không phải tự kê khai và nộp thuế vì chủ quản sàn giao dịch có trách nhiệm khấu trừ, khai thay và nộp thay [LUAT_48_2024_D4_K5] [LUAT_108_2025_"
+        },
+        "understanding_source": "llm",
+        "generation_disposition": "generated_delivered",
+        "generation_reason": "verified_draft",
+        "assessment_outcome": "supported",
+        "assessment_reason": "accepted",
+        "latency_ms": 91943.1,
+        "scope_ok": true,
+        "status_ok": true,
+        "answered_ok": true,
+        "citation_ok": true,
+        "primary_citation_ok": true,
+        "conclusion_ok": true,
+        "strict_pass": true,
+        "has_noise": false,
+        "has_missing_facts": true
+      },
+      {
+        "id": "UPG_15",
+        "category": "conditional_needs_facts",
+        "expected_scope": "in_scope",
+        "answer_status": "ANSWERED",
+        "llm_used": true,
+        "citations": [
+          "LUAT_48_2024_D5_K21",
+          "ND_181_2025_D4_K13",
+          "LUAT_48_2024_D5_K27",
+          "ND_181_2025_D17_K4_k"
+        ],
+        "missing_facts": [],
+        "rewritten_query": "Dịch vụ phần mềm cung cấp cho khách hàng có được hưởng thuế suất GTGT 0% không?",
+        "answer_preview": {
+          "conclusion": "Dịch vụ phần mềm cung cấp cho khách hàng không thuộc đối tượng được áp dụng thuế suất thuế GTGT 0%.\n- Dịch vụ phần mềm tiêu thụ trong nước hoặc cung cấp thông thường thuộc diện không chịu thuế GTGT [LUAT_48_2024_D5_K21] [ND_181_2025_D4_K13].\n- Dịch vụ phần mềm cung cấp cho tổ chức, cá nhân ở nước ngoài không thuộc trường hợp được áp dụng thuế suất 0% [ND_181_2025_D17_K4_k].\nBạn cung cấp thêm thông tin chi tiết về đối tượng khách hàng (trong nước hay nước ngoài) và địa điểm cung cấp dịch vụ phần ",
+          "rule": "Dịch vụ phần mềm thuộc đối tượng không chịu thuế giá trị gia tăng [LUAT_48_2024_D5_K21] [ND_181_2025_D4_K13]. Cơ sở kinh doanh dịch vụ không chịu thuế giá trị gia tăng thì không được khấu trừ, không được hoàn thuế giá trị gia tăng đầu vào, trừ trường hợp được áp dụng mức thuế suất 0% quy định tại kh",
+          "application": "Khi cung cấp dịch vụ phần mềm cho khách hàng tại thị trường trong nước hoặc các trường hợp thông thường khác, dịch vụ này nằm trong danh mục không chịu thuế GTGT [LUAT_48_2024_D5_K21] [ND_181_2025_D4_K13], do đó không áp dụng mức thuế suất 0% [LUAT_48_2024_D5_K27]. Trường hợp dịch vụ phần mềm được c"
+        },
+        "understanding_source": "bypass",
+        "generation_disposition": "generated_delivered",
+        "generation_reason": "verified_draft",
+        "assessment_outcome": "supported",
+        "assessment_reason": "accepted",
+        "latency_ms": 25584.3,
+        "scope_ok": true,
+        "status_ok": true,
+        "answered_ok": true,
+        "citation_ok": true,
+        "primary_citation_ok": true,
+        "conclusion_ok": true,
+        "strict_pass": true,
+        "has_noise": false,
+        "has_missing_facts": false
+      },
+      {
+        "id": "UPG_16",
+        "category": "multi_turn_followup",
+        "expected_scope": "in_scope",
+        "answer_status": "ANSWERED",
+        "llm_used": true,
+        "citations": [
+          "ND_68_2026_D3_K1",
+          "ND_68_2026_D3_K2"
+        ],
+        "missing_facts": [
+          "Phương pháp tính thuế GTGT",
+          "Ngành nghề kinh doanh cụ thể"
+        ],
+        "rewritten_query": "Hộ kinh doanh có doanh thu 150 triệu đồng một năm có phải nộp thuế giá trị gia tăng không?",
+        "answer_preview": {
+          "conclusion": "Hộ kinh doanh có doanh thu 150 triệu đồng một năm được xác định nghĩa vụ cụ thể như sau:\n- Không phải nộp thuế giá trị gia tăng do có doanh thu năm từ 01 tỷ đồng trở xuống [ND_68_2026_D3_K1].",
+          "rule": "Hộ kinh doanh, cá nhân kinh doanh có mức doanh thu năm từ 01 tỷ đồng trở xuống thuộc đối tượng không chịu thuế giá trị gia tăng [ND_68_2026_D3_K1]. Ngược lại, hộ kinh doanh có mức doanh thu năm trên 01 tỷ đồng thuộc đối tượng chịu thuế giá trị gia tăng và áp dụng phương pháp tính trực tiếp theo doan",
+          "application": "Xét trường hợp hộ kinh doanh có doanh thu 150 triệu đồng một năm, mức doanh thu này nằm trong hạn mức từ 01 tỷ đồng trở xuống [ND_68_2026_D3_K1]. Do đó, hộ kinh doanh này thuộc đối tượng không chịu thuế giá trị gia tăng và không phải nộp loại thuế này [ND_68_2026_D3_K1]."
+        },
+        "understanding_source": "llm",
+        "generation_disposition": "generated_delivered",
+        "generation_reason": "verified_draft",
+        "assessment_outcome": "supported",
+        "assessment_reason": "accepted",
+        "latency_ms": 62860.6,
+        "scope_ok": true,
+        "status_ok": true,
+        "answered_ok": true,
+        "citation_ok": true,
+        "primary_citation_ok": true,
+        "conclusion_ok": true,
+        "strict_pass": true,
+        "has_noise": false,
+        "has_missing_facts": true
+      },
+      {
         "id": "UPG_17",
         "category": "multi_turn_followup",
-        "answer_status": "INSUFFICIENT_BASIS",
+        "expected_scope": "in_scope",
+        "answer_status": "ANSWERED",
+        "llm_used": true,
         "citations": [
-          "ND_181_2025_D27_K3_k",
           "ND_181_2025_D18_K1_b",
           "ND_181_2025_D18_K2_b",
           "ND_181_2025_D27_K3",
+          "ND_181_2025_D27_K3_k",
           "ND_181_2025_D26_K2_h"
         ],
-        "missing_facts": [],
+        "missing_facts": [
+          "Doanh nghiệp xuất khẩu là hàng hóa hay dịch vụ phần mềm?"
+        ],
         "rewritten_query": "nếu hợp đồng thanh toán dưới 20 triệu đồng nhưng vẫn đáp ứng xuất khẩu thì điều kiện chứng từ thanh toán không dùng tiền mặt áp dụng ra sao?",
-        "latency_ms": 12442.1,
+        "answer_preview": {
+          "conclusion": "Doanh nghiệp xuất khẩu phải đáp ứng các điều kiện cụ thể sau:\n- Trường hợp thực hiện đầy đủ giao dịch qua ngân hàng đúng quy định thì được chấp nhận điều kiện thanh toán không dùng tiền mặt [ND_181_2025_D27_K3].\n- Trường hợp có sai sót về tên ngân hàng thanh toán nhưng đáp ứng đủ thông tin về người thanh toán, người thụ hưởng, số hợp đồng và giá trị thì vẫn được công nhận là chứng từ hợp lệ [ND_181_2025_D27_K3_k].\nDoanh nghiệp xuất khẩu là hàng hóa hay dịch vụ phần mềm?",
+          "rule": "Đối với hàng hóa và dịch vụ xuất khẩu, cơ sở kinh doanh phải đáp ứng điều kiện về chứng từ thanh toán không dùng tiền mặt theo quy định [ND_181_2025_D18_K1_b] [ND_181_2025_D18_K2_b], trong đó chứng từ này là chứng từ chuyển tiền từ tài khoản của bên nhập khẩu sang tài khoản của bên xuất khẩu mở tại ",
+          "application": "Khi thực hiện giao dịch xuất khẩu có giá trị hợp đồng dưới 20 triệu đồng, cơ sở kinh doanh vẫn phải tuân thủ quy định chung về điều kiện chứng từ thanh toán không dùng tiền mặt đối với hàng hóa và dịch vụ xuất khẩu [ND_181_2025_D18_K1_b] [ND_181_2025_D18_K2_b], trong đó dòng tiền phải được chuyển từ"
+        },
+        "understanding_source": "llm",
+        "generation_disposition": "generated_delivered",
+        "generation_reason": "verified_draft",
+        "assessment_outcome": "needs_facts",
+        "assessment_reason": "accepted",
+        "latency_ms": 19616.6,
         "scope_ok": true,
         "status_ok": true,
+        "answered_ok": true,
         "citation_ok": true,
+        "primary_citation_ok": true,
+        "conclusion_ok": true,
+        "strict_pass": true,
+        "has_noise": false,
+        "has_missing_facts": true
+      },
+      {
+        "id": "UPG_18",
+        "category": "multi_turn_followup",
+        "expected_scope": "in_scope",
+        "answer_status": "ANSWERED",
+        "llm_used": true,
+        "citations": [
+          "LUAT_48_2024_D12_K2_a",
+          "ND_68_2026_D3_K1",
+          "ND_68_2026_D3_K2",
+          "LUAT_48_2024_D12_K2_c"
+        ],
+        "missing_facts": [
+          "Phương pháp tính thuế GTGT đang áp dụng"
+        ],
+        "rewritten_query": "Hộ kinh doanh bán tạp hóa có doanh thu 650 triệu đồng một năm trong năm 2026 thì tính thuế giá trị gia tăng theo phương pháp nào?",
+        "answer_preview": {
+          "conclusion": "Hộ kinh doanh bán tạp hóa với doanh thu 650 triệu đồng trong năm 2026 không phải tính và nộp thuế GTGT do thuộc diện không chịu thuế [ND_68_2026_D3_K1].",
+          "rule": "Hộ và cá nhân sản xuất, kinh doanh thuộc đối tượng áp dụng phương pháp tính trực tiếp theo doanh thu [LUAT_48_2024_D12_K2_a]. Cụ thể, hộ kinh doanh có mức doanh thu năm từ 01 tỷ đồng trở xuống thuộc đối tượng không chịu thuế giá trị gia tăng [ND_68_2026_D3_K1], trong khi hộ kinh doanh có mức doanh t",
+          "application": "Trường hợp hộ kinh doanh bán tạp hóa có doanh thu năm 2026 là 650 triệu đồng, mức doanh thu này nằm trong hạn mức từ 01 tỷ đồng trở xuống [ND_68_2026_D3_K1]. Do đó, hộ kinh doanh này thuộc đối tượng không chịu thuế giá trị gia tăng [ND_68_2026_D3_K1], đồng thời việc xác định tổng số tiền bán hàng hó"
+        },
+        "understanding_source": "llm",
+        "generation_disposition": "generated_delivered",
+        "generation_reason": "verified_draft",
+        "assessment_outcome": "supported",
+        "assessment_reason": "accepted",
+        "latency_ms": 19453.7,
+        "scope_ok": true,
+        "status_ok": true,
+        "answered_ok": true,
+        "citation_ok": true,
+        "primary_citation_ok": true,
+        "conclusion_ok": true,
+        "strict_pass": true,
+        "has_noise": false,
+        "has_missing_facts": true
+      },
+      {
+        "id": "UPG_19",
+        "category": "multi_turn_followup",
+        "expected_scope": "in_scope",
+        "answer_status": "ANSWERED",
+        "llm_used": true,
+        "citations": [
+          "LUAT_48_2024_D11_K1_c",
+          "ND_181_2025_D20_K3"
+        ],
+        "missing_facts": [],
+        "rewritten_query": "trường hợp hóa đơn mua vào ghi nhận điều kiện khấu trừ và chứng từ nộp thuế thì cần đáp ứng những giấy tờ gì?",
+        "answer_preview": {
+          "conclusion": "- Trường hợp đáp ứng đầy đủ hóa đơn, chứng từ nộp thuế hợp pháp cùng các điều kiện khấu trừ theo quy định, cơ sở kinh doanh được khấu trừ toàn bộ số thuế GTGT đầu vào ghi trên hóa đơn và chứng từ nộp thuế [LUAT_48_2024_D11_K1_c] [ND_181_2025_D20_K3].\nAnh/chị vui lòng cho biết cụ thể loại hình giao dịch, hàng hóa dịch vụ mua vào và các chứng từ thanh toán liên quan để có căn cứ xác định chính xác hơn?",
+          "rule": "Số thuế GTGT đầu vào được khấu trừ được xác định bằng tổng số thuế GTGT ghi trên hóa đơn GTGT mua hàng hóa, dịch vụ, chứng từ nộp thuế GTGT của hàng hóa nhập khẩu hoặc chứng từ nộp thuế khi mua dịch vụ [LUAT_48_2024_D11_K1_c] [ND_181_2025_D20_K3]. Các chứng từ và hóa đơn này phải đáp ứng các điều ki",
+          "application": "Để xác định số thuế GTGT đầu vào được khấu trừ khi mua hàng hóa, dịch vụ, cơ sở kinh doanh căn cứ vào tổng số thuế GTGT ghi trên hóa đơn GTGT mua hàng hóa, dịch vụ hoặc chứng từ nộp thuế GTGT đối với hàng hóa nhập khẩu và chứng từ nộp thuế đối với trường hợp mua dịch vụ [LUAT_48_2024_D11_K1_c] [ND_1"
+        },
+        "understanding_source": "bypass",
+        "generation_disposition": "generated_delivered",
+        "generation_reason": "verified_draft",
+        "assessment_outcome": "supported",
+        "assessment_reason": "accepted",
+        "latency_ms": 14733.1,
+        "scope_ok": true,
+        "status_ok": true,
+        "answered_ok": true,
+        "citation_ok": false,
+        "primary_citation_ok": false,
+        "conclusion_ok": true,
+        "strict_pass": false,
+        "has_noise": false,
+        "has_missing_facts": false
+      },
+      {
+        "id": "UPG_20",
+        "category": "multi_turn_followup",
+        "expected_scope": "in_scope",
+        "answer_status": "ANSWERED",
+        "llm_used": true,
+        "citations": [
+          "ND_359_2025_D1_K1",
+          "LUAT_48_2024_D5_K1",
+          "LUAT_149_2025_D1_K1_a"
+        ],
+        "missing_facts": [
+          "Phương pháp tính thuế giá trị gia tăng của hợp tác xã",
+          "Xác định sản phẩm trồng trọt đã qua chế biến hay chưa"
+        ],
+        "rewritten_query": "Sản phẩm trồng trọt do hợp tác xã bán ra ở khâu thương mại cho doanh nghiệp chế biến nộp thuế theo phương pháp khấu trừ chịu thuế suất thuế giá trị gia tăng bao nhiêu?",
+        "answer_preview": {
+          "conclusion": "- Sản phẩm trồng trọt do hợp tác xã nộp thuế GTGT theo phương pháp khấu trừ bán ra ở khâu thương mại cho doanh nghiệp chế biến thuộc diện không phải kê khai, tính nộp thuế giá trị gia tăng [ND_359_2025_D1_K1] [LUAT_48_2024_D5_K1] [LUAT_149_2025_D1_K1_a].",
+          "rule": "Doanh nghiệp, hợp tác xã nộp thuế giá trị gia tăng theo phương pháp khấu trừ khi bán sản phẩm cây trồng, rừng trồng, chăn nuôi, thủy sản nuôi trồng, đánh bắt chưa chế biến thành các sản phẩm khác hoặc chỉ qua sơ chế thông thường cho doanh nghiệp, hợp tác xã khác ở khâu kinh doanh thương mại thì khôn",
+          "application": "Trong trường hợp hợp tác xã hoạt động theo phương pháp khấu trừ bán sản phẩm trồng trọt (sản phẩm cây trồng chưa chế biến thành các sản phẩm khác hoặc chỉ qua sơ chế thông thường) ở khâu kinh doanh thương mại cho doanh nghiệp chế biến (là doanh nghiệp khác), giao dịch này thuộc đối tượng không phải "
+        },
+        "understanding_source": "llm",
+        "generation_disposition": "generated_delivered",
+        "generation_reason": "verified_draft",
+        "assessment_outcome": "supported",
+        "assessment_reason": "accepted",
+        "latency_ms": 99124.3,
+        "scope_ok": true,
+        "status_ok": true,
+        "answered_ok": true,
+        "citation_ok": true,
+        "primary_citation_ok": true,
+        "conclusion_ok": true,
+        "strict_pass": true,
+        "has_noise": false,
+        "has_missing_facts": true
+      },
+      {
+        "id": "UPG_21",
+        "category": "out_of_scope_and_boundary",
+        "expected_scope": "out_of_scope",
+        "answer_status": "OUT_OF_SCOPE",
+        "llm_used": false,
+        "citations": [],
+        "missing_facts": [],
+        "rewritten_query": null,
+        "answer_preview": {
+          "conclusion": "Câu hỏi của bạn không thuộc phạm vi điều chỉnh của Hệ thống Pháp lý Thuế Giá trị gia tăng (GTGT). Vui lòng đặt câu hỏi liên quan đến chính sách thuế, thuế suất hoặc quy định hóa đơn chứng từ.",
+          "rule": "Phạm vi điều chỉnh: Các văn bản pháp luật về Thuế Giá trị gia tăng Việt Nam hiện hành trong cơ sở tri thức.",
+          "application": "Câu hỏi của bạn không thuộc phạm vi điều chỉnh của Hệ thống Pháp lý Thuế Giá trị gia tăng (GTGT). Vui lòng đặt câu hỏi liên quan đến chính sách thuế, thuế suất hoặc quy định hóa đơn chứng từ."
+        },
+        "understanding_source": null,
+        "generation_disposition": "safety_bypass",
+        "generation_reason": "out_of_scope",
+        "assessment_outcome": null,
+        "assessment_reason": null,
+        "latency_ms": 1.3,
+        "scope_ok": true,
+        "status_ok": true,
+        "answered_ok": false,
+        "citation_ok": true,
+        "primary_citation_ok": true,
+        "conclusion_ok": true,
+        "strict_pass": true,
         "has_noise": false,
         "has_missing_facts": false
       },
       {
         "id": "UPG_22",
         "category": "out_of_scope_and_boundary",
+        "expected_scope": "out_of_scope",
         "answer_status": "OUT_OF_SCOPE",
+        "llm_used": false,
         "citations": [],
         "missing_facts": [],
         "rewritten_query": null,
-        "latency_ms": 0.7,
+        "answer_preview": {
+          "conclusion": "Câu hỏi của bạn không thuộc phạm vi điều chỉnh của Hệ thống Pháp lý Thuế Giá trị gia tăng (GTGT). Vui lòng đặt câu hỏi liên quan đến chính sách thuế, thuế suất hoặc quy định hóa đơn chứng từ.",
+          "rule": "Phạm vi điều chỉnh: Các văn bản pháp luật về Thuế Giá trị gia tăng Việt Nam hiện hành trong cơ sở tri thức.",
+          "application": "Câu hỏi của bạn không thuộc phạm vi điều chỉnh của Hệ thống Pháp lý Thuế Giá trị gia tăng (GTGT). Vui lòng đặt câu hỏi liên quan đến chính sách thuế, thuế suất hoặc quy định hóa đơn chứng từ."
+        },
+        "understanding_source": null,
+        "generation_disposition": "safety_bypass",
+        "generation_reason": "out_of_scope",
+        "assessment_outcome": null,
+        "assessment_reason": null,
+        "latency_ms": 0.8,
         "scope_ok": true,
         "status_ok": true,
+        "answered_ok": false,
         "citation_ok": true,
+        "primary_citation_ok": true,
+        "conclusion_ok": true,
+        "strict_pass": true,
         "has_noise": false,
         "has_missing_facts": false
+      },
+      {
+        "id": "UPG_23",
+        "category": "out_of_scope_and_boundary",
+        "expected_scope": "out_of_scope",
+        "answer_status": "OUT_OF_SCOPE",
+        "llm_used": false,
+        "citations": [],
+        "missing_facts": [],
+        "rewritten_query": null,
+        "answer_preview": {
+          "conclusion": "Câu hỏi nằm ngoài phạm vi thuế GTGT.",
+          "rule": "Phạm vi điều chỉnh: Các văn bản pháp luật về Thuế Giá trị gia tăng Việt Nam hiện hành trong cơ sở tri thức.",
+          "application": "Câu hỏi nằm ngoài phạm vi thuế GTGT."
+        },
+        "understanding_source": null,
+        "generation_disposition": "safety_bypass",
+        "generation_reason": "out_of_scope",
+        "assessment_outcome": null,
+        "assessment_reason": null,
+        "latency_ms": 0.4,
+        "scope_ok": true,
+        "status_ok": true,
+        "answered_ok": false,
+        "citation_ok": true,
+        "primary_citation_ok": true,
+        "conclusion_ok": true,
+        "strict_pass": true,
+        "has_noise": false,
+        "has_missing_facts": false
+      },
+      {
+        "id": "UPG_24",
+        "category": "out_of_scope_and_boundary",
+        "expected_scope": "in_scope",
+        "answer_status": "ANSWERED",
+        "llm_used": true,
+        "citations": [
+          "ND_181_2025_D4_K3",
+          "LUAT_48_2024_D5_K27"
+        ],
+        "missing_facts": [],
+        "rewritten_query": "Chuyển nhượng quyền sử dụng đất có phải chịu thuế giá trị gia tăng không?",
+        "answer_preview": {
+          "conclusion": "Hoạt động chuyển nhượng quyền sử dụng đất thuộc diện không chịu thuế giá trị gia tăng.\n- Trường hợp thực hiện chuyển quyền sử dụng đất theo pháp luật về đất đai thì không chịu thuế giá trị gia tăng [ND_181_2025_D4_K3].\n- Trường hợp cơ sở kinh doanh thực hiện hoạt động không chịu thuế này thì không được khấu trừ, không được hoàn thuế giá trị gia tăng đầu vào [LUAT_48_2024_D5_K27].\nBạn có đang thực hiện giao dịch chuyển nhượng quyền sử dụng đất dưới tư cách là cá nhân không kinh doanh hay cơ sở ki",
+          "rule": "Theo quy định pháp luật, hoạt động chuyển quyền sử dụng đất thuộc đối tượng không chịu thuế giá trị gia tăng [ND_181_2025_D4_K3]. Đồng thời, cơ sở kinh doanh hàng hóa, dịch vụ thuộc đối tượng không chịu thuế giá trị gia tăng sẽ không được khấu trừ và không được hoàn thuế giá trị gia tăng đầu vào [LU",
+          "application": "Khi cơ sở kinh doanh thực hiện việc chuyển nhượng quyền sử dụng đất, hoạt động này được xác định là chuyển quyền sử dụng đất theo quy định [ND_181_2025_D4_K3], do đó không phải chịu thuế giá trị gia tăng [ND_181_2025_D4_K3]. Hơn nữa, các chi phí đầu vào liên quan đến giao dịch không chịu thuế này sẽ"
+        },
+        "understanding_source": "bypass",
+        "generation_disposition": "generated_delivered",
+        "generation_reason": "verified_draft",
+        "assessment_outcome": "supported",
+        "assessment_reason": "accepted",
+        "latency_ms": 17767.4,
+        "scope_ok": true,
+        "status_ok": true,
+        "answered_ok": true,
+        "citation_ok": true,
+        "primary_citation_ok": true,
+        "conclusion_ok": true,
+        "strict_pass": true,
+        "has_noise": false,
+        "has_missing_facts": false
+      },
+      {
+        "id": "UPG_25",
+        "category": "out_of_scope_and_boundary",
+        "expected_scope": "in_scope",
+        "answer_status": "ANSWERED",
+        "llm_used": true,
+        "citations": [
+          "ND_174_2025_D1_K2_a",
+          "ND_181_2025_D17_K4",
+          "ND_181_2025_D17_K4_k",
+          "ND_181_2025_D17_K4_l"
+        ],
+        "missing_facts": [
+          "Phương pháp tính thuế GTGT của cơ sở kinh doanh (khấu trừ hay trực tiếp)",
+          "Đối tượng khách hàng sử dụng dịch vụ lưu trú (trong nước, nước ngoài hay trong khu phi thuế quan)"
+        ],
+        "rewritten_query": "Kinh doanh dịch vụ lưu trú khách sạn trong nước áp dụng thuế suất GTGT là bao nhiêu?",
+        "answer_preview": {
+          "conclusion": "Dịch vụ lưu trú khách sạn trong nước áp dụng mức thuế suất như sau:\n- Trường hợp cơ sở kinh doanh tính thuế giá trị gia tăng theo phương pháp khấu trừ đối với dịch vụ thuộc diện giảm thuế thì áp dụng mức thuế suất 8% [ND_174_2025_D1_K2_a].\n- Trường hợp dịch vụ khách sạn cung cấp cho tổ chức, cá nhân ở nước ngoài hoặc trong khu phi thuế quan thì áp dụng theo các quy định đặc thù về thuế suất 0% và các trường hợp không áp dụng thuế suất 0% [ND_181_2025_D17_K4] [ND_181_2025_D17_K4_k] [ND_181_2025_D",
+          "rule": "Cơ sở kinh doanh tính thuế giá trị gia tăng theo phương pháp khấu trừ được áp dụng mức thuế suất 8% đối với các hàng hóa, dịch vụ thuộc diện giảm thuế theo quy định [ND_174_2025_D1_K2_a]. Tuy nhiên, các dịch vụ khách sạn cung cấp tại Việt Nam cho tổ chức, cá nhân ở nước ngoài hoặc cung cấp trong khu",
+          "application": "Khi cơ sở kinh doanh thực hiện cung cấp dịch vụ lưu trú khách sạn phục vụ khách hàng trong nước, nếu tính thuế giá trị gia tăng theo phương pháp khấu trừ thì có thể được áp dụng mức thuế suất 8% theo chính sách giảm thuế giá trị gia tăng hiện hành [ND_174_2025_D1_K2_a]. Trường hợp dịch vụ khách sạn "
+        },
+        "understanding_source": "bypass",
+        "generation_disposition": "generated_delivered",
+        "generation_reason": "verified_draft",
+        "assessment_outcome": "needs_facts",
+        "assessment_reason": "accepted",
+        "latency_ms": 17428.1,
+        "scope_ok": true,
+        "status_ok": true,
+        "answered_ok": true,
+        "citation_ok": true,
+        "primary_citation_ok": true,
+        "conclusion_ok": true,
+        "strict_pass": true,
+        "has_noise": false,
+        "has_missing_facts": true
       }
     ]
+  },
+  "run_metadata": {
+    "generated_at_utc": "2026-11-27T08:02:59.691619+00:00",
+    "git_head": "1ce306c",
+    "fixture_path": "tests\\fixtures\\upgrade_eval_25.json",
+    "fixture_sha256": "6b46252af006f4d8573d6970046a3db69d220ec292536f31a78600ed3cdcfe24",
+    "total_fixture_cases": 25,
+    "e2e_case_count": 25,
+    "vat_env": "staging",
+    "llm_provider": "gemini",
+    "gemini_model": "gemini-3.5-flash-lite",
+    "embedding_provider": "ollama",
+    "reranker_model": "BAAI/bge-reranker-v2-m3"
   }
 }

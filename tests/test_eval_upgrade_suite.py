@@ -3,6 +3,7 @@ from collections import Counter
 
 from scripts.eval_upgrade_suite import (
     load_upgrade_cases,
+    render_markdown_report,
     run_retrieval_ablation,
     score_e2e_case,
     score_retrieval_case,
@@ -30,6 +31,10 @@ def test_upgrade_eval_fixture_has_25_balanced_cases():
         assert len(case["as_of_date"]) == 10
         assert case["expected_scope"] in {"in_scope", "out_of_scope"}
         assert isinstance(case["history"], list)
+        assert isinstance(case["primary_doc_prefixes"], list)
+        assert isinstance(case["required_answer_groups"], list)
+        assert isinstance(case["forbidden_answer_patterns"], list)
+        assert str(case["ground_truth_note"]).strip()
 
 
 def test_select_balanced_cases_stratifies_categories():
@@ -46,7 +51,10 @@ def test_score_retrieval_and_e2e_helpers():
         "category": "conditional_needs_facts",
         "expected_scope": "in_scope",
         "expected_statuses": ["INSUFFICIENT_BASIS", "ANSWERED"],
-        "expected_doc_prefixes": ["LUAT_48_2024_D5", "ND_68_2026_D3"],
+        "expected_doc_prefixes": ["LUAT_48_2024_D5", "ND_68_2026_D3", "LUAT_108_2025_D13"],
+        "primary_doc_prefixes": ["LUAT_48_2024_D5", "ND_68_2026_D3"],
+        "required_answer_groups": [["doanh thu"]],
+        "forbidden_answer_patterns": [],
         "forbidden_substrings": ["casino", "trò chơi điện tử có thưởng"],
     }
     clean = score_retrieval_case(
@@ -54,14 +62,14 @@ def test_score_retrieval_and_e2e_helpers():
         ["ND_68_2026_D3_K1", "LUAT_48_2024_D5_K25"],
         ["Miễn thuế hộ kinh doanh dưới ngưỡng doanh thu"],
     )
-    assert clean == {"hit_top5": True, "hit_any": True, "has_noise": False}
+    assert clean == {"hit_top5": True, "primary_hit_top5": True, "hit_any": True, "has_noise": False}
 
     noisy = score_retrieval_case(
         case,
         ["ND_181_2025_D10"],
         ["Kinh doanh casino, trò chơi điện tử có thưởng"],
     )
-    assert noisy == {"hit_top5": False, "hit_any": False, "has_noise": True}
+    assert noisy == {"hit_top5": False, "primary_hit_top5": False, "hit_any": False, "has_noise": True}
 
     e2e_ok = score_e2e_case(
         case,
@@ -76,7 +84,11 @@ def test_score_retrieval_and_e2e_helpers():
     assert e2e_ok == {
         "scope_ok": True,
         "status_ok": True,
+        "answered_ok": False,
         "citation_ok": True,
+        "primary_citation_ok": True,
+        "conclusion_ok": True,
+        "strict_pass": True,
         "has_noise": False,
         "has_missing_facts": True,
     }
@@ -92,6 +104,7 @@ def test_run_retrieval_ablation_with_mocked_retrievers():
             "history": [],
             "expected_scope": "in_scope",
             "expected_doc_prefixes": ["ND_68_2026_D3"],
+            "primary_doc_prefixes": ["ND_68_2026_D3"],
             "forbidden_substrings": ["casino"],
         }
     ]
@@ -104,6 +117,127 @@ def test_run_retrieval_ablation_with_mocked_retrievers():
 
     report = run_retrieval_ablation(cases, baseline_fn=fake_base, upgraded_fn=fake_upg)
     assert report["summary"]["baseline"]["top5_hit_rate"] == 0.0
+    assert report["summary"]["baseline"]["primary_top5_hit_rate"] == 0.0
     assert report["summary"]["baseline"]["forbidden_noise_rate"] == 1.0
     assert report["summary"]["upgraded"]["top5_hit_rate"] == 1.0
+    assert report["summary"]["upgraded"]["primary_top5_hit_rate"] == 1.0
     assert report["summary"]["upgraded"]["forbidden_noise_rate"] == 0.0
+
+
+def test_score_e2e_case_tracks_answered_ok_and_strict_answerable_status():
+    strict_case = {
+        "id": "UPG_02",
+        "category": "colloquial_everyday",
+        "expected_scope": "in_scope",
+        "expected_statuses": ["ANSWERED"],
+        "expected_doc_prefixes": ["ND_68_2026_D3"],
+        "primary_doc_prefixes": ["ND_68_2026_D3"],
+        "required_answer_groups": [["không chịu thuế"]],
+        "forbidden_answer_patterns": [],
+        "forbidden_substrings": [],
+    }
+    abstained = score_e2e_case(
+        strict_case,
+        {
+            "answer_status": "INSUFFICIENT_BASIS",
+            "citations": ["ND_68_2026_D3"],
+            "irac_sections": {},
+        },
+    )
+    assert abstained["status_ok"] is False
+    assert abstained["answered_ok"] is False
+    assert abstained["strict_pass"] is False
+
+
+def test_score_e2e_case_fails_strict_pass_on_wrong_conclusion_or_tangential_citation():
+    case = {
+        "id": "UPG_08",
+        "category": "temporal_amendment",
+        "expected_scope": "in_scope",
+        "expected_statuses": ["ANSWERED"],
+        "expected_doc_prefixes": ["LUAT_48_2024_D9", "TT_69_2025_D8"],
+        "primary_doc_prefixes": ["LUAT_48_2024_D9"],
+        "required_answer_groups": [["5%"]],
+        "forbidden_answer_patterns": [r"phân bón[^.\n]{0,60}không chịu thuế"],
+        "forbidden_substrings": [],
+    }
+    # Procedural/tangential match passes loose citation_ok, yet fails primary_citation_ok and conclusion_ok.
+    scored = score_e2e_case(
+        case,
+        {
+            "answer_status": "ANSWERED",
+            "citations": ["TT_69_2025_D8_K1"],
+            "irac_sections": {"conclusion": "Mặt hàng phân bón thuộc đối tượng không chịu thuế 5%."},
+        },
+    )
+    assert scored["status_ok"] is True
+    assert scored["citation_ok"] is True
+    assert scored["primary_citation_ok"] is False
+    assert scored["conclusion_ok"] is False
+    assert scored["strict_pass"] is False
+
+
+def test_render_markdown_report_contains_category_and_failed_case_sections():
+    sample_report = {
+        "run_metadata": {
+            "generated_at_utc": "2026-11-27T01:00:00+00:00",
+            "git_head": "1ce306c",
+            "vat_env": "staging",
+            "llm_provider": "auto",
+            "gemini_model": "gemini-3.5-flash-lite",
+            "embedding_provider": "ollama",
+            "e2e_case_count": 25,
+            "total_fixture_cases": 25,
+        },
+        "retrieval_ablation": {
+            "summary": {
+                "baseline": {"total_in_scope": 22, "top5_hit_rate": 0.9545, "primary_top5_hit_rate": 0.9545, "forbidden_noise_rate": 0.0, "mean_latency_ms": 4900.0},
+                "upgraded": {"total_in_scope": 22, "top5_hit_rate": 0.9545, "primary_top5_hit_rate": 0.9545, "forbidden_noise_rate": 0.0, "mean_latency_ms": 6600.0},
+            },
+            "cases": [{"id": "UPG_08", "category": "temporal_amendment", "upgraded_hit_top5": False, "upgraded_top5": ["ND_181_2025_D39"]}],
+        },
+        "e2e_evaluation": {
+            "summary": {
+                "total_cases": 1,
+                "scope_accuracy": 1.0,
+                "status_accuracy": 1.0,
+                "answered_rate": 1.0,
+                "citation_hit_rate": 1.0,
+                "primary_citation_hit_rate": 0.0,
+                "conclusion_accuracy": 0.0,
+                "strict_pass_rate": 0.0,
+                "mean_latency_ms": 12000.0,
+                "by_category": {
+                    "temporal_amendment": {
+                        "total": 1,
+                        "strict_pass_rate": 0.0,
+                        "answered_rate": 1.0,
+                        "primary_citation_hit_rate": 0.0,
+                        "conclusion_accuracy": 0.0,
+                        "mean_latency_ms": 12000.0,
+                    }
+                },
+            },
+            "cases": [
+                {
+                    "id": "UPG_07",
+                    "category": "temporal_amendment",
+                    "answer_status": "ANSWERED",
+                    "primary_citation_ok": False,
+                    "conclusion_ok": False,
+                    "strict_pass": False,
+                    "citations": ["LUAT_108_2025_D13_K1_a"],
+                    "generation_reason": "verified_draft",
+                    "assessment_reason": "accepted",
+                    "latency_ms": 12000.0,
+                    "answer_preview": {"conclusion": "Ngưỡng 500 triệu đồng"},
+                }
+            ],
+        },
+    }
+    md = render_markdown_report(sample_report)
+    assert "### By Category" in md
+    assert "temporal_amendment" in md
+    assert "## Failed / Partial Cases" in md
+    assert "Retrieval Miss `UPG_08`" in md
+    assert "E2E Fail `UPG_07`" in md

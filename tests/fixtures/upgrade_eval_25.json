@@ -8,6 +8,10 @@
     "expected_scope": "in_scope",
     "expected_statuses": ["INSUFFICIENT_BASIS", "ANSWERED"],
     "expected_doc_prefixes": ["LUAT_48_2024_D5", "ND_68_2026_D3", "VBHN_25_2026_D3", "LUAT_108_2025_D13", "LUAT_09_2026_D2", "ND_181_2025_D4"],
+    "primary_doc_prefixes": ["ND_68_2026_D3", "ND_141_2026_D1", "LUAT_48_2024_D5", "LUAT_09_2026_D2"],
+    "required_answer_groups": [["doanh thu"], ["hộ kinh doanh", "cá nhân kinh doanh", "doanh nghiệp"]],
+    "forbidden_answer_patterns": [],
+    "ground_truth_note": "ND_68_2026_D3_K1/K2 (amended by ND_141_2026_D1_K1: 01 tỷ đồng threshold for households) & LUAT_09_2026_D2; legal status and annual revenue are required facts.",
     "forbidden_substrings": ["casino", "ca-si-nô", "trò chơi điện tử có thưởng"]
   },
   {
@@ -17,8 +21,12 @@
     "as_of_date": "2026-11-24",
     "history": [],
     "expected_scope": "in_scope",
-    "expected_statuses": ["ANSWERED", "INSUFFICIENT_BASIS"],
-    "expected_doc_prefixes": ["LUAT_48_2024_D5", "ND_68_2026_D3", "VBHN_25_2026_D3", "LUAT_108_2025_D13", "LUAT_09_2026_D2"],
+    "expected_statuses": ["ANSWERED"],
+    "expected_doc_prefixes": ["LUAT_48_2024_D5", "ND_68_2026_D3", "ND_141_2026_D1", "VBHN_25_2026_D3", "LUAT_108_2025_D13", "LUAT_09_2026_D2"],
+    "primary_doc_prefixes": ["ND_68_2026_D3", "ND_141_2026_D1", "LUAT_48_2024_D5", "LUAT_09_2026_D2", "LUAT_149_2025_D1"],
+    "required_answer_groups": [["không chịu thuế", "không phải nộp thuế", "miễn thuế"], ["01 tỷ", "1 tỷ", "500 triệu"]],
+    "forbidden_answer_patterns": [],
+    "ground_truth_note": "ND_68_2026_D3_K1 (500 triệu -> 01 tỷ per ND_141_2026_D1_K1) & LUAT_149_2025_D1_K1_b; 400M/year household is VAT-exempt.",
     "forbidden_substrings": []
   },
   {
@@ -30,6 +38,10 @@
     "expected_scope": "in_scope",
     "expected_statuses": ["ANSWERED", "INSUFFICIENT_BASIS"],
     "expected_doc_prefixes": ["ND_68_2026", "VBHN_25_2026_D3", "LUAT_108_2025_D13", "LUAT_48_2024_D5", "LUAT_09_2026_D2", "TT_69_2025_D5"],
+    "primary_doc_prefixes": ["ND_68_2026_D3", "ND_141_2026_D1", "LUAT_48_2024_D5", "LUAT_09_2026_D2", "ND_68_2026_D11"],
+    "required_answer_groups": [["doanh thu"], ["không chịu thuế", "chịu thuế", "tỷ lệ"]],
+    "forbidden_answer_patterns": [],
+    "ground_truth_note": "ND_68_2026_D3_K1/K2 (amended by ND_141_2026_D1_K1) & ND_68_2026_D11_K1 (platform withholding); depends on annual revenue and platform deduction.",
     "forbidden_substrings": []
   },
   {
@@ -41,6 +53,10 @@
     "expected_scope": "in_scope",
     "expected_statuses": ["INSUFFICIENT_BASIS", "ANSWERED"],
     "expected_doc_prefixes": ["ND_68_2026", "VBHN_25_2026_D3", "LUAT_108_2025_D13", "LUAT_48_2024_D5", "LUAT_09_2026_D2", "TT_69_2025_D5"],
+    "primary_doc_prefixes": ["ND_68_2026_D3", "ND_141_2026_D1", "LUAT_48_2024_D5", "LUAT_09_2026_D2", "ND_68_2026_D4"],
+    "required_answer_groups": [["doanh thu"], ["cho thuê", "nhà", "phòng trọ", "hộ kinh doanh", "cá nhân kinh doanh"]],
+    "forbidden_answer_patterns": [],
+    "ground_truth_note": "ND_68_2026_D3_K1 & ND_68_2026_D4 (threshold/rules for property rental by individuals/households); annual rental revenue is needed.",
     "forbidden_substrings": []
   },
   {
@@ -52,6 +68,10 @@
     "expected_scope": "in_scope",
     "expected_statuses": ["INSUFFICIENT_BASIS", "ANSWERED"],
     "expected_doc_prefixes": ["LUAT_48_2024_D5", "ND_68_2026", "VBHN_25_2026_D3", "LUAT_108_2025_D13", "LUAT_09_2026_D2"],
+    "primary_doc_prefixes": ["ND_68_2026_D3", "ND_68_2026_D8", "ND_141_2026_D1", "LUAT_48_2024_D5"],
+    "required_answer_groups": [["doanh thu"], ["hóa đơn"]],
+    "forbidden_answer_patterns": [],
+    "ground_truth_note": "ND_68_2026_D3 & ND_68_2026_D8_K5_a (amended by ND_141_2026_D1_K2); invoice & VAT obligation depends on annual revenue threshold.",
     "forbidden_substrings": []
   },
   {
@@ -61,8 +81,12 @@
     "as_of_date": "2025-10-15",
     "history": [],
     "expected_scope": "in_scope",
-    "expected_statuses": ["ANSWERED", "INSUFFICIENT_BASIS"],
-    "expected_doc_prefixes": ["LUAT_48_2024_D5", "ND_181_2025_D4"],
+    "expected_statuses": ["ANSWERED"],
+    "expected_doc_prefixes": ["LUAT_48_2024_D5", "LUAT_48_2024_D18", "ND_181_2025_D4"],
+    "primary_doc_prefixes": ["LUAT_48_2024_D18", "LUAT_48_2024_D5", "ND_181_2025_D4"],
+    "required_answer_groups": [["01/01/2026", "1/1/2026", "01 tháng 01 năm 2026", "chưa có hiệu lực", "100 triệu"]],
+    "forbidden_answer_patterns": [],
+    "ground_truth_note": "LUAT_48_2024_D18_K2: LUAT_48_2024_D5_K25 (new household revenue threshold) takes effect from 01/01/2026, not yet effective in 10/2025.",
     "forbidden_substrings": []
   },
   {
@@ -72,8 +96,12 @@
     "as_of_date": "2026-11-24",
     "history": [],
     "expected_scope": "in_scope",
-    "expected_statuses": ["ANSWERED", "INSUFFICIENT_BASIS"],
-    "expected_doc_prefixes": ["LUAT_48_2024_D5", "ND_68_2026_D3", "VBHN_25_2026_D3", "LUAT_09_2026_D2", "LUAT_149_2025_D1"],
+    "expected_statuses": ["ANSWERED"],
+    "expected_doc_prefixes": ["LUAT_48_2024_D5", "ND_68_2026_D3", "ND_141_2026_D1", "VBHN_25_2026_D3", "LUAT_09_2026_D2", "LUAT_149_2025_D1"],
+    "primary_doc_prefixes": ["ND_141_2026_D1", "ND_68_2026_D3", "LUAT_09_2026_D2", "LUAT_149_2025_D1"],
+    "required_answer_groups": [["01 tỷ", "1 tỷ"]],
+    "forbidden_answer_patterns": [],
+    "ground_truth_note": "ND_141_2026_D1_K1 replaces '500 triệu đồng' with '01 tỷ đồng' in ND_68_2026_D3 effective 01/01/2026.",
     "forbidden_substrings": []
   },
   {
@@ -83,8 +111,12 @@
     "as_of_date": "2025-08-01",
     "history": [],
     "expected_scope": "in_scope",
-    "expected_statuses": ["ANSWERED", "INSUFFICIENT_BASIS"],
+    "expected_statuses": ["ANSWERED"],
     "expected_doc_prefixes": ["LUAT_48_2024_D9", "ND_181_2025_D19"],
+    "primary_doc_prefixes": ["LUAT_48_2024_D9", "ND_181_2025_D19"],
+    "required_answer_groups": [["5%"]],
+    "forbidden_answer_patterns": ["phân bón[^.\\n]{0,60}không chịu thuế"],
+    "ground_truth_note": "LUAT_48_2024_D9_K2_b: fertilizers ('Phân bón...') are subject to 5% VAT rate from 01/07/2025.",
     "forbidden_substrings": []
   },
   {
@@ -94,8 +126,12 @@
     "as_of_date": "2026-06-01",
     "history": [],
     "expected_scope": "in_scope",
-    "expected_statuses": ["ANSWERED", "INSUFFICIENT_BASIS"],
+    "expected_statuses": ["ANSWERED"],
     "expected_doc_prefixes": ["NQ_204_2025", "ND_174_2025"],
+    "primary_doc_prefixes": ["NQ_204_2025", "ND_174_2025"],
+    "required_answer_groups": [["31/12/2026", "31 tháng 12 năm 2026"]],
+    "forbidden_answer_patterns": [],
+    "ground_truth_note": "NQ_204_2025_D2 & ND_174_2025_D2_K1: effective from 01/07/2025 through 31/12/2026.",
     "forbidden_substrings": []
   },
   {
@@ -105,8 +141,12 @@
     "as_of_date": "2026-09-15",
     "history": [],
     "expected_scope": "in_scope",
-    "expected_statuses": ["ANSWERED", "INSUFFICIENT_BASIS"],
+    "expected_statuses": ["ANSWERED"],
     "expected_doc_prefixes": ["ND_181_2025", "ND_359_2025", "ND_144_2026"],
+    "primary_doc_prefixes": ["ND_359_2025", "ND_144_2026"],
+    "required_answer_groups": [["359/2025", "359"], ["144/2026", "144"]],
+    "forbidden_answer_patterns": [],
+    "ground_truth_note": "ND_359_2025_D1_K1 adds D4 K1b & ND_144_2026_D1/D4 amends ND_181_2025_D4 and D26 K2 g.",
     "forbidden_substrings": []
   },
   {
@@ -118,6 +158,10 @@
     "expected_scope": "in_scope",
     "expected_statuses": ["INSUFFICIENT_BASIS", "ANSWERED"],
     "expected_doc_prefixes": ["LUAT_48_2024_D5", "ND_68_2026", "VBHN_25_2026_D3", "LUAT_108_2025_D13", "LUAT_09_2026_D2"],
+    "primary_doc_prefixes": ["ND_68_2026_D3", "ND_141_2026_D1", "LUAT_48_2024_D5", "LUAT_09_2026_D2"],
+    "required_answer_groups": [["doanh thu"], ["hộ kinh doanh", "cá nhân kinh doanh", "doanh nghiệp"]],
+    "forbidden_answer_patterns": [],
+    "ground_truth_note": "ND_68_2026_D3_K1/K2 (amended by ND_141_2026_D1_K1); taxpayer legal form and annual revenue determine VAT obligation.",
     "forbidden_substrings": []
   },
   {
@@ -129,6 +173,10 @@
     "expected_scope": "in_scope",
     "expected_statuses": ["INSUFFICIENT_BASIS", "ANSWERED"],
     "expected_doc_prefixes": ["LUAT_48_2024_D14", "ND_181_2025_D23", "ND_181_2025_D26", "ND_181_2025_D27"],
+    "primary_doc_prefixes": ["LUAT_48_2024_D14", "ND_181_2025_D23", "ND_181_2025_D26"],
+    "required_answer_groups": [["hóa đơn"], ["thanh toán không dùng tiền mặt", "chứng từ", "phục vụ"]],
+    "forbidden_answer_patterns": [],
+    "ground_truth_note": "LUAT_48_2024_D14 & ND_181_2025_D23/D26: input VAT credit requires taxable business use, valid VAT invoice, and non-cash payment proof.",
     "forbidden_substrings": []
   },
   {
@@ -140,6 +188,10 @@
     "expected_scope": "in_scope",
     "expected_statuses": ["INSUFFICIENT_BASIS", "ANSWERED"],
     "expected_doc_prefixes": ["LUAT_48_2024_D5", "ND_181_2025_D4", "LUAT_149_2025_D1"],
+    "primary_doc_prefixes": ["LUAT_48_2024_D5", "ND_181_2025_D4", "LUAT_149_2025_D1", "ND_359_2025_D1"],
+    "required_answer_groups": [["chưa chế biến", "chưa qua chế biến", "sơ chế"], ["không chịu thuế", "không phải kê khai", "tự sản xuất", "khâu"]],
+    "forbidden_answer_patterns": [],
+    "ground_truth_note": "LUAT_149_2025_D1_K1_a & ND_359_2025_D1_K1: tax treatment depends on whether self-produced or commercial stage and buyer tax method.",
     "forbidden_substrings": []
   },
   {
@@ -151,6 +203,10 @@
     "expected_scope": "in_scope",
     "expected_statuses": ["INSUFFICIENT_BASIS", "ANSWERED"],
     "expected_doc_prefixes": ["ND_68_2026_D11", "ND_68_2026_D3", "VBHN_25_2026_D11", "LUAT_48_2024_D4"],
+    "primary_doc_prefixes": ["ND_68_2026_D11", "VBHN_25_2026_D11"],
+    "required_answer_groups": [["khấu trừ", "khai thay", "nộp thay"], ["sàn", "nền tảng"]],
+    "forbidden_answer_patterns": [],
+    "ground_truth_note": "ND_68_2026_D11_K1: e-commerce platform with ordering & payment functions withholds, declares, and pays tax on behalf of sellers.",
     "forbidden_substrings": []
   },
   {
@@ -162,6 +218,10 @@
     "expected_scope": "in_scope",
     "expected_statuses": ["INSUFFICIENT_BASIS", "ANSWERED"],
     "expected_doc_prefixes": ["LUAT_48_2024_D9", "ND_181_2025_D17", "ND_181_2025_D18", "LUAT_48_2024_D5"],
+    "primary_doc_prefixes": ["LUAT_48_2024_D9", "ND_181_2025_D17", "ND_181_2025_D18", "LUAT_48_2024_D5"],
+    "required_answer_groups": [["xuất khẩu", "ngoài việt nam", "0%"], ["không chịu thuế", "phần mềm", "điều kiện"]],
+    "forbidden_answer_patterns": [],
+    "ground_truth_note": "LUAT_48_2024_D5/D9 & ND_181_2025_D17/D18: 0% applies only if exported/consumed outside Vietnam with export documentation; domestic software is non-taxable.",
     "forbidden_substrings": []
   },
   {
@@ -180,8 +240,12 @@
       }
     ],
     "expected_scope": "in_scope",
-    "expected_statuses": ["ANSWERED", "INSUFFICIENT_BASIS"],
-    "expected_doc_prefixes": ["LUAT_48_2024_D5", "ND_68_2026_D3", "VBHN_25_2026_D3", "LUAT_09_2026_D2"],
+    "expected_statuses": ["ANSWERED"],
+    "expected_doc_prefixes": ["LUAT_48_2024_D5", "ND_68_2026_D3", "ND_141_2026_D1", "VBHN_25_2026_D3", "LUAT_09_2026_D2"],
+    "primary_doc_prefixes": ["ND_68_2026_D3", "ND_141_2026_D1", "LUAT_48_2024_D5", "LUAT_09_2026_D2"],
+    "required_answer_groups": [["không chịu thuế", "không phải nộp thuế"]],
+    "forbidden_answer_patterns": [],
+    "ground_truth_note": "ND_68_2026_D3_K1 (500M -> 01 tỷ per ND_141_2026_D1_K1): household business with 150M annual revenue is VAT-exempt.",
     "forbidden_substrings": ["casino", "ca-si-nô", "trò chơi điện tử có thưởng"]
   },
   {
@@ -200,8 +264,12 @@
       }
     ],
     "expected_scope": "in_scope",
-    "expected_statuses": ["ANSWERED", "INSUFFICIENT_BASIS"],
+    "expected_statuses": ["ANSWERED"],
     "expected_doc_prefixes": ["ND_181_2025_D18", "ND_181_2025_D26", "TT_69_2025_D4", "LUAT_48_2024_D14"],
+    "primary_doc_prefixes": ["ND_181_2025_D18", "ND_181_2025_D26", "ND_181_2025_D27", "LUAT_48_2024_D14"],
+    "required_answer_groups": [["không dùng tiền mặt", "qua ngân hàng"], ["05 triệu", "5 triệu", "hợp đồng", "chứng từ"]],
+    "forbidden_answer_patterns": [],
+    "ground_truth_note": "ND_181_2025_D18_K1 & ND_181_2025_D26 (and D26_K2 5M threshold / export non-cash payment condition).",
     "forbidden_substrings": []
   },
   {
@@ -220,8 +288,12 @@
       }
     ],
     "expected_scope": "in_scope",
-    "expected_statuses": ["ANSWERED", "INSUFFICIENT_BASIS"],
-    "expected_doc_prefixes": ["ND_68_2026_D3", "ND_68_2026_D9", "VBHN_25_2026_D3", "LUAT_48_2024_D12"],
+    "expected_statuses": ["ANSWERED"],
+    "expected_doc_prefixes": ["ND_68_2026_D3", "ND_141_2026_D1", "ND_68_2026_D9", "VBHN_25_2026_D3", "LUAT_48_2024_D12"],
+    "primary_doc_prefixes": ["ND_68_2026_D3", "ND_141_2026_D1", "ND_68_2026_D9", "LUAT_48_2024_D12"],
+    "required_answer_groups": [["01 tỷ", "1 tỷ"], ["không chịu thuế", "không phải nộp"]],
+    "forbidden_answer_patterns": [],
+    "ground_truth_note": "ND_141_2026_D1_K1 raises ND_68_2026_D3 threshold from 500M to 01 tỷ effective 01/01/2026, so 650M in 2026 is VAT-exempt.",
     "forbidden_substrings": []
   },
   {
@@ -240,8 +312,12 @@
       }
     ],
     "expected_scope": "in_scope",
-    "expected_statuses": ["ANSWERED", "INSUFFICIENT_BASIS"],
+    "expected_statuses": ["ANSWERED"],
     "expected_doc_prefixes": ["LUAT_48_2024_D14", "LUAT_48_2024_D16", "ND_181_2025_D23", "ND_181_2025_D25"],
+    "primary_doc_prefixes": ["LUAT_48_2024_D14", "ND_181_2025_D23", "ND_181_2025_D25", "ND_181_2025_D26"],
+    "required_answer_groups": [["hóa đơn"], ["không dùng tiền mặt", "chứng từ thanh toán"]],
+    "forbidden_answer_patterns": [],
+    "ground_truth_note": "LUAT_48_2024_D14_K2 & ND_181_2025_D25/D26: VAT invoice / customs tax payment receipt plus non-cash payment documents.",
     "forbidden_substrings": []
   },
   {
@@ -260,8 +336,12 @@
       }
     ],
     "expected_scope": "in_scope",
-    "expected_statuses": ["ANSWERED", "INSUFFICIENT_BASIS"],
-    "expected_doc_prefixes": ["LUAT_48_2024_D5", "LUAT_48_2024_D9", "ND_181_2025_D4", "LUAT_149_2025_D1"],
+    "expected_statuses": ["ANSWERED"],
+    "expected_doc_prefixes": ["ND_359_2025_D1", "LUAT_48_2024_D5", "LUAT_48_2024_D9", "ND_181_2025_D4", "LUAT_149_2025_D1"],
+    "primary_doc_prefixes": ["ND_359_2025_D1", "LUAT_149_2025_D1", "LUAT_48_2024_D5", "ND_181_2025_D4"],
+    "required_answer_groups": [["không phải kê khai", "không chịu thuế", "khâu thương mại", "5%"]],
+    "forbidden_answer_patterns": [],
+    "ground_truth_note": "ND_359_2025_D1_K1 & LUAT_149_2025_D1_K1_a: unprocessed crops sold by cooperatives to deduction-method enterprises/cooperatives at commercial stage.",
     "forbidden_substrings": []
   },
   {
@@ -273,6 +353,10 @@
     "expected_scope": "out_of_scope",
     "expected_statuses": ["OUT_OF_SCOPE"],
     "expected_doc_prefixes": [],
+    "primary_doc_prefixes": [],
+    "required_answer_groups": [],
+    "forbidden_answer_patterns": [],
+    "ground_truth_note": "Out-of-scope traffic administrative violation; guardrails must reject as OUT_OF_SCOPE.",
     "forbidden_substrings": []
   },
   {
@@ -284,6 +368,10 @@
     "expected_scope": "out_of_scope",
     "expected_statuses": ["OUT_OF_SCOPE"],
     "expected_doc_prefixes": [],
+    "primary_doc_prefixes": [],
+    "required_answer_groups": [],
+    "forbidden_answer_patterns": [],
+    "ground_truth_note": "Out-of-scope programming question; guardrails must reject as OUT_OF_SCOPE.",
     "forbidden_substrings": []
   },
   {
@@ -295,6 +383,10 @@
     "expected_scope": "out_of_scope",
     "expected_statuses": ["OUT_OF_SCOPE"],
     "expected_doc_prefixes": [],
+    "primary_doc_prefixes": [],
+    "required_answer_groups": [],
+    "forbidden_answer_patterns": [],
+    "ground_truth_note": "Out-of-scope marriage/family law question; guardrails must reject as OUT_OF_SCOPE.",
     "forbidden_substrings": []
   },
   {
@@ -304,8 +396,12 @@
     "as_of_date": "2026-11-24",
     "history": [],
     "expected_scope": "in_scope",
-    "expected_statuses": ["ANSWERED", "INSUFFICIENT_BASIS"],
+    "expected_statuses": ["ANSWERED"],
     "expected_doc_prefixes": ["LUAT_48_2024_D5", "ND_181_2025_D4", "ND_181_2025_D8"],
+    "primary_doc_prefixes": ["LUAT_48_2024_D5", "ND_181_2025_D4"],
+    "required_answer_groups": [["không chịu thuế"]],
+    "forbidden_answer_patterns": ["thuế suất\\s*0\\s*%"],
+    "ground_truth_note": "LUAT_48_2024_D5_K7: 'Chuyển quyền sử dụng đất.' is VAT-exempt (not 0%).",
     "forbidden_substrings": []
   },
   {
@@ -315,8 +411,12 @@
     "as_of_date": "2026-11-24",
     "history": [],
     "expected_scope": "in_scope",
-    "expected_statuses": ["ANSWERED", "INSUFFICIENT_BASIS"],
+    "expected_statuses": ["ANSWERED"],
     "expected_doc_prefixes": ["LUAT_48_2024_D9", "ND_181_2025", "ND_174_2025", "NQ_204_2025"],
+    "primary_doc_prefixes": ["LUAT_48_2024_D9", "ND_174_2025", "NQ_204_2025"],
+    "required_answer_groups": [["8%", "10%"]],
+    "forbidden_answer_patterns": [],
+    "ground_truth_note": "LUAT_48_2024_D9_K3 (10% base rate) reduced to 8% through 31/12/2026 under NQ_204_2025 & ND_174_2025.",
     "forbidden_substrings": []
   }
 ]
